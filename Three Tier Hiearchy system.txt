@@ -1,0 +1,106 @@
+Great question! Let me show you how to log in as each role type. Here's how to access all three user levels:
+
+## 🔑 **Login Credentials**
+
+### **1. Super Admin (Already Created)**
+- **Email**: `superadmin@glangetaway.com`
+- **Password**: `SuperAdmin123!`
+- **Access**: Full system control + resort approval
+
+### **2. Regular User (Create New)**
+You need to register a new user account:
+1. Go to your frontend: `http://localhost:5174`
+2. Click **"Register"** or **"Sign Up"**
+3. Fill in the registration form
+4. This creates a regular user account
+
+### **3. Admin/Frontdesk (Create New)**
+Same as regular user, but we'll need to promote them to admin role in the database.
+
+## 🛠️ **Step-by-Step Setup**
+
+### **Step 1: Create Regular User Account**
+
+1. **Register a new user** at `http://localhost:5174/register`
+   - Email: `user@test.com`
+   - Password: `password123`
+   - Fill in any other required fields
+
+2. **Register another user** for admin role:
+   - Email: `admin@test.com` 
+   - Password: `password123`
+
+### **Step 2: Promote User to Admin Role**
+
+Now I'll create a script to promote a user to admin role:
+
+## 📋 **Complete Login Guide**
+
+### **🚀 Quick Setup Steps:**
+
+#### **1. Start Both Services**
+```bash
+# Backend (in hotel-booking-backend folder)
+npm run dev
+
+# Frontend (in hotel-booking-frontend folder) 
+npm run dev
+```
+
+#### **2. Create Test Accounts**
+
+**A. Regular User:**
+- Go to: `http://localhost:5174/register`
+- Email: `user@test.com`
+- Password: `password123`
+- Fill registration form
+
+**B. Admin User:**
+- Go to: `http://localhost:5174/register`
+- Email: `admin@test.com`
+- Password: `password123`
+- Fill registration form
+
+#### **3. Promote Admin User**
+```bash
+cd hotel-booking-backend
+npm run promote-admin admin@test.com
+```
+
+#### **4. Test All Three Roles**
+
+| Role | Email | Password | Access Level |
+|------|-------|-----------|--------------|
+| **Super Admin** | `superadmin@glangetaway.com` | `SuperAdmin123!` | ✅ Full access + Resort approval |
+| **Admin** | `admin@test.com` | `password123` | ✅ Admin dashboard + My resorts |
+| **User** | `user@test.com` | `password123` | ✅ Browse + Book only |
+
+### **🔍 What Each Role Sees:**
+
+#### **Regular User (`user@test.com`)**
+- ✅ Resorts, Search, Detail pages
+- ✅ My Bookings
+- ❌ No Admin dropdown
+- ❌ No "My Resorts" link
+
+#### **Admin (`admin@test.com`)**
+- ✅ All user features
+- ✅ Admin dropdown (Feedback, Reports)
+- ✅ "My Resorts" link
+- ❌ No Resort Approval
+
+#### **Super Admin (`superadmin@glangetaway.com`)**
+- ✅ Everything including Resort Approval
+- ✅ Full system control
+
+### **🧪 Test Route Protection:**
+
+Try accessing these URLs with different accounts:
+- `/admin/feedback` - Admin+ only
+- `/admin/reports` - Admin+ only  
+- `/admin/resort-approval` - Super Admin only
+- `/my-hotels` - Admin+ only
+
+**Regular users should be redirected to home page!**
+
+Ready to test the complete three-tier system? 🎯
