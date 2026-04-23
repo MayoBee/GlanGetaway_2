@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
-import useAppContext from "../../../shared/hooks/useAppContext";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import useAppContext from "../hooks/useAppContext";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { 
   FileText, 
   BarChart3, 

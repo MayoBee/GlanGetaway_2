@@ -39,6 +39,14 @@ import ResortApproval from './pages/Admin/ResortApproval';
 import AdminReports from './pages/AdminReports';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminSettings from "./pages/AdminSettings";
+import StaffManagement from "./pages/StaffManagement";
+import HousekeepingTasks from "./pages/HousekeepingTasks";
+import MaintenanceManagement from "./pages/MaintenanceManagement";
+import WeatherTriggers from "./pages/WeatherTriggers";
+import FeatureFlags from "./pages/FeatureFlags";
+import RoomBlocks from "./pages/RoomBlocks";
+import IdentityVerification from "./pages/IdentityVerification";
+import AmenitySlots from "./pages/AmenitySlots";
 
 const App = () => {
   return (
@@ -293,7 +301,87 @@ const App = () => {
                 </AdminRouteGuard>
               }
             />
-            
+            <Route
+              path="/admin/staff-management"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <StaffManagement />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/housekeeping-tasks"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <HousekeepingTasks />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/maintenance"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <MaintenanceManagement />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/weather-triggers"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <WeatherTriggers />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/feature-flags"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <FeatureFlags />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/room-blocks"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <RoomBlocks />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/identity-verification"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <IdentityVerification />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/amenity-slots"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <AmenitySlots />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
           <Toaster />

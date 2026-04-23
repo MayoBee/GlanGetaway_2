@@ -144,12 +144,18 @@ const AddHotel = () => {
     Object.keys(hotelFormData).forEach(key => {
       const value = hotelFormData[key];
       if (key === 'imageFiles') {
-        const files = value as unknown as FileList | File[];
+        const files = value as unknown as FileList | File[] | Record<string, any>;
+        // Skip imageFiles if it's an invalid object (e.g., { "0": {} })
         if (files && (files instanceof FileList || Array.isArray(files))) {
-          Array.from(files).forEach((file: File, index: number) => {
-            formData.append('imageFiles', file);
+          Array.from(files).forEach((file: File) => {
+            // Only append if it's an actual File object with size > 0
+            if (file instanceof File && file.size > 0) {
+              formData.append('imageFiles', file);
+            }
           });
         }
+        // If imageFiles is an object with empty values, skip it entirely
+        // This prevents sending invalid data to the backend
       } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
         // Handle nested objects with images
         if (Array.isArray(value)) {

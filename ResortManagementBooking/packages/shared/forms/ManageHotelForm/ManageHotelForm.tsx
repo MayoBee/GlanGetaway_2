@@ -14,7 +14,7 @@ import ImagesSection from "./ImagesSection";
 import PaymentModuleSection from "./PaymentModuleSection";
 import DiscountsSection from "./DiscountsSection";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
-import { HotelType } from "../../../../shared/types";
+import { HotelType } from "../../types";
 
 export type HotelFormData = {
   name: string;
@@ -145,6 +145,34 @@ export type HotelFormData = {
       id: string;
       name: string;
       description?: string;
+    }>;
+    customRooms?: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      capacity: number;
+      features: string;
+      price: number;
+      availability: number;
+    }>;
+    customCottages?: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      capacity: number;
+      features: string;
+      price: number;
+      availability: number;
+    }>;
+    customAmenities?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      quantity: number;
+      inclusionType: 'included' | 'addon';
+      price?: number;
     }>;
     includedAdultEntranceFee: boolean;
     includedChildEntranceFee: boolean;

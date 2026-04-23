@@ -51,23 +51,6 @@ const AdminAnalytics: React.FC = () => {
   });
   const [groupBy, setGroupBy] = useState<"daily" | "weekly" | "monthly" | "yearly">("monthly");
 
-  // Check if user has access
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <CardTitle className="text-2xl font-bold text-red-600">Access Denied</CardTitle>
-            <CardDescription>
-              Only Super Admins can access the Analytics Reports module.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   // ==================== RESERVATION REPORTS ====================
   
   // 2.5.1.1 Booking Summary
@@ -79,7 +62,7 @@ const AdminAnalytics: React.FC = () => {
       groupBy
     }),
     { 
-      enabled: activeTab === "reservations",
+      enabled: isAdmin && activeTab === "reservations",
       loadingMessage: "Loading booking summary...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -93,7 +76,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "reservations",
+      enabled: isAdmin && activeTab === "reservations",
       loadingMessage: "Loading occupancy data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -107,7 +90,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "reservations",
+      enabled: isAdmin && activeTab === "reservations",
       loadingMessage: "Loading cancelled reservations...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -123,7 +106,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "financial",
+      enabled: isAdmin && activeTab === "financial",
       loadingMessage: "Loading revenue data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -134,7 +117,7 @@ const AdminAnalytics: React.FC = () => {
     ["dailyTransaction"],
     () => fetchDailyTransaction({}),
     { 
-      enabled: activeTab === "financial",
+      enabled: isAdmin && activeTab === "financial",
       loadingMessage: "Loading daily transactions...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -148,7 +131,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "financial",
+      enabled: isAdmin && activeTab === "financial",
       loadingMessage: "Loading tax data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -164,7 +147,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "operational",
+      enabled: isAdmin && activeTab === "operational",
       loadingMessage: "Loading guest data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -178,7 +161,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "operational",
+      enabled: isAdmin && activeTab === "operational",
       loadingMessage: "Loading activity data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -192,7 +175,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "operational",
+      enabled: isAdmin && activeTab === "operational",
       loadingMessage: "Loading maintenance data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }
@@ -208,7 +191,7 @@ const AdminAnalytics: React.FC = () => {
       endDate: dateRange.endDate
     }),
     { 
-      enabled: activeTab === "amenities",
+      enabled: isAdmin && activeTab === "amenities",
       loadingMessage: "Loading amenity data...",
       onError: (error: Error) => showToast({ title: "Error", description: error.message, type: "ERROR" })
     }

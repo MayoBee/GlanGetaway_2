@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import FeatureFlag, { IFeatureFlag } from "../models/feature-flag";
+import { FeatureFlag, IFeatureFlag } from "../models/feature-flag";
 
 export interface FeatureFlagContext {
   userId?: string;

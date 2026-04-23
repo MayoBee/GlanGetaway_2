@@ -5,7 +5,7 @@ import { X, Upload } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import SmartImage from "../../components/SmartImage";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
 
 interface ImagePreview {
   id: string;

@@ -29,6 +29,8 @@ export const useRoleBasedAccess = () => {
   const canManageBilling = isAdmin || isResortOwner || isFrontDesk;
   const canManageMaintenance = isAdmin || isResortOwner;
   
+  const requireAdmin = () => isAdmin;
+  
   // Only log in development to reduce console noise
   if (process.env.NODE_ENV === 'development') {
     console.log("useRoleBasedAccess - Calculated permissions:", {
@@ -128,6 +130,7 @@ export const useRoleBasedAccess = () => {
     canViewReports,
     canManageBilling,
     canManageMaintenance,
+    requireAdmin,
     permissions: {
       canCreateResort,
       canApproveResorts,

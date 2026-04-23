@@ -24,38 +24,6 @@ const Booking = () => {
   
   console.log("Booking data:", { hotelId, search });
   
-  // Add null checks
-  if (!hotelId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Invalid Booking
-          </h2>
-          <p className="text-gray-600">
-            No hotel ID provided for this booking.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if search context has required data
-  if (!search.checkIn || !search.checkOut) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Missing Booking Information
-          </h2>
-          <p className="text-gray-600">
-            Please select check-in and check-out dates to continue with your booking.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const { 
     totalCost, 
     downPaymentAmount,

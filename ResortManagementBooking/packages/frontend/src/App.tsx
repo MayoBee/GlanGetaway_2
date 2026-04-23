@@ -28,13 +28,16 @@ import AdminManagement from "./pages/AdminManagement";
 import BusinessInsights from "./pages/BusinessInsights";
 import ResortApproval from "./pages/Admin/ResortApproval";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import WebsiteFeedbackManagement from "./pages/Admin/WebsiteFeedbackManagement";
 import WebsiteFeedback from "./components/WebsiteFeedback";
 import ErrorBoundary from "./components/ErrorBoundary";
-import ResortDashboard from "./pages/ResortDashboard";
 import ResortReports from "./pages/ResortReports";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AuthDebug from "./components/AuthDebug";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminLayout from "./layouts/AdminLayout";
 
 const App = () => {
   return (
@@ -157,56 +160,8 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/admin/business-insights"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <Layout>
-                    <BusinessInsights />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/resort-approval"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <Layout>
-                    <ResortApproval />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/management"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <Layout>
-                    <AdminManagement />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/analytics"
-              element={
-                <ProtectedRoute requireSuperAdmin>
-                  <Layout>
-                    <AdminAnalytics />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/feedback"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <Layout>
-                    <WebsiteFeedbackManagement />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Secret Admin Login Route - No public links to this */}
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route
               path="/website-feedback"
               element={
@@ -215,38 +170,53 @@ const App = () => {
                 </Layout>
               }
             />
+            {/* Secret Admin Dashboard Routes - Protected and hidden */}
             <Route
-              path="/admin/reports"
+              path="/admin-dashboard"
               element={
-                <ProtectedRoute requireAdmin>
-                  <Layout>
-                    <AdminReports />
-                  </Layout>
-                </ProtectedRoute>
+                <AdminProtectedRoute>
+                  <AdminLayout />
+                </AdminProtectedRoute>
               }
-            />
-            
-            {/* Resort Management Routes */}
-            <Route
-              path="/resort/dashboard"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <Layout>
-                    <ResortDashboard />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/resort/reports"
-              element={
-                <ProtectedRoute requiredPermission="canManageOwnResorts">
-                  <Layout>
-                    <ResortReports />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route
+                path="business-insights"
+                element={
+                  <AdminProtectedRoute requireSuperAdmin>
+                    <BusinessInsights />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="resort-approval"
+                element={<ResortApproval />}
+              />
+              <Route
+                path="management"
+                element={<AdminManagement />}
+              />
+              <Route
+                path="analytics"
+                element={
+                  <AdminProtectedRoute requireSuperAdmin>
+                    <AdminAnalytics />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="feedback"
+                element={<WebsiteFeedbackManagement />}
+              />
+              <Route
+                path="reports"
+                element={<AdminReports />}
+              />
+              <Route
+                path="resort-reports"
+                element={<ResortReports />}
+              />
+            </Route>
 
             {/* Debug Route */}
             <Route

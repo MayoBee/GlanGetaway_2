@@ -1,4 +1,4 @@
-import axiosInstance, { getApiBaseUrl } from "../../shared/auth/api-client";
+import { axiosInstance, getApiBaseUrl } from "@shared/auth";
 import { RegisterFormData } from "./pages/Register";
 import { SignInFormData } from "./pages/SignIn";
 import {
@@ -8,7 +8,7 @@ import {
   UserType,
   HotelWithBookingsType,
   BookingType,
-} from "../../shared/types";
+} from "@shared/types";
 import { BookingFormData } from "./forms/BookingForm/BookingForm";
 
 export { getApiBaseUrl };
@@ -760,17 +760,6 @@ export const approvePromotionRequest = async (requestId: string) => {
 
 export const declinePromotionRequest = async (requestId: string, reason: string) => {
   const response = await axiosInstance.post(`/api/role-promotion-requests/${requestId}/decline`, { reason });
-  return response.data;
-};
-
-// User Management
-export const deleteUser = async (userId: string) => {
-  const response = await axiosInstance.delete(`/api/admin-management/users/${userId}`);
-  return response.data;
-};
-
-export const demoteUser = async (userId: string) => {
-  const response = await axiosInstance.put(`/api/admin-management/demote-to-user/${userId}`);
   return response.data;
 };
 

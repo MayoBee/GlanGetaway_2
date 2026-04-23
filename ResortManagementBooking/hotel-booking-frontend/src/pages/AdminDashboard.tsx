@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 import useAppContext from "../hooks/useAppContext";
 import { useAdminBypass } from "../hooks/useAdminBypass";
 import { Link, useLocation } from "react-router-dom";

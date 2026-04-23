@@ -100,6 +100,9 @@ export type HotelType = {
   nightRateCheckOutTime: string;
   starRating: number;
   imageUrls: string[];
+  // Legacy fields for backward compatibility
+  image?: string;
+  rating?: number;
   lastUpdated: Date;
   location?: {
     latitude: number;
@@ -208,6 +211,7 @@ export type HotelType = {
   approvedBy?: string;
   approvedAt?: Date;
   rejectionReason?: string;
+  status?: 'pending' | 'approved' | 'declined';
   adultEntranceFee?: {
     dayRate: number;
     nightRate: number;

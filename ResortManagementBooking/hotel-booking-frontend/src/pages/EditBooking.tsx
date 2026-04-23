@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
-import { BookingType, HotelType } from "../types";
+import { axiosInstance } from '@glan-getaway/shared-auth';
+import type { BookingType, HotelType } from "../../../shared/types";
+import { updateBooking } from "../api-client";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";

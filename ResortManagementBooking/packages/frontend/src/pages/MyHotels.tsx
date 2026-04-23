@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import { BsBuilding, BsMap } from "react-icons/bs";
 import { BiHotel, BiMoney } from "react-icons/bi";
@@ -31,7 +31,7 @@ import {
 } from "../../../shared/ui/card";
 import BookingLogModal from "../components/BookingLogModal";
 import { useState } from "react";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import { useMutation, useQueryClient } from "react-query";
 
 const MyHotels = () => {

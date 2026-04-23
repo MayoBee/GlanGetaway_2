@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ImageUpload from '../components/ImageUpload';
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';

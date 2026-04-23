@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import * as apiClient from "../../api-client";
-import { useRoleBasedAccess } from "../../../../shared/hooks/useRoleBasedAccess";
+import { useRoleBasedAccess } from "../../hooks/useRoleBasedAccess";
 import { useToast } from "../../../../shared/hooks/use-toast";
 import { HotelType } from "../../../../shared/types";
 import { Button } from "../../../../shared/ui/button";

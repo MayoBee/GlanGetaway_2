@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import FeatureFlag from "../models/feature-flag";
+import { FeatureFlag } from "../models/feature-flag";
 import "dotenv/config";
 
 const defaultFlags = [

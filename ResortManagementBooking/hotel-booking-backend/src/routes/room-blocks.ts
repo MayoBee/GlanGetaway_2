@@ -3,17 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import RoomBlock from "../models/room-block";
 import Room from "../models/room";
 
-// Extended Request interface with user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id?: string;
-        _id?: string;
-      };
-    }
-  }
-}
+// Extended Request interface with user - using auth.ts declaration
 
 // Inline verifyToken middleware
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {

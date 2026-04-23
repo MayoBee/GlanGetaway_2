@@ -1,14 +1,14 @@
 import { useFormContext } from "react-hook-form";
-import { Label } from "../../components/ui/label";
-import { Input } from "../../components/ui/input";
-import { Checkbox } from "../../components/ui/checkbox";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import { Checkbox } from "../../ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
-  CardDescription 
-} from "../../components/ui/card";
+  CardDescription
+} from "../../ui/card";
 import { 
   Percent,
   AlertCircle

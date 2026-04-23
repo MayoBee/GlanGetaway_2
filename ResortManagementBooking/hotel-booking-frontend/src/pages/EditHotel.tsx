@@ -12,17 +12,6 @@ const EditHotel = () => {
   console.log("EditHotel - hotelId:", hotelId);
   console.log("EditHotel - current URL:", window.location.href);
 
-  if (!hotelId) {
-    console.error("No hotelId found in URL params");
-    showToast({
-      title: "Error",
-      description: "No resort ID found. Please navigate from My Resorts page.",
-      type: "ERROR",
-    });
-    navigate("/my-hotels");
-    return null;
-  }
-
   const { data: hotel } = useQuery(
     "fetchMyHotelById",
     () => fetchMyHotelById(hotelId || ""),
@@ -48,130 +37,19 @@ const EditHotel = () => {
       console.error("=== EDIT HOTEL ERROR DETAILS ===");
       console.error("Error type:", error.constructor.name);
       console.error("Error message:", error.message);
-      console.error("Error code:", error.code);
-      console.error("Error config:", error.config);
-      console.error("Error response status:", error.response?.status);
-      console.error("Error response status text:", error.response?.statusText);
-      console.error("Error response headers:", error.response?.headers);
-      console.error("Error response data:", error.response?.data);
-      
-      // Log the request that caused the error
-      if (error.config) {
-        console.log("=== REQUEST DETAILS ===");
-        console.log("URL:", error.config.url);
-        console.log("Method:", error.config.method);
-        console.log("Headers:", error.config.headers);
-        console.log("Data:", error.config.data);
-      }
-      
-      let errorMessage = "";
-      let errorTitle = "Failed to Update Resort";
-      
-      // Network/Connection errors
-      if (!error.response) {
-        if (error.code === 'ECONNABORTED') {
-          errorTitle = "Request Timeout";
-          errorMessage = "The request took too long to complete. Please check your internet connection and try again.";
-        } else if (error.message === 'Network Error') {
-          errorTitle = "Network Connection Error";
-          errorMessage = "Unable to connect to the server. Please check your internet connection and try again.";
-        } else {
-          errorTitle = "Connection Error";
-          errorMessage = "Unable to update resort. Please check your internet connection and try again.";
-        }
-      }
-      // HTTP Status Code specific errors
-      else if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-        
-        switch (status) {
-          case 400:
-            errorTitle = "Invalid Data";
-            if (data.message) {
-              errorMessage = `Validation error: ${data.message}`;
-            } else if (data.errors && Array.isArray(data.errors)) {
-              errorMessage = `Please fix the following issues: ${data.errors.map((e: any) => e.message).join(", ")}`;
-            } else {
-              errorMessage = "Please check all required fields and try again.";
-            }
-            break;
-            
-          case 401:
-            errorTitle = "Authentication Error";
-            errorMessage = "Your session has expired. Please log in again and retry.";
-            break;
-            
-          case 403:
-            errorTitle = "Permission Denied";
-            errorMessage = "You don't have permission to update this resort.";
-            break;
-            
-          case 404:
-            errorTitle = "Resort Not Found";
-            errorMessage = "The resort you're trying to update doesn't exist or has been deleted.";
-            break;
-            
-          case 409:
-            errorTitle = "Conflict Error";
-            errorMessage = "This resort has been modified by another user. Please refresh and try again.";
-            break;
-            
-          case 413:
-            errorTitle = "File Too Large";
-            errorMessage = "One or more images are too large. Please compress images and try again.";
-            break;
-            
-          case 422:
-            errorTitle = "Validation Error";
-            if (data.message) {
-              errorMessage = data.message;
-            } else if (data.errors && Array.isArray(data.errors)) {
-              errorMessage = data.errors.map((e: any) => e.message).join(", ");
-            } else {
-              errorMessage = "Please check all fields for correct formatting and required information.";
-            }
-            break;
-            
-          case 429:
-            errorTitle = "Too Many Requests";
-            errorMessage = "Please wait a moment before trying again.";
-            break;
-            
-          case 500:
-            errorTitle = "Server Error";
-            errorMessage = "Our server encountered an error. Please try again in a few minutes.";
-            break;
-            
-          case 502:
-          case 503:
-          case 504:
-            errorTitle = "Service Unavailable";
-            errorMessage = "Our servers are temporarily unavailable. Please try again in a few minutes.";
-            break;
-            
-          default:
-            errorTitle = "Update Failed";
-            if (data.message) {
-              errorMessage = data.message;
-            } else {
-              errorMessage = `An unexpected error occurred (${status}). Please try again or contact support if the problem persists.`;
-            }
-        }
-      }
-      
-      // Fallback if no specific error message was set
-      if (!errorMessage) {
-        errorMessage = "Unable to update resort. Please try again or contact support if the problem persists.";
-      }
-      
-      showToast({
-        title: errorTitle,
-        description: errorMessage,
-        type: "ERROR",
-      });
-    },
+    }
   });
+
+  if (!hotelId) {
+    console.error("No hotelId found in URL params");
+    showToast({
+      title: "Error",
+      description: "No resort ID found. Please navigate from My Resorts page.",
+      type: "ERROR",
+    });
+    navigate("/my-hotels");
+    return null;
+  }
 
   const handleSave = (hotelFormData: any) => {
     // Log data being sent for debugging
@@ -311,7 +189,26 @@ const EditHotel = () => {
     Object.keys(hotelFormData).forEach(key => {
       const value = hotelFormData[key];
       console.log("Processing key: " + key + ", value type: " + typeof value + ", is policies: " + (key === 'policies'));
-      if (key === 'imageFiles') {
+      if (key === 'imageUrls') {
+        // Handle imageUrls array - send as multiple values with same key
+        console.log("=== IMAGE URLS DEBUG ===");
+        console.log("imageUrls value:", value);
+        console.log("imageUrls type:", typeof value);
+        console.log("imageUrls isArray:", Array.isArray(value));
+        console.log("imageUrls length:", Array.isArray(value) ? value.length : 'N/A');
+        
+        if (Array.isArray(value) && value.length > 0) {
+          value.forEach((url, index) => {
+            console.log(`Appending imageUrls[${index}]:`, url);
+            formData.append('imageUrls', url);
+          });
+        } else if (value && !Array.isArray(value)) {
+          console.log("Appending single imageUrl:", value);
+          formData.append('imageUrls', value);
+        } else {
+          console.log("imageUrls is empty or null, not appending");
+        }
+      } else if (key === 'imageFiles') {
         // Handle files separately - check for FileList or Array
         if (value) {
           console.log("=== IMAGE FILES DEBUG ===");
@@ -333,9 +230,12 @@ const EditHotel = () => {
           }
           
           console.log("Final files array:", files.length, "files");
-          files.forEach((file: File, index: number) => {
-            console.log(`Appending file ${index}:`, file.name, file.size, file.type);
-            formData.append('imageFiles', file);
+          files.forEach((file: File) => {
+            // Only append if it's an actual File object with size > 0
+            if (file instanceof File && file.size > 0) {
+              console.log(`Appending file:`, file.name, file.size, file.type);
+              formData.append('imageFiles', file);
+            }
           });
         }
       } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
@@ -443,7 +343,7 @@ const EditHotel = () => {
     
     // Log all FormData entries for debugging
     console.log("=== ALL FORM DATA ENTRIES ===");
-    for (let [key, value] of formData.entries()) {
+    for (const [key, value] of formData.entries()) {
       if (key.startsWith('policies.resortPolicies')) {
         console.log(`${key}:`, value);
       }

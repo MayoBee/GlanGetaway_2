@@ -9,6 +9,34 @@ interface PackageItemState {
   cottages: Map<string, { checked: boolean; units: number }>;
   amenities: Map<string, { checked: boolean; units: number }>;
   customItems: Array<{ id: string; name: string; description: string }>;
+  customRooms: Array<{
+    id: string;
+    name: string;
+    type: string;
+    description: string;
+    capacity: number;
+    features: string;
+    price: number;
+    availability: number;
+  }>;
+  customCottages: Array<{
+    id: string;
+    name: string;
+    type: string;
+    description: string;
+    capacity: number;
+    features: string;
+    price: number;
+    availability: number;
+  }>;
+  customAmenities: Array<{
+    id: string;
+    name: string;
+    description: string;
+    quantity: number;
+    inclusionType: 'included' | 'addon';
+    price?: number;
+  }>;
 }
 
 const FreshPackagesSection = () => {
@@ -27,6 +55,9 @@ const FreshPackagesSection = () => {
   const [packageStates, setPackageStates] = useState<Map<string, PackageItemState>>(new Map());
   const isInitializingRef = useRef(false);
   const confirmedPackagesRef = useRef<Set<string>>(new Set());
+  const [showCustomRoomModal, setShowCustomRoomModal] = useState<string | null>(null);
+  const [showCustomCottageModal, setShowCustomCottageModal] = useState<string | null>(null);
+  const [showCustomAmenityModal, setShowCustomAmenityModal] = useState<string | null>(null);
 
   const addPackage = () => {
     const newPackageId = `package_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -52,7 +83,10 @@ const FreshPackagesSection = () => {
       rooms: new Map(),
       cottages: new Map(),
       amenities: new Map(),
-      customItems: []
+      customItems: [],
+      customRooms: [],
+      customCottages: [],
+      customAmenities: []
     }));
   };
 
@@ -87,7 +121,10 @@ const FreshPackagesSection = () => {
             customItems: (pkg.customItems || []).map(item => ({
             ...item,
             description: item.description || ""
-          }))
+          })),
+          customRooms: (pkg.customRooms || []).map(r => ({ ...r })),
+          customCottages: (pkg.customCottages || []).map(c => ({ ...c })),
+          customAmenities: (pkg.customAmenities || []).map(a => ({ ...a }))
         };
         
         // Load existing selections with units
@@ -195,7 +232,10 @@ const FreshPackagesSection = () => {
             includedRooms: includedRooms.map(r => r.id),
             includedCottages: includedCottages.map(c => c.id),
             includedAmenities: includedAmenities.map(a => a.id),
-            customItems: packageState.customItems
+            customItems: packageState.customItems,
+            customRooms: packageState.customRooms,
+            customCottages: packageState.customCottages,
+            customAmenities: packageState.customAmenities
           });
         }
       }
@@ -209,7 +249,10 @@ const FreshPackagesSection = () => {
         rooms: new Map(),
         cottages: new Map(),
         amenities: new Map(),
-        customItems: []
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
       };
       
       newStates.set(packageId, { ...currentState, ...updates });
@@ -226,7 +269,10 @@ const FreshPackagesSection = () => {
         rooms: new Map(),
         cottages: new Map(),
         amenities: new Map(),
-        customItems: []
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
       };
       setPackageStates(prev => new Map(prev).set(packageId, newState));
       packageState = newState;
@@ -252,7 +298,10 @@ const FreshPackagesSection = () => {
         rooms: new Map(),
         cottages: new Map(),
         amenities: new Map(),
-        customItems: []
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
       };
       setPackageStates(prev => new Map(prev).set(packageId, newState));
       packageState = newState;
@@ -278,7 +327,10 @@ const FreshPackagesSection = () => {
         rooms: new Map(),
         cottages: new Map(),
         amenities: new Map(),
-        customItems: []
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
       };
       setPackageStates(prev => new Map(prev).set(packageId, newState));
       packageState = newState;
@@ -304,7 +356,10 @@ const FreshPackagesSection = () => {
         rooms: new Map(),
         cottages: new Map(),
         amenities: new Map(),
-        customItems: []
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
       };
       setPackageStates(prev => new Map(prev).set(packageId, newState));
       packageState = newState;
@@ -312,6 +367,175 @@ const FreshPackagesSection = () => {
 
     updatePackageState(packageId, {
       customItems: packageState.customItems.filter(item => item.id !== customItemId)
+    });
+  };
+
+  const addCustomRoom = (packageId: string, room: {
+    name: string;
+    type: string;
+    description: string;
+    capacity: number;
+    features: string;
+    price: number;
+    availability: number;
+  }) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    const newRoom = {
+      id: `custom_room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...room
+    };
+
+    updatePackageState(packageId, {
+      customRooms: [...packageState.customRooms, newRoom]
+    });
+  };
+
+  const removeCustomRoom = (packageId: string, roomId: string) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    updatePackageState(packageId, {
+      customRooms: packageState.customRooms.filter(room => room.id !== roomId)
+    });
+  };
+
+  const addCustomCottage = (packageId: string, cottage: {
+    name: string;
+    type: string;
+    description: string;
+    capacity: number;
+    features: string;
+    price: number;
+    availability: number;
+  }) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    const newCottage = {
+      id: `custom_cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...cottage
+    };
+
+    updatePackageState(packageId, {
+      customCottages: [...packageState.customCottages, newCottage]
+    });
+  };
+
+  const removeCustomCottage = (packageId: string, cottageId: string) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    updatePackageState(packageId, {
+      customCottages: packageState.customCottages.filter(cottage => cottage.id !== cottageId)
+    });
+  };
+
+  const addCustomAmenity = (packageId: string, amenity: {
+    name: string;
+    description: string;
+    quantity: number;
+    inclusionType: 'included' | 'addon';
+    price?: number;
+  }) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    const newAmenity = {
+      id: `custom_amenity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...amenity
+    };
+
+    updatePackageState(packageId, {
+      customAmenities: [...packageState.customAmenities, newAmenity]
+    });
+  };
+
+  const removeCustomAmenity = (packageId: string, amenityId: string) => {
+    let packageState = packageStates.get(packageId);
+    
+    if (!packageState) {
+      const newState: PackageItemState = {
+        rooms: new Map(),
+        cottages: new Map(),
+        amenities: new Map(),
+        customItems: [],
+        customRooms: [],
+        customCottages: [],
+        customAmenities: []
+      };
+      setPackageStates(prev => new Map(prev).set(packageId, newState));
+      packageState = newState;
+    }
+
+    updatePackageState(packageId, {
+      customAmenities: packageState.customAmenities.filter(amenity => amenity.id !== amenityId)
     });
   };
 
@@ -612,6 +836,130 @@ const FreshPackagesSection = () => {
                     </div>
                   </div>
 
+                  {/* Custom Rooms */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Bed className="inline w-4 h-4 mr-1 text-blue-600" />
+                      Custom Rooms (Package Exclusive)
+                    </label>
+                    <div className="space-y-2">
+                      {packageState?.customRooms.map((customRoom) => (
+                        <div key={customRoom.id} className="flex items-center gap-2 p-2 border rounded bg-blue-50">
+                          <span className="flex-1 text-sm">
+                            <strong>{customRoom.name}</strong>
+                            <span className="text-gray-600"> - {customRoom.type}</span>
+                            <span className="text-gray-500 text-xs block">
+                              Capacity: {customRoom.capacity} | Price: ₱{customRoom.price} | Available: {customRoom.availability}
+                            </span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomRoom(field.id, customRoom.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomRoomModal(field.id)}
+                        className="flex items-center gap-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Custom Room
+                      </button>
+                      <p className="text-xs text-gray-500">
+                        Create package-exclusive rooms that won't appear in main inventory
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Custom Cottages */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Home className="inline w-4 h-4 mr-1 text-green-600" />
+                      Custom Cottages (Package Exclusive)
+                    </label>
+                    <div className="space-y-2">
+                      {packageState?.customCottages.map((customCottage) => (
+                        <div key={customCottage.id} className="flex items-center gap-2 p-2 border rounded bg-green-50">
+                          <span className="flex-1 text-sm">
+                            <strong>{customCottage.name}</strong>
+                            <span className="text-gray-600"> - {customCottage.type}</span>
+                            <span className="text-gray-500 text-xs block">
+                              Capacity: {customCottage.capacity} | Price: ₱{customCottage.price} | Available: {customCottage.availability}
+                            </span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomCottage(field.id, customCottage.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomCottageModal(field.id)}
+                        className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Custom Cottage
+                      </button>
+                      <p className="text-xs text-gray-500">
+                        Create package-exclusive cottages that won't appear in main inventory
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Custom Amenities */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Sparkles className="inline w-4 h-4 mr-1 text-purple-600" />
+                      Custom Amenities (Package Exclusive)
+                    </label>
+                    <div className="space-y-2">
+                      {packageState?.customAmenities.map((customAmenity) => (
+                        <div key={customAmenity.id} className="flex items-center gap-2 p-2 border rounded bg-purple-50">
+                          <span className="flex-1 text-sm">
+                            <strong>{customAmenity.name}</strong>
+                            <span className="text-gray-600"> - Qty: {customAmenity.quantity}</span>
+                            <span className={`text-xs ml-2 px-2 py-0.5 rounded ${
+                              customAmenity.inclusionType === 'included' 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-orange-100 text-orange-700'
+                            }`}>
+                              {customAmenity.inclusionType === 'included' ? 'Included' : 'Add-on'}
+                            </span>
+                            {customAmenity.price !== undefined && customAmenity.inclusionType === 'addon' && (
+                              <span className="text-gray-500 text-xs"> | ₱{customAmenity.price}</span>
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCustomAmenity(field.id, customAmenity.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomAmenityModal(field.id)}
+                        className="flex items-center gap-2 px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Custom Amenity
+                      </button>
+                      <p className="text-xs text-gray-500">
+                        Create package-exclusive amenities that won't appear in main inventory
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Entrance Fees */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -660,6 +1008,309 @@ const FreshPackagesSection = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Custom Room Modal */}
+      {showCustomRoomModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Add Custom Room</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
+                <input
+                  type="text"
+                  id="custom-room-name"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Honeymoon Suite - Package Exclusive"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                <input
+                  type="text"
+                  id="custom-room-type"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Suite, Deluxe, Standard"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  id="custom-room-description"
+                  className="w-full border rounded px-3 py-2 h-20 resize-none"
+                  placeholder="Describe features and highlights..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                <input
+                  type="number"
+                  id="custom-room-capacity"
+                  className="w-full border rounded px-3 py-2"
+                  min="1"
+                  placeholder="2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Features</label>
+                <textarea
+                  id="custom-room-features"
+                  className="w-full border rounded px-3 py-2 h-20 resize-none"
+                  placeholder="Bed configuration, view type, amenities..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Package Price (₱)</label>
+                <input
+                  type="number"
+                  id="custom-room-price"
+                  className="w-full border rounded px-3 py-2"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Availability (Units)</label>
+                <input
+                  type="number"
+                  id="custom-room-availability"
+                  className="w-full border rounded px-3 py-2"
+                  min="1"
+                  placeholder="1"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowCustomRoomModal(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = (document.getElementById('custom-room-name') as HTMLInputElement)?.value;
+                  const type = (document.getElementById('custom-room-type') as HTMLInputElement)?.value;
+                  const description = (document.getElementById('custom-room-description') as HTMLTextAreaElement)?.value;
+                  const capacity = parseInt((document.getElementById('custom-room-capacity') as HTMLInputElement)?.value || '0');
+                  const features = (document.getElementById('custom-room-features') as HTMLTextAreaElement)?.value;
+                  const price = parseFloat((document.getElementById('custom-room-price') as HTMLInputElement)?.value || '0');
+                  const availability = parseInt((document.getElementById('custom-room-availability') as HTMLInputElement)?.value || '0');
+
+                  if (name && type && capacity > 0 && availability > 0) {
+                    addCustomRoom(showCustomRoomModal!, { name, type, description, capacity, features, price, availability });
+                    setShowCustomRoomModal(null);
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Add Room
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Cottage Modal */}
+      {showCustomCottageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Add Custom Cottage</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cottage Name</label>
+                <input
+                  type="text"
+                  id="custom-cottage-name"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Beachfront Villa - Package Exclusive"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cottage Type</label>
+                <input
+                  type="text"
+                  id="custom-cottage-type"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Villa, Cabana, Bungalow"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  id="custom-cottage-description"
+                  className="w-full border rounded px-3 py-2 h-20 resize-none"
+                  placeholder="Describe features and highlights..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Guests)</label>
+                <input
+                  type="number"
+                  id="custom-cottage-capacity"
+                  className="w-full border rounded px-3 py-2"
+                  min="1"
+                  placeholder="4"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Features</label>
+                <textarea
+                  id="custom-cottage-features"
+                  className="w-full border rounded px-3 py-2 h-20 resize-none"
+                  placeholder="Bed configuration, view type, amenities..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Package Price (₱)</label>
+                <input
+                  type="number"
+                  id="custom-cottage-price"
+                  className="w-full border rounded px-3 py-2"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Availability (Units)</label>
+                <input
+                  type="number"
+                  id="custom-cottage-availability"
+                  className="w-full border rounded px-3 py-2"
+                  min="1"
+                  placeholder="1"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowCustomCottageModal(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = (document.getElementById('custom-cottage-name') as HTMLInputElement)?.value;
+                  const type = (document.getElementById('custom-cottage-type') as HTMLInputElement)?.value;
+                  const description = (document.getElementById('custom-cottage-description') as HTMLTextAreaElement)?.value;
+                  const capacity = parseInt((document.getElementById('custom-cottage-capacity') as HTMLInputElement)?.value || '0');
+                  const features = (document.getElementById('custom-cottage-features') as HTMLTextAreaElement)?.value;
+                  const price = parseFloat((document.getElementById('custom-cottage-price') as HTMLInputElement)?.value || '0');
+                  const availability = parseInt((document.getElementById('custom-cottage-availability') as HTMLInputElement)?.value || '0');
+
+                  if (name && type && capacity > 0 && availability > 0) {
+                    addCustomCottage(showCustomCottageModal!, { name, type, description, capacity, features, price, availability });
+                    setShowCustomCottageModal(null);
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Add Cottage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Amenity Modal */}
+      {showCustomAmenityModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Add Custom Amenity</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amenity Name</label>
+                <input
+                  type="text"
+                  id="custom-amenity-name"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="e.g., Private Beach Dinner"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  id="custom-amenity-description"
+                  className="w-full border rounded px-3 py-2 h-20 resize-none"
+                  placeholder="Details of what's included..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                <input
+                  type="number"
+                  id="custom-amenity-quantity"
+                  className="w-full border rounded px-3 py-2"
+                  min="1"
+                  placeholder="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Inclusion Type</label>
+                <select
+                  id="custom-amenity-inclusion"
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="included">Included in Package</option>
+                  <option value="addon">Available as Add-on</option>
+                </select>
+              </div>
+              <div id="custom-amenity-price-container">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Add-on Price (₱)</label>
+                <input
+                  type="number"
+                  id="custom-amenity-price"
+                  className="w-full border rounded px-3 py-2"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">Only required if 'Available as Add-on' is selected</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowCustomAmenityModal(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const name = (document.getElementById('custom-amenity-name') as HTMLInputElement)?.value;
+                  const description = (document.getElementById('custom-amenity-description') as HTMLTextAreaElement)?.value;
+                  const quantity = parseInt((document.getElementById('custom-amenity-quantity') as HTMLInputElement)?.value || '0');
+                  const inclusionType = (document.getElementById('custom-amenity-inclusion') as HTMLSelectElement)?.value as 'included' | 'addon';
+                  const price = parseFloat((document.getElementById('custom-amenity-price') as HTMLInputElement)?.value || '0');
+
+                  if (name && quantity > 0) {
+                    addCustomAmenity(showCustomAmenityModal!, { 
+                      name, 
+                      description, 
+                      quantity, 
+                      inclusionType, 
+                      price: inclusionType === 'addon' ? price : undefined 
+                    });
+                    setShowCustomAmenityModal(null);
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+              >
+                Add Amenity
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

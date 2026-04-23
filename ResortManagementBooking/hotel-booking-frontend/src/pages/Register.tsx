@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
-import { register } from "../api-client";
+import { register as registerUser } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -57,7 +57,7 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegisterFormData>();
 
-  const mutation = useMutationWithLoading(register, {
+  const mutation = useMutationWithLoading(registerUser, {
     onSuccess: async (data) => {
       showToast({ 
         title: "Registration Successful", 

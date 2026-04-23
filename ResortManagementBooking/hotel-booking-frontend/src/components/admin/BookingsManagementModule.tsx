@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 import { useRoleBasedAccess } from '../../hooks/useRoleBasedAccess';
 import { useToast } from '../../hooks/use-toast';
 import { BookingType } from '../../../../shared/types';

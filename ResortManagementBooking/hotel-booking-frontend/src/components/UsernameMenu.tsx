@@ -27,7 +27,7 @@ const UsernameMenu = () => {
   const [imgError, setImgError] = useState(false);
   const [pendingRequest, setPendingRequest] = useState<any>(null);
   const { isLoggedIn } = useAppContext();
-  const { permissions } = useRoleBasedAccess();
+  const { permissions, isAdmin } = useRoleBasedAccess();
   const [loadingRequest, setLoadingRequest] = useState(true);
 
   useEffect(() => {
@@ -81,8 +81,8 @@ const UsernameMenu = () => {
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <Separator className="my-2 bg-gray-200" />
-         {/* Apply for Resort Owner - Regular users only */}
-         {!permissions.canManageOwnResorts && !permissions.isAdmin && !loadingRequest && (
+        {/* Apply for Resort Owner - Regular users only */}
+        {!permissions.canManageOwnResorts && !isAdmin && !loadingRequest && (
            pendingRequest ? (
              <DropdownMenuItem disabled className="py-1.5 rounded-md opacity-60">
                <div className="flex items-center gap-2 w-full">

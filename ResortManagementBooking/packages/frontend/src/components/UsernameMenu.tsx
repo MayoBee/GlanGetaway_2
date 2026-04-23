@@ -9,9 +9,9 @@ import { Separator } from "../../../shared/ui/separator";
 import { Button } from "../../../shared/ui/button";
 import { useState } from "react";
 import * as apiClient from "../api-client";
-import { Plus, LogOut, Building2, MessageSquare, Flag, Users, BarChart3, Building } from "lucide-react";
-import useAppContext from "../../../shared/hooks/useAppContext";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import { Plus, LogOut, Building } from "lucide-react";
+import useAppContext from "../hooks/useAppContext";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
 const getAvatarUrl = () => {
   const image = localStorage.getItem("user_image");
@@ -26,7 +26,7 @@ const UsernameMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const { isLoggedIn } = useAppContext();
-  const { isAdmin, permissions } = useRoleBasedAccess();
+  const { permissions } = useRoleBasedAccess();
 
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
@@ -62,8 +62,8 @@ const UsernameMenu = () => {
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <Separator className="my-2 bg-gray-200" />
-        {/* Add Resort - Only visible to Resort Owners (not Admins) */}
-        {permissions.canManageOwnResorts && !isAdmin && (
+        {/* Add Resort - Only visible to Resort Owners */}
+        {permissions.canManageOwnResorts && (
           <DropdownMenuItem
             onClick={handleMenuClick}
             asChild
@@ -78,94 +78,22 @@ const UsernameMenu = () => {
             </Link>
           </DropdownMenuItem>
         )}
-        <Separator className="my-2 bg-gray-200" />
-        
-        {/* Admin Links - Only for Admins and Resort Owners */}
-        {(isAdmin || permissions.canManageOwnResorts) && (
-          <>
-            {/* User Management - Only for Admins */}
-            {isAdmin && (
-              <DropdownMenuItem
-                onClick={handleMenuClick}
-                asChild
-                className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-              >
-                <Link
-                  to="/admin/management"
-                  className="flex items-center gap-2 w-full font-bold hover:text-purple-600"
-                >
-                  <Users className="h-4 w-4" />
-                  User Management
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {/* Website Feedback - Only for Admins */}
-            {isAdmin && (
-              <DropdownMenuItem
-                onClick={handleMenuClick}
-                asChild
-                className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-              >
-                <Link
-                  to="/admin/feedback"
-                  className="flex items-center gap-2 w-full font-bold hover:text-blue-600"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Website Feedback
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {/* User Reports - Only for Admins */}
-            {isAdmin && (
-              <DropdownMenuItem
-                onClick={handleMenuClick}
-                asChild
-                className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-              >
-                <Link
-                  to="/admin/reports"
-                  className="flex items-center gap-2 w-full font-bold hover:text-red-600"
-                >
-                  <Flag className="h-4 w-4" />
-                  User Reports
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {/* Resort Reports - Available to Admins and Resort Owners */}
-            {(isAdmin || permissions.canManageOwnResorts) && (
-              <DropdownMenuItem
-                onClick={handleMenuClick}
-                asChild
-                className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-              >
-                <Link
-                  to="/resort/reports"
-                  className="flex items-center gap-2 w-full font-bold hover:text-green-600"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Resort Reports
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {/* My Resorts - Only visible to Resort Owners (not Admins) */}
-            {permissions.canManageOwnResorts && !isAdmin && (
-              <DropdownMenuItem
-                onClick={handleMenuClick}
-                asChild
-                className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-              >
-                <Link
-                  to="/my-hotels"
-                  className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
-                >
-                  <Building className="h-4 w-4" />
-                  My Resorts
-                </Link>
-              </DropdownMenuItem>
-            )}
-            <Separator className="my-2 bg-gray-200" />
-          </>
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            onClick={handleMenuClick}
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/my-hotels"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <Building className="h-4 w-4" />
+              My Resorts
+            </Link>
+          </DropdownMenuItem>
         )}
+        <Separator className="my-2 bg-gray-200" />
         <DropdownMenuItem className="py-1.5 rounded-md cursor-pointer">
           <Button
             onClick={handleLogout}

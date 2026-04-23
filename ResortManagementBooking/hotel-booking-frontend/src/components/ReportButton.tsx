@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Flag, AlertTriangle, MessageSquare, X } from "lucide-react";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 
 interface ReportButtonProps {
   itemId: string;

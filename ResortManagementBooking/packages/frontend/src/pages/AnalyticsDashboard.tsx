@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import {
   fetchBusinessInsightsDashboard,
   fetchBusinessInsightsForecast,

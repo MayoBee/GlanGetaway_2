@@ -2,10 +2,10 @@ import { useFormContext } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Upload } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Button } from "../../ui/button";
+import { Badge } from "../../ui/badge";
 import SmartImage from "../../components/SmartImage";
-import { getApiBaseUrl } from "../../lib/api-client";
+import { getApiBaseUrl } from "../../auth/api-client";
 
 interface ImagePreview {
   id: string;

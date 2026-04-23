@@ -1252,17 +1252,19 @@ router.put(
         
         // Combine existing and new images
         finalImageUrls = [...existingImageUrls, ...newImageUrls];
-      } else {
-        // No new files, keep existing images
-        finalImageUrls = req.body.imageUrls
-          ? Array.isArray(req.body.imageUrls)
-            ? req.body.imageUrls
-            : [req.body.imageUrls]
-          : [];
+        
+        // Update the hotel with all image URLs
+        updateData.imageUrls = finalImageUrls;
+      } else if (req.body.imageUrls && (Array.isArray(req.body.imageUrls) ? req.body.imageUrls.length > 0 : req.body.imageUrls)) {
+        // No new files, but imageUrls provided in request - update with provided URLs
+        finalImageUrls = Array.isArray(req.body.imageUrls)
+          ? req.body.imageUrls
+          : [req.body.imageUrls];
+        
+        // Update the hotel with all image URLs
+        updateData.imageUrls = finalImageUrls;
       }
-      
-      // Update the hotel with all image URLs
-      updateData.imageUrls = finalImageUrls;
+      // If no files and no imageUrls provided, don't update imageUrls field (keep existing)
       
       // Debug: Log the full updateData before updating
       console.log("=== FINAL UPDATE DATA ===");

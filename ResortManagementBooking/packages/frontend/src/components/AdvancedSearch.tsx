@@ -7,7 +7,7 @@ import {
   Calendar,
   Users,
 } from "lucide-react";
-import useSearchContext from "../../../shared/hooks/useSearchContext";
+import useSearchContext from "../hooks/useSearchContext";
 import { glanBarangays } from "../config/hotel-options-config";
 
 interface AdvancedSearchProps {

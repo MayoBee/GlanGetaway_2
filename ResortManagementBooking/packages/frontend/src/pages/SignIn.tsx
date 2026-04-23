@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import { useMutation } from "react-query";
-import { useMutationWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles } from "lucide-react";
 import { useState } from "react";

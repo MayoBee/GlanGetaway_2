@@ -1,12 +1,12 @@
 import { useQuery } from "react-query";
 import * as apiClient from "../api-client";
 import EnhancedBookingForm from "../forms/BookingForm/EnhancedBookingForm";
-import useSearchContext from "../../../shared/hooks/useSearchContext";
+import useSearchContext from "../hooks/useSearchContext";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { Elements } from "@stripe/react-stripe-js";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import {
   Card,
   CardContent,

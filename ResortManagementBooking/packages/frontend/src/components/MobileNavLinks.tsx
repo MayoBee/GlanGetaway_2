@@ -3,20 +3,14 @@ import { Button } from "../../../shared/ui/button";
 import {
   Hotel,
   Calendar,
-  Building2,
   Building,
   FileText,
   Activity,
-  Users,
-  MessageSquare,
-  Flag,
-  Settings,
   LogIn,
-  BarChart3,
 } from "lucide-react";
 import UsernameMenu from "./UsernameMenu";
-import useAppContext from "../../../shared/hooks/useAppContext";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import useAppContext from "../hooks/useAppContext";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { getHotelsSearchUrl } from "../../../shared/lib/nav-utils";
 
 const linkClass =
@@ -24,7 +18,7 @@ const linkClass =
 
 const MobileNavLinks = () => {
   const { isLoggedIn } = useAppContext();
-  const { isAdmin, permissions } = useRoleBasedAccess();
+  const { permissions } = useRoleBasedAccess();
 
   return (
     <div className="flex flex-col gap-1">
@@ -40,49 +34,20 @@ const MobileNavLinks = () => {
         </Link>
       )}
       
-      {/* Admin Links - Only visible to admins and resort owners */}
-      {(isAdmin || permissions.canManageOwnResorts) && (
+      {/* Resort Owner Links - Only visible to resort owners */}
+      {permissions.canManageOwnResorts && (
         <div className="py-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-2">
-            Admin
+            My Resorts
           </p>
-          {isAdmin && (
-            <Link to="/admin/management" className={`${linkClass} pl-4`}>
-              <Users className="h-4 w-4" />
-              User Management
-            </Link>
-          )}
-          {isAdmin && (
-            <Link to="/admin/feedback" className={`${linkClass} pl-4`}>
-              <MessageSquare className="h-4 w-4" />
-              Website Feedback
-            </Link>
-          )}
-          {isAdmin && (
-            <Link to="/admin/reports" className={`${linkClass} pl-4`}>
-              <Flag className="h-4 w-4" />
-              User Reports
-            </Link>
-          )}
-          {(isAdmin || permissions.canManageOwnResorts) && (
-            <Link to="/resort/reports" className={`${linkClass} pl-4`}>
-              <BarChart3 className="h-4 w-4" />
-              Resort Reports
-            </Link>
-          )}
-          {permissions.canManageOwnResorts && !isAdmin && (
-            <Link to="/my-hotels" className={`${linkClass} pl-4`}>
-              <Building className="h-4 w-4" />
-              My Resorts
-            </Link>
-          )}
-          {/* Super Admin Only */}
-          {permissions.canApproveResorts && (
-            <Link to="/admin/resort-approval" className={`${linkClass} pl-4`}>
-              <Settings className="h-4 w-4" />
-              Resort Approval
-            </Link>
-          )}
+          <Link to="/add-hotel" className={`${linkClass} pl-4`}>
+            <Building className="h-4 w-4" />
+            Add Resort
+          </Link>
+          <Link to="/my-hotels" className={`${linkClass} pl-4`}>
+            <Building className="h-4 w-4" />
+            My Resorts
+          </Link>
         </div>
       )}
       <div className="py-2">

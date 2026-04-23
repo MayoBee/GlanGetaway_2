@@ -23,7 +23,7 @@ export type AppContext = {
   isGlobalLoading: boolean;
   globalLoadingMessage: string;
   user: UserType | null;
-  userRole: "user" | "admin" | "resort_owner" | "resort-owner" | "front_desk" | "housekeeping" | "superAdmin" | null;
+  userRole: "user" | "admin" | "resort_owner" | "resort-owner" | "front_desk" | "housekeeping" | "superAdmin" | "super_admin" | null;
   isLoading: boolean;
   isAuthLoading: boolean;
 };
@@ -114,8 +114,8 @@ export const AppContextProvider = ({
   // IMPORTANT: User is logged in if they have a token, regardless of backend status
   // This prevents being logged out when backend is temporarily down
   const isLoggedIn = hasToken;
-  const user = userData || null;
-  const userRole = userData?.role || null;
+  const user = userData as unknown as UserType || null;
+  const userRole = userData?.role as "user" | "admin" | "resort_owner" | "resort-owner" | "front_desk" | "housekeeping" | "superAdmin" | "super_admin" | null || null;
   
   // Show auth loading only during initial load, not for every API call
   const isAuthLoading = hasToken && !userData && !userFetchError;

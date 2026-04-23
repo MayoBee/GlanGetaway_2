@@ -7,7 +7,7 @@ import Maintenance from "../models/maintenance";
 import Housekeeping from "../models/housekeeping";
 import AmenityBooking from "../models/amenity-booking";
 import ActivityBooking from "../models/activity-booking";
-import PaymentTransaction from "../models/payment";
+import { PaymentTransaction } from "../models/payment";
 import VerificationDocument from "../models/verification-document";
 import { verifyToken, requireRole } from "../middleware/role-based-auth";
 

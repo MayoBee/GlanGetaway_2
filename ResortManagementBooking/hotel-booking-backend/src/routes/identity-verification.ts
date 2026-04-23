@@ -31,7 +31,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await User.findById(req.userId);
-    if (!user || (user.role !== "admin" && user.role !== "superAdmin")) {
+    if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
       return res.status(403).json({ message: "Admin privileges required" });
     }
     next();

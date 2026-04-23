@@ -53,23 +53,11 @@ const AdminReports: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState<string>("");
   const queryClient = useQueryClient();
 
-  // Check if user has access
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Only administrators can access the reports module.</p>
-        </div>
-      </div>
-    );
-  }
-
   const { data: reportsData, isLoading, error } = useQueryWithLoading(
     ["reports", filter],
     () => fetchReports(1, 50, filter !== "all" ? filter : undefined),
     {
+      enabled: isAdmin,
       loadingMessage: "Loading reports...",
     }
   );
@@ -98,22 +86,33 @@ const AdminReports: React.FC = () => {
       onSuccess: () => {
         showToast({
           title: "Report Updated",
-          description: "The report has been successfully updated.",
+          description: "The report status has been updated successfully.",
           type: "SUCCESS",
         });
-        queryClient.invalidateQueries("reports");
-        setSelectedReport(null);
-        setAdminNotes("");
+        queryClient.invalidateQueries(["reports"]);
       },
-      onError: (error: Error) => {
+      onError: (error: any) => {
         showToast({
           title: "Update Failed",
-          description: error.message,
+          description: error.response?.data?.message || "Failed to update report.",
           type: "ERROR",
         });
-      },
+      }
     }
   );
+
+  // Check if user has access
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only administrators can access the reports module.</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

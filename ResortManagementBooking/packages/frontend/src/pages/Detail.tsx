@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "react-router-dom";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "../forms/GuestInfoForm/GuestInfoForm";

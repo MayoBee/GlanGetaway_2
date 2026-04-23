@@ -1,4 +1,4 @@
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import type { BookingType, HotelWithBookingsType } from "../../../shared/types";
 import { Badge } from "../../../shared/ui/badge";
@@ -29,7 +29,7 @@ import {
   Trash,
   Edit,
 } from "lucide-react";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 

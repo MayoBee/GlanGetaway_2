@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 import { Loader2 } from "lucide-react";
 
 interface UserInfo {
@@ -54,7 +54,8 @@ const AutoLogin = () => {
             if (userInfo.role) localStorage.setItem("user_role", userInfo.role);
             if (userInfo.image) localStorage.setItem("user_image", userInfo.image);
           } catch (userErr: any) {
-            }
+            console.error("Error fetching user info:", userErr);
+          }
 
           navigate(destination, { replace: true });
         } else {

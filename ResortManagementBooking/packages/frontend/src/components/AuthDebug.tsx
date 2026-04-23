@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import axiosInstance from "../../../shared/auth/api-client";
 import { Badge } from "../../../shared/ui/badge";
 import { Button } from "../../../shared/ui/button";

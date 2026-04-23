@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
-import { getApiBaseUrl } from '../../../shared/lib/api-client';
+import { getApiBaseUrl } from '../../../shared/auth/api-client';
 
 interface SmartImageProps {
   src?: string | string[];
@@ -67,22 +67,27 @@ const SmartImage: React.FC<SmartImageProps> = ({
       }
       
       try {
-        const url = new URL(source);
+        // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
+        const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
         
-        // Fix port issues by using current API base URL
-        if (url.hostname === 'localhost') {
-          // Construct new URL with correct port from API base URL
-          const apiUrl = new URL(apiBaseUrl);
-          url.port = apiUrl.port;
-          url.hostname = apiUrl.hostname;
-          url.protocol = apiUrl.protocol;
-          const fixedUrl = url.toString();
-          logImageEvent('URL_FIXED', { 
-            original: source, 
-            fixed: fixedUrl,
-            apiBaseUrl 
-          });
-          return fixedUrl;
+        if (isAbsoluteUrl) {
+          const url = new URL(source);
+          
+          // Fix port issues by using current API base URL for localhost absolute URLs
+          if (url.hostname === 'localhost') {
+            // Construct new URL with correct port from API base URL
+            const apiUrl = new URL(apiBaseUrl);
+            url.port = apiUrl.port;
+            url.hostname = apiUrl.hostname;
+            url.protocol = apiUrl.protocol;
+            const fixedUrl = url.toString();
+            logImageEvent('URL_FIXED', { 
+              original: source, 
+              fixed: fixedUrl,
+              apiBaseUrl 
+            });
+            return fixedUrl;
+          }
         }
         
         return source;

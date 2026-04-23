@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import PaymentTransaction from "../models/payment";
+import { PaymentTransaction } from "../models/payment";
 import Booking from "../models/booking";
 import Hotel from "../models/hotel";
 import Stripe from "stripe";

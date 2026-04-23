@@ -84,6 +84,31 @@ export const fetchHotelById = async (hotelId: string) => {
   return response.data;
 };
 
+export const checkAvailability = async (params: {
+  hotelId: string;
+  checkIn: string;
+  checkOut: string;
+  selectedRooms?: Array<{ id: string; units: number }>;
+  selectedCottages?: Array<{ id: string; units: number }>;
+  selectedAmenities?: Array<{ id: string; units: number }>;
+  selectedPackages?: Array<{ id: string }>;
+}) => {
+  const { hotelId, checkIn, checkOut, selectedRooms, selectedCottages, selectedAmenities, selectedPackages } = params;
+  const queryParams = new URLSearchParams();
+  queryParams.append('checkIn', checkIn);
+  queryParams.append('checkOut', checkOut);
+  
+  if (selectedRooms && selectedRooms.length > 0) {
+    queryParams.append('roomIds', selectedRooms.map(r => r.id).join(','));
+  }
+  if (selectedCottages && selectedCottages.length > 0) {
+    queryParams.append('cottageIds', selectedCottages.map(c => c.id).join(','));
+  }
+  
+  const response = await axiosInstance.get(`/api/hotels/${hotelId}/availability?${queryParams}`);
+  return response.data;
+};
+
 // Bookings
 export const fetchMyBookings = async () => {
   const response = await axiosInstance.get("/api/my-bookings");
@@ -233,4 +258,399 @@ export const clearAllStorage = () => {
       .replace(/^ +/, "")
       .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
   });
+};
+
+// Website Feedback API functions
+export const fetchWebsiteFeedback = async (page = 1, limit = 10, status?: string, type?: string) => {
+  const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+  if (status) params.append('status', status);
+  if (type) params.append('type', type);
+  const response = await axiosInstance.get(`/api/website-feedback?${params}`);
+  return response.data;
+};
+
+export const fetchWebsiteFeedbackStats = async () => {
+  const response = await axiosInstance.get("/api/website-feedback/stats");
+  return response.data;
+};
+
+export const updateWebsiteFeedback = async (feedbackId: string, updateData: {
+  status?: string;
+  adminNotes?: string;
+  priority?: string;
+  assignedTo?: string;
+}) => {
+  const response = await axiosInstance.put(`/api/website-feedback/${feedbackId}`, updateData);
+  return response.data;
+};
+
+export const deleteWebsiteFeedback = async (feedbackId: string) => {
+  const response = await axiosInstance.delete(`/api/website-feedback/${feedbackId}`);
+  return response.data;
+};
+
+// Admin Report API functions
+export const fetchBookingSummary = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+  groupBy?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.groupBy) queryParams.append('groupBy', params.groupBy);
+  const response = await axiosInstance.get(`/api/resort-reports/reservations/summary?${queryParams}`);
+  return response.data;
+};
+
+export const fetchOccupancyRate = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  const response = await axiosInstance.get(`/api/resort-reports/reservations/occupancy?${queryParams}`);
+  return response.data;
+};
+
+export const fetchCancelledReservations = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.limit) queryParams.append('limit', params.limit.toString());
+  const response = await axiosInstance.get(`/api/resort-reports/reservations/cancelled?${queryParams}`);
+  return response.data;
+};
+
+export const fetchRevenueReport = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  const response = await axiosInstance.get(`/api/resort-reports/financial/revenue?${queryParams}`);
+  return response.data;
+};
+
+export const fetchDailyTransaction = async (params: {
+  hotelId?: string;
+  date?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.date) queryParams.append('date', params.date);
+  const response = await axiosInstance.get(`/api/resort-reports/financial/daily?${queryParams}`);
+  return response.data;
+};
+
+export const fetchTaxCollection = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  const response = await axiosInstance.get(`/api/resort-reports/financial/taxes?${queryParams}`);
+  return response.data;
+};
+
+export const fetchGuestMasterList = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.limit) queryParams.append('limit', params.limit.toString());
+  const response = await axiosInstance.get(`/api/resort-reports/operational/guests?${queryParams}`);
+  return response.data;
+};
+
+export const fetchActivityParticipation = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  const response = await axiosInstance.get(`/api/resort-reports/operational/activities?${queryParams}`);
+  return response.data;
+};
+
+export const fetchRoomMaintenanceHistory = async (params: {
+  hotelId?: string;
+  roomId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.roomId) queryParams.append('roomId', params.roomId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.page) queryParams.append('page', params.page.toString());
+  if (params.limit) queryParams.append('limit', params.limit.toString());
+  const response = await axiosInstance.get(`/api/resort-reports/operational/maintenance?${queryParams}`);
+  return response.data;
+};
+
+export const fetchAmenityUsage = async (params: {
+  hotelId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.hotelId) queryParams.append('hotelId', params.hotelId);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  const response = await axiosInstance.get(`/api/resort-reports/amenity-usage?${queryParams}`);
+  return response.data;
+};
+
+// Staff Management API functions
+export const fetchStaffMembers = async (hotelId?: string) => {
+  const params = hotelId ? `?hotelId=${hotelId}` : '';
+  const response = await axiosInstance.get(`/api/staff-management${params}`);
+  return response.data;
+};
+
+export const createStaffMember = async (staffData: any) => {
+  const response = await axiosInstance.post('/api/staff-management', staffData);
+  return response.data;
+};
+
+export const updateStaffMember = async (staffId: string, staffData: any) => {
+  const response = await axiosInstance.put(`/api/staff-management/${staffId}`, staffData);
+  return response.data;
+};
+
+export const deleteStaffMember = async (staffId: string) => {
+  const response = await axiosInstance.delete(`/api/staff-management/${staffId}`);
+  return response.data;
+};
+
+export const toggleStaffStatus = async (staffId: string) => {
+  const response = await axiosInstance.put(`/api/staff-management/${staffId}/toggle-status`);
+  return response.data;
+};
+
+// Housekeeping Tasks API functions
+export const fetchHousekeepingTasks = async (hotelId?: string, status?: string) => {
+  const params = new URLSearchParams();
+  if (hotelId) params.append('hotelId', hotelId);
+  if (status) params.append('status', status);
+  const response = await axiosInstance.get(`/api/housekeeping-tasks?${params}`);
+  return response.data;
+};
+
+export const createHousekeepingTask = async (taskData: any) => {
+  const response = await axiosInstance.post('/api/housekeeping-tasks', taskData);
+  return response.data;
+};
+
+export const updateHousekeepingTask = async (taskId: string, taskData: any) => {
+  const response = await axiosInstance.put(`/api/housekeeping-tasks/${taskId}`, taskData);
+  return response.data;
+};
+
+export const deleteHousekeepingTask = async (taskId: string) => {
+  const response = await axiosInstance.delete(`/api/housekeeping-tasks/${taskId}`);
+  return response.data;
+};
+
+export const assignHousekeepingTask = async (taskId: string, staffId: string) => {
+  const response = await axiosInstance.put(`/api/housekeeping-tasks/${taskId}/assign`, { staffId });
+  return response.data;
+};
+
+// Maintenance API functions
+export const fetchMaintenanceRequests = async (hotelId?: string, status?: string) => {
+  const params = new URLSearchParams();
+  if (hotelId) params.append('hotelId', hotelId);
+  if (status) params.append('status', status);
+  const response = await axiosInstance.get(`/api/housekeeping-maintenance?${params}`);
+  return response.data;
+};
+
+export const createMaintenanceRequest = async (maintenanceData: any) => {
+  const response = await axiosInstance.post('/api/housekeeping-maintenance', maintenanceData);
+  return response.data;
+};
+
+export const updateMaintenanceRequest = async (requestId: string, maintenanceData: any) => {
+  const response = await axiosInstance.put(`/api/housekeeping-maintenance/${requestId}`, maintenanceData);
+  return response.data;
+};
+
+export const deleteMaintenanceRequest = async (requestId: string) => {
+  const response = await axiosInstance.delete(`/api/housekeeping-maintenance/${requestId}`);
+  return response.data;
+};
+
+export const assignMaintenanceRequest = async (requestId: string, staffId: string) => {
+  const response = await axiosInstance.put(`/api/housekeeping-maintenance/${requestId}/assign`, { staffId });
+  return response.data;
+};
+
+// Weather Triggers API functions
+export const fetchWeatherTriggers = async (hotelId?: string) => {
+  const params = hotelId ? `?hotelId=${hotelId}` : '';
+  const response = await axiosInstance.get(`/api/weather-triggers${params}`);
+  return response.data;
+};
+
+export const createWeatherTrigger = async (triggerData: any) => {
+  const response = await axiosInstance.post('/api/weather-triggers', triggerData);
+  return response.data;
+};
+
+export const updateWeatherTrigger = async (triggerId: string, triggerData: any) => {
+  const response = await axiosInstance.put(`/api/weather-triggers/${triggerId}`, triggerData);
+  return response.data;
+};
+
+export const deleteWeatherTrigger = async (triggerId: string) => {
+  const response = await axiosInstance.delete(`/api/weather-triggers/${triggerId}`);
+  return response.data;
+};
+
+export const toggleWeatherTrigger = async (triggerId: string) => {
+  const response = await axiosInstance.put(`/api/weather-triggers/${triggerId}/toggle`);
+  return response.data;
+};
+
+// Feature Flags API functions
+export const fetchFeatureFlags = async () => {
+  const response = await axiosInstance.get('/api/feature-flags');
+  return response.data;
+};
+
+export const createFeatureFlag = async (flagData: any) => {
+  const response = await axiosInstance.post('/api/feature-flags', flagData);
+  return response.data;
+};
+
+export const updateFeatureFlag = async (flagId: string, flagData: any) => {
+  const response = await axiosInstance.put(`/api/feature-flags/${flagId}`, flagData);
+  return response.data;
+};
+
+export const deleteFeatureFlag = async (flagId: string) => {
+  const response = await axiosInstance.delete(`/api/feature-flags/${flagId}`);
+  return response.data;
+};
+
+export const toggleFeatureFlag = async (flagId: string) => {
+  const response = await axiosInstance.put(`/api/feature-flags/${flagId}/toggle`);
+  return response.data;
+};
+
+// Room Blocks API functions
+export const fetchRoomBlocks = async (hotelId?: string, roomId?: string) => {
+  const params = new URLSearchParams();
+  if (hotelId) params.append('hotelId', hotelId);
+  if (roomId) params.append('roomId', roomId);
+  const response = await axiosInstance.get(`/api/room-blocks?${params}`);
+  return response.data;
+};
+
+export const createRoomBlock = async (blockData: any) => {
+  const response = await axiosInstance.post('/api/room-blocks', blockData);
+  return response.data;
+};
+
+export const updateRoomBlock = async (blockId: string, blockData: any) => {
+  const response = await axiosInstance.put(`/api/room-blocks/${blockId}`, blockData);
+  return response.data;
+};
+
+export const deleteRoomBlock = async (blockId: string) => {
+  const response = await axiosInstance.delete(`/api/room-blocks/${blockId}`);
+  return response.data;
+};
+
+// Identity Verification API functions
+export const fetchIdentityVerifications = async (status?: string, type?: string) => {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (type) params.append('type', type);
+  const response = await axiosInstance.get(`/api/identity-verification?${params}`);
+  return response.data;
+};
+
+export const verifyPWD = async (userId: string, verificationData: any) => {
+  const response = await axiosInstance.put(`/api/identity-verification/pwd/${userId}/verify`, verificationData);
+  return response.data;
+};
+
+export const verifyAccount = async (userId: string, verificationData: any) => {
+  const response = await axiosInstance.put(`/api/identity-verification/account/${userId}/verify`, verificationData);
+  return response.data;
+};
+
+export const fetchVerificationDocuments = async (userId?: string) => {
+  const params = userId ? `?userId=${userId}` : '';
+  const response = await axiosInstance.get(`/api/verification-documents${params}`);
+  return response.data;
+};
+
+export const uploadVerificationDocument = async (documentData: FormData) => {
+  const response = await axiosInstance.post('/api/verification-documents', documentData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data;
+};
+
+export const reviewVerificationDocument = async (documentId: string, reviewData: any) => {
+  const response = await axiosInstance.put(`/api/verification-documents/${documentId}/review`, reviewData);
+  return response.data;
+};
+
+// Amenity Slots API functions
+export const fetchAmenitySlots = async (amenityId: string, date?: string) => {
+  const params = date ? `?date=${date}` : '';
+  const response = await axiosInstance.get(`/api/amenity-slots/amenity/${amenityId}${params}`);
+  return response.data;
+};
+
+export const bookAmenitySlot = async (slotData: any) => {
+  const response = await axiosInstance.post('/api/amenity-slots/book', slotData);
+  return response.data;
+};
+
+export const cancelAmenitySlotBooking = async (bookingId: string) => {
+  const response = await axiosInstance.delete(`/api/amenity-slots/booking/${bookingId}`);
+  return response.data;
+};
+
+export const fetchMyAmenityBookings = async () => {
+  const response = await axiosInstance.get('/api/amenity-slots/my-bookings');
+  return response.data;
 };

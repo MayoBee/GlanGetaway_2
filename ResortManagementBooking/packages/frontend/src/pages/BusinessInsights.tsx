@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { 
   TrendingUp, 
   Users, 

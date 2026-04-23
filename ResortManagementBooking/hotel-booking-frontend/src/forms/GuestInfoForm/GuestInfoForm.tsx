@@ -219,11 +219,11 @@ const GuestInfoForm = ({
         // Check if dates overlap
         if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
           // Add all dates in the range to unavailable
-        let currentDate = new Date(bookingStart);
-        while (currentDate < bookingEnd) {
-          unavailable.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
+          const currentDate = new Date(bookingStart);
+          while (currentDate < bookingEnd) {
+            unavailable.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         }
       });
 

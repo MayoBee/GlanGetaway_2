@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "react-query";
 import { useQueryWithLoading } from "../../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { fetchWebsiteFeedback, fetchWebsiteFeedbackStats, updateWebsiteFeedback, deleteWebsiteFeedback } from "../../api-client";
 import useAppContext from "../../hooks/useAppContext";
 import { useRoleBasedAccess } from "../../hooks/useRoleBasedAccess";
 import { Badge } from "../../components/ui/badge";
@@ -59,33 +59,21 @@ const WebsiteFeedbackManagement: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState<string>("");
   const queryClient = useQueryClient();
 
-  // Check if user has access
-  if (!isAdmin && !isSuperAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Only administrators can access the feedback management module.</p>
-        </div>
-      </div>
-    );
-  }
-
   const { data: feedbackData, isLoading, error } = useQueryWithLoading(
     ["website-feedback", filter, typeFilter],
-    () => apiClient.fetchWebsiteFeedback(1, 50, filter !== "all" ? filter : undefined, typeFilter !== "all" ? typeFilter : undefined),
+    () => fetchWebsiteFeedback(1, 50, filter !== "all" ? filter : undefined, typeFilter !== "all" ? typeFilter : undefined),
     {
+      enabled: isAdmin || isSuperAdmin,
       loadingMessage: "Loading feedback...",
     }
   );
 
   const { data: statsData } = useQueryWithLoading(
     ["website-feedback-stats"],
-    apiClient.fetchWebsiteFeedbackStats,
+    fetchWebsiteFeedbackStats,
     {
+      enabled: isAdmin || isSuperAdmin,
       loadingMessage: "",
-      enabled: true,
     }
   );
 
@@ -108,7 +96,7 @@ const WebsiteFeedbackManagement: React.FC = () => {
 
   const updateFeedbackMutation = useMutation(
     ({ feedbackId, status, adminNotes, priority }: { feedbackId: string; status: string; adminNotes?: string; priority?: string }) =>
-      apiClient.updateWebsiteFeedback(feedbackId, { status, adminNotes, priority }),
+      updateWebsiteFeedback(feedbackId, { status, adminNotes, priority }),
     {
       onSuccess: () => {
         showToast({
@@ -120,18 +108,18 @@ const WebsiteFeedbackManagement: React.FC = () => {
         setSelectedFeedback(null);
         setAdminNotes("");
       },
-      onError: (error: Error) => {
+      onError: (error: any) => {
         showToast({
           title: "Update Failed",
-          description: error.message,
+          description: error.response?.data?.message || "Failed to update feedback.",
           type: "ERROR",
         });
-      },
+      }
     }
   );
 
   const deleteFeedbackMutation = useMutation(
-    (feedbackId: string) => apiClient.deleteWebsiteFeedback(feedbackId),
+    (feedbackId: string) => deleteWebsiteFeedback(feedbackId),
     {
       onSuccess: () => {
         showToast({
@@ -142,15 +130,28 @@ const WebsiteFeedbackManagement: React.FC = () => {
         queryClient.invalidateQueries("website-feedback");
         setSelectedFeedback(null);
       },
-      onError: (error: Error) => {
+      onError: (error: any) => {
         showToast({
           title: "Delete Failed",
-          description: error.message,
+          description: error.response?.data?.message || "Failed to delete feedback.",
           type: "ERROR",
         });
-      },
+      }
     }
   );
+
+  // Check if user has access
+  if (!isAdmin && !isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
+          <p className="text-gray-600">Only administrators can access the feedback management module.</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

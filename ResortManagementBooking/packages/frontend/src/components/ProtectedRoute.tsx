@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {

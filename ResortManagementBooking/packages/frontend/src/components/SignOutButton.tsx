@@ -1,7 +1,7 @@
 import { useQueryClient } from "react-query";
-import { useMutationWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Trash2, RefreshCw } from "lucide-react";
 import {

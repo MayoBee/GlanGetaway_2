@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useQuery } from "react-query";
 import * as apiClient from "../api-client";
-import useAppContext from "../../../shared/hooks/useAppContext";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import useAppContext from "../hooks/useAppContext";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { Button } from "../../../shared/ui/button";
 import {
   Select,

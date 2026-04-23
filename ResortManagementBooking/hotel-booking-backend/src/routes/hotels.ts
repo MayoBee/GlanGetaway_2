@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import multer from "multer";
 import path from "path";
+import rateLimit from "express-rate-limit";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import User from "../models/user";
@@ -9,9 +10,18 @@ import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
-import { checkAvailability } from "../services/availabilityService";
+import { checkAvailability, createAtomicBooking } from "../services/availabilityService";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
+
+// Stricter rate limiting for search endpoints to prevent scraping
+const searchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many search requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -60,7 +70,7 @@ function shouldPaymentRemainPending(paymentMethod: string, isPwdBooking: boolean
   return false;
 }
 
-router.get("/search", async (req: Request, res: Response) => {
+router.get("/search", searchLimiter, async (req: Request, res: Response) => {
   try {
     let query = constructSearchQuery(req.query);
     console.log("🔍 Search query:", JSON.stringify(query, null, 2));
@@ -84,7 +94,9 @@ router.get("/search", async (req: Request, res: Response) => {
     );
     const skip = (pageNumber - 1) * pageSize;
 
+    // DATA PROJECTION: Exclude sensitive fields from search results
     const hotels = await Hotel.find(query)
+      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate adultEntranceFee childEntranceFee isApproved')
       .sort(sortOptions)
       .skip(skip)
       .limit(pageSize);
@@ -122,7 +134,10 @@ router.get("/search", async (req: Request, res: Response) => {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const hotels = await Hotel.find({ isApproved: { $ne: false } }).sort("-lastUpdated");
+    // DATA PROJECTION: Exclude sensitive fields from hotel list
+    const hotels = await Hotel.find({ isApproved: { $ne: false } })
+      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate adultEntranceFee childEntranceFee isApproved')
+      .sort("-lastUpdated");
     
     // Transform database fields to match frontend expectations for backward compatibility
     const transformedHotels = hotels.map(hotel => {
@@ -317,18 +332,28 @@ router.post(
         return res.status(404).json({ message: "Hotel not found" });
       }
 
-      // Extract IDs
-      const roomIds = selectedRooms.map((room: any) => room.id);
-      const cottageIds = selectedCottages.map((cottage: any) => cottage.id);
-
-      // Check availability
-      const availability = await checkAvailability(hotelId, new Date(checkIn), new Date(checkOut), roomIds, cottageIds);
-      if (!availability.available) {
-        return res.status(409).json({ message: "Some rooms or cottages are not available for the selected dates", conflicts: availability.conflicts });
+      // DATE VALIDATION: Prevent time-travel bookings
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      const now = new Date();
+      
+      // Set now to start of day for fair comparison
+      now.setHours(0, 0, 0, 0);
+      checkInDate.setHours(0, 0, 0, 0);
+      checkOutDate.setHours(0, 0, 0, 0);
+      
+      // Validate checkIn is not in the past
+      if (checkInDate < now) {
+        return res.status(400).json({ message: "Check-in date cannot be in the past" });
+      }
+      
+      // Validate checkOut is after checkIn
+      if (checkOutDate <= checkInDate) {
+        return res.status(400).json({ message: "Check-out date must be after check-in date" });
       }
 
-      // Create the booking
-      const booking = new Booking({
+      // Prepare booking data
+      const bookingData = {
         userId,
         hotelId,
         firstName,
@@ -358,9 +383,18 @@ router.post(
         // Set 8-hour change window
         changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
         canModify: true
-      });
+      };
+
+      // Use ATOMIC booking to prevent race conditions
+      const result = await createAtomicBooking(bookingData);
       
-      await booking.save();
+      if (!result.success) {
+        return res.status(409).json({ 
+          message: result.error || "Booking failed due to availability conflict" 
+        });
+      }
+      
+      const booking = result.booking;
       
       // Update hotel booking count
       await Hotel.findByIdAndUpdate(hotelId, {

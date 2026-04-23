@@ -28,7 +28,7 @@ import {
   DiscountCalculationResult,
   validateDiscountInput
 } from "../lib/discountCalculation";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 
 export type { DiscountCalculationResult };
 

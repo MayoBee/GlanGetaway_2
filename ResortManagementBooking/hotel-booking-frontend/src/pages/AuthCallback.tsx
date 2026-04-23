@@ -42,7 +42,6 @@ const AuthCallback = () => {
       if (name) localStorage.setItem("user_name", name);
       if (image) localStorage.setItem("user_image", image);
       // Note: role may not be available in Google auth callback, will be fetched on next app load
-      if (role) localStorage.setItem("user_role", role);
 
       queryClient.invalidateQueries("validateToken");
       showToast({

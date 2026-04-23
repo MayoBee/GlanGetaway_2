@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
 
 interface IDVerificationWidgetProps {
   bookingId: string;

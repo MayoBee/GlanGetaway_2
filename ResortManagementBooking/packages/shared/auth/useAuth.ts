@@ -37,7 +37,6 @@ const useAuth = () => {
     isLoading,
     isAuthLoading,
     userRole: user?.role || null,
-    permissions: user?.permissions || [],
   };
 };
 

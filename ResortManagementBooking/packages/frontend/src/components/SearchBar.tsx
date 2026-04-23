@@ -1,5 +1,5 @@
 import { FormEvent, useState, useEffect } from "react";
-import useSearchContext from "../../../shared/hooks/useSearchContext";
+import useSearchContext from "../hooks/useSearchContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";

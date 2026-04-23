@@ -1,6 +1,51 @@
 import { useState } from "react";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
+
+interface BusinessStats {
+  totalResorts: number;
+  totalBookings: number;
+  totalRevenue: number;
+  totalUsers: number;
+  averageRating: number;
+  occupancyRate: number;
+  monthlyGrowth: {
+    resorts: number;
+    bookings: number;
+    revenue: number;
+    users: number;
+  };
+  userDistribution: {
+    users: number;
+    admins: number;
+    superAdmins: number;
+  };
+  topPerformingResorts: Array<{
+    name: string;
+    bookings: number;
+    revenue: number;
+  }>;
+  recentBookings: Array<{
+    id: string;
+    hotelName: string;
+    customerName: string;
+    status: string;
+    totalCost: number;
+  }>;
+  popularDestinations: Array<{
+    name: string;
+    bookings: number;
+  }>;
+  revenueByMonth: Array<{
+    month: string;
+    revenue: number;
+  }>;
+}
+
+const fetchBusinessStats = async (timeRange: string): Promise<BusinessStats> => {
+  const response = await axiosInstance.get(`/api/admin/analytics/business-stats?timeRange=${timeRange}`);
+  return response.data;
+};
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { 
   TrendingUp, 
@@ -28,7 +73,7 @@ const BusinessInsights = () => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
 
   // Fetch business statistics
-  const { data: stats, isLoading } = useQueryWithLoading(
+  const { data: stats, isLoading } = useQueryWithLoading<BusinessStats>(
     ["businessStats", timeRange],
     () => fetchBusinessStats(timeRange),
     {

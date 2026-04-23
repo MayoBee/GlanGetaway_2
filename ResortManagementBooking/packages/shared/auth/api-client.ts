@@ -258,8 +258,4 @@ export const fetchCurrentUser = async (): Promise<{
   return response.data;
 };
 
-export {
-  axiosInstance
-};
-
 export default axiosInstance;

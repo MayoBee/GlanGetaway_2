@@ -2,7 +2,7 @@ import React from "react";
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: "default" | "outline" | "secondary";
+  variant?: "default" | "outline" | "secondary" | "destructive";
   className?: string;
 }
 
@@ -18,6 +18,7 @@ const Badge: React.FC<BadgeProps> = ({
     default: "bg-primary-100 text-primary-800",
     outline: "border border-gray-300 text-gray-700 bg-white",
     secondary: "bg-gray-100 text-gray-800",
+    destructive: "bg-red-100 text-red-800",
   };
 
   const classes = `${baseClasses} ${variantClasses[variant]} ${className}`;

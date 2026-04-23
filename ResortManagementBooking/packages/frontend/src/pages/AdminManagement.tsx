@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useMutationWithLoading, useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useMutationWithLoading, useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
-import useAppContext from "../../../shared/hooks/useAppContext";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import useAppContext from "../hooks/useAppContext";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import SmartImage from "../components/SmartImage";
 import {
   Users,

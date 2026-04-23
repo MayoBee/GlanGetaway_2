@@ -55,51 +55,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     hasNightRate: cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0)
   }));
   
-  // TEMPORARY: Add test data to debug display issue
-  const testCottages = [
-    {
-      id: "test-1",
-      name: "Test Cottage",
-      type: "Beach Villa",
-      hasDayRate: true,
-      hasNightRate: true,
-      dayRate: 100,
-      nightRate: 200,
-      minOccupancy: 1,
-      maxOccupancy: 3,
-      description: "Test cottage for debugging"
-    }
-  ];
-  
-  // Use fixed cottages data
-  const cottagesToDisplay = fixedCottages.length > 0 ? fixedCottages : testCottages;
+  // Use fixed cottages data - no test data fallback
+  const cottagesToDisplay = fixedCottages;
   
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;
   const hasPackages = packages.length > 0;
-
-  console.log('=== FRESH ACCOMMODATION DEBUG ===');
-  console.log('Hotel data:', hotel);
-  console.log('Rooms found:', rooms);
-  console.log('Cottages found:', cottages);
-  console.log('Fixed cottages:', fixedCottages);
-  console.log('Packages found:', packages);
-  console.log('Has rooms:', hasRooms);
-  console.log('Has cottages:', hasCottages);
-  console.log('Has packages:', hasPackages);
-  console.log('Selected rate type:', selectedRateType);
-  
-  // Debug cottage data specifically
-  cottagesToDisplay.forEach((cottage: any, index: any) => {
-    console.log(`Cottage ${index} details:`, {
-      id: cottage.id,
-      name: cottage.name,
-      hasDayRate: cottage.hasDayRate,
-      hasNightRate: cottage.hasNightRate,
-      dayRate: cottage.dayRate,
-      nightRate: cottage.nightRate
-    });
-  });
 
   return (
     <div className="space-y-8">

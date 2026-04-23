@@ -3,7 +3,7 @@ import { UserType, HotelType, BookingType, UserRole } from "../../../packages/sh
 
 // Backend only mongoose document interfaces
 export interface UserDocument extends Omit<mongoose.Document, '_id'>, Omit<UserType, 'role'> {
-  _id: mongoose.Types.ObjectId;
+  _id: string;
   role: UserRole;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }

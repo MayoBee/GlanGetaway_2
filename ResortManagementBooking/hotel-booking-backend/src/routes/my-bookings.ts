@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import verifyToken from "../middleware/auth";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
+import { canModifyBooking } from "../services/bookingValidationService";
 
 const router = express.Router();
 
@@ -102,7 +103,6 @@ router.put("/:bookingId", verifyToken, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
     const { bookingId } = req.params;
-    const updateData = req.body;
     
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -120,31 +120,46 @@ router.put("/:bookingId", verifyToken, async (req: Request, res: Response) => {
       return res.status(403).json({ message: "You can only update your own bookings" });
     }
     
-    // Check if the booking is still pending (can only edit pending bookings)
-    if (booking.status !== "pending") {
+    // Use centralized 8-hour window check
+    const modificationCheck = canModifyBooking(booking);
+    if (!modificationCheck.canModify) {
       return res.status(400).json({ 
-        message: "You can only edit bookings that are still pending confirmation" 
+        message: modificationCheck.reason,
+        changeWindowDeadline: modificationCheck.changeWindowDeadline,
+        currentTime: modificationCheck.currentTime
       });
     }
     
-    // Check 8-hour window for modifications
-    const bookingTime = new Date(booking.createdAt || booking.checkIn);
-    const currentTime = new Date();
-    const hoursSinceBooking = (currentTime.getTime() - bookingTime.getTime()) / (1000 * 60 * 60);
+    // MASS ASSIGNMENT PROTECTION: Whitelist allowed fields
+    const allowedFields = [
+      'firstName',
+      'lastName',
+      'email',
+      'phone',
+      'adultCount',
+      'childCount',
+      'checkIn',
+      'checkOut',
+      'checkInTime',
+      'checkOutTime',
+      'selectedRooms',
+      'selectedCottages',
+      'selectedAmenities',
+      'specialRequests'
+    ];
     
-    if (hoursSinceBooking > 8) {
-      return res.status(400).json({ 
-        message: "Booking modifications are only allowed within 8 hours of making the reservation" 
-      });
+    // Build update object with only allowed fields
+    const updateData: any = { updatedAt: new Date() };
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
     }
     
-    // Update the booking with new data
+    // Update the booking with whitelisted data only
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      {
-        ...updateData,
-        updatedAt: new Date(),
-      },
+      updateData,
       { new: true, runValidators: true }
     );
     

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { MessageSquare, Send, X, Bug, Lightbulb, AlertTriangle, ThumbsUp } from "lucide-react";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 
 interface WebsiteFeedbackProps {
   className?: string;

@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Upload, FileText, CheckCircle, AlertCircle, X, Download } from "lucide-react";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 
 interface UploadedDocument {
   _id: string;

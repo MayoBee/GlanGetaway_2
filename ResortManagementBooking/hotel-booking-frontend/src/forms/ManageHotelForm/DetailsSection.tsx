@@ -13,6 +13,8 @@ const DetailsSection = () => {
   } = useFormContext<HotelFormData>();
   
   const hasNightRateTimeRestrictions = watch("hasNightRateTimeRestrictions");
+  const hasDayRate = watch("hasDayRate");
+  const hasNightRate = watch("hasNightRate");
 
 
   return (
@@ -79,7 +81,7 @@ const DetailsSection = () => {
               type="checkbox"
               id="hasDayRate"
               className="h-4 w-4 text-blue-600"
-              {...register("hasDayRate", { required: "Please select at least one rate type" })}
+              {...register("hasDayRate")}
             />
             <label htmlFor="hasDayRate" className="flex-1 cursor-pointer">
               <span className="font-medium text-blue-800">Day Rate (Resort Owner) <span className="text-red-500">*</span></span>
@@ -100,7 +102,7 @@ const DetailsSection = () => {
                 placeholder="0.00"
                 className="w-full border rounded pl-10 pr-3 py-2 font-normal"
                 {...register("dayRate", { 
-                  required: "Day rate is required",
+                  required: hasDayRate ? "Day rate is required" : false,
                   min: { value: 0, message: "Price must be positive" }
                 })}
               />
@@ -119,8 +121,8 @@ const DetailsSection = () => {
                 type="text"
                 placeholder="08:00 AM"
                 className="w-full border rounded px-3 py-2 font-normal"
-                {...register("dayRateCheckInTime", { 
-                  required: "Check-in time is required",
+                {...register("dayRateCheckInTime", {
+                  required: hasDayRate ? "Check-in time is required" : false,
                   pattern: {
                     value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
                     message: "Please use format like 08:00 AM"
@@ -139,8 +141,8 @@ const DetailsSection = () => {
                 type="text"
                 placeholder="05:00 PM"
                 className="w-full border rounded px-3 py-2 font-normal"
-                {...register("dayRateCheckOutTime", { 
-                  required: "Check-out time is required",
+                {...register("dayRateCheckOutTime", {
+                  required: hasDayRate ? "Check-out time is required" : false,
                   pattern: {
                     value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
                     message: "Please use format like 05:00 PM"
@@ -158,7 +160,7 @@ const DetailsSection = () => {
               type="checkbox"
               id="hasNightRate"
               className="h-4 w-4 text-green-600"
-              {...register("hasNightRate", { required: "Please select at least one rate type" })}
+              {...register("hasNightRate")}
             />
             <label htmlFor="hasNightRate" className="flex-1 cursor-pointer">
               <span className="font-medium text-green-800">Night Rate (Resort Owner) <span className="text-red-500">*</span></span>
@@ -179,7 +181,7 @@ const DetailsSection = () => {
                 placeholder="0.00"
                 className="w-full border rounded pl-10 pr-3 py-2 font-normal"
                 {...register("nightRate", { 
-                  required: "Night rate is required",
+                  required: hasNightRate ? "Night rate is required" : false,
                   min: { value: 0, message: "Price must be positive" }
                 })}
               />

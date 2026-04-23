@@ -4,16 +4,16 @@ import "react-datepicker/dist/react-datepicker.css";
 import useSearchContext from "../../hooks/useSearchContext";
 import useAppContext from "../../hooks/useAppContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
+import { Button } from "@shared/ui/button";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+} from "@shared/ui/card";
+import { Badge } from "@shared/ui/badge";
 import { Calendar, Users, User, Baby, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import { BookingType } from "../../../shared/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../shared/ui/dialog";

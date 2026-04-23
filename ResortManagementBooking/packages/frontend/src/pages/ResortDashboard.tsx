@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import useAppContext from "../hooks/useAppContext";
 import axiosInstance from "../../../shared/auth/api-client";
 import {
   Card,
@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "../../../shared/ui/card";
 import { Button } from "../../../shared/ui/button";
-import { useRoleBasedAccess } from "../../../shared/hooks/useRoleBasedAccess";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
 interface DashboardStats {
   monthlyBookings: number;

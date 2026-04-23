@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import useSearchContext from "../../../shared/hooks/useSearchContext";
-import { useQueryWithLoading } from "../../../shared/hooks/useLoadingHooks";
+import useSearchContext from "../hooks/useSearchContext";
+import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import { useEffect, useState } from "react";
 import SearchResultsCard from "../components/SearchResultsCard";

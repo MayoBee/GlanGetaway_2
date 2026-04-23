@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { ShieldOff, FileText, TrendingUp, Users, Wrench, Activity, DollarSign, Calendar, XCircle, BarChart2, Clock, CheckCircle, Eye, Download } from "lucide-react";
-import { axiosInstance } from '@glan-getaway/shared-auth';;
+import { axiosInstance } from '@glan-getaway/shared-auth';
 
 // ─── API helpers ────────────────────────────────────────────────────────────
 

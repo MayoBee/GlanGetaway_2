@@ -1,4 +1,4 @@
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useEffect, useState } from "react";
 import DetailsSection from "./DetailsSection";
 import GuestsSection from "./GuestsSection";
@@ -146,6 +146,31 @@ export type HotelFormData = {
       name: string;
       description?: string;
     }>;
+    customRooms?: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      capacity: number;
+      features: string;
+      availability: number;
+    }>;
+    customCottages?: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      capacity: number;
+      features: string;
+      availability: number;
+    }>;
+    customAmenities?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      quantity: number;
+      inclusionType: 'included' | 'addon';
+    }>;
     includedAdultEntranceFee: boolean;
     includedChildEntranceFee: boolean;
     isConfirmed?: boolean;
@@ -162,6 +187,7 @@ type Props = {
 
 const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isManualSubmit, setIsManualSubmit] = useState(false);
 
   const steps = [
     {
@@ -197,8 +223,28 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   ];
 
   const formMethods = useForm<HotelFormData>({
-    mode: 'onChange',
+    mode: 'onSubmit',
     shouldFocusError: true,
+    resolver: async (values) => {
+      const errors: any = {};
+      
+      // Custom validation: at least one rate type must be selected
+      if (!values.hasDayRate && !values.hasNightRate) {
+        errors.hasDayRate = {
+          type: 'manual',
+          message: 'Please select at least one rate type (Day Rate or Night Rate)'
+        };
+        errors.hasNightRate = {
+          type: 'manual',
+          message: 'Please select at least one rate type (Day Rate or Night Rate)'
+        };
+      }
+      
+      return {
+        values,
+        errors: Object.keys(errors).length > 0 ? errors : {}
+      };
+    },
     defaultValues: {
       name: "",
       city: "",
@@ -367,8 +413,116 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   }, [hotel, reset, formMethods]);
 
   const handleSave = async (formDataJson: HotelFormData) => {
+    // Only allow submission if manually triggered by user
+    if (!isManualSubmit) {
+      console.log('=== BLOCKED AUTOMATIC SUBMISSION ===');
+      return;
+    }
+    
     console.log('=== FORM SUBMISSION DEBUG ===');
     console.log('Complete form data:', JSON.stringify(formDataJson, null, 2));
+    
+    // Comprehensive validation gatekeeper
+    const validationErrors: string[] = [];
+    
+    // Required fields validation
+    if (!formDataJson.name || formDataJson.name.trim() === '') {
+      validationErrors.push('Resort name is required');
+    }
+    if (!formDataJson.city || formDataJson.city.trim() === '') {
+      validationErrors.push('Barangay is required');
+    }
+    if (!formDataJson.country || formDataJson.country.trim() === '') {
+      validationErrors.push('Purok is required');
+    }
+    if (!formDataJson.description || formDataJson.description.trim() === '') {
+      validationErrors.push('Description is required');
+    }
+    
+    // Rate type validation
+    if (!formDataJson.hasDayRate && !formDataJson.hasNightRate) {
+      validationErrors.push('Please select at least one rate type (Day Rate or Night Rate)');
+    }
+    if (formDataJson.hasDayRate && (!formDataJson.dayRate || formDataJson.dayRate <= 0)) {
+      validationErrors.push('Day rate price is required when Day Rate is enabled');
+    }
+    if (formDataJson.hasNightRate && (!formDataJson.nightRate || formDataJson.nightRate <= 0)) {
+      validationErrors.push('Night rate price is required when Night Rate is enabled');
+    }
+    
+    // Check if at least one accommodation type is configured
+    const hasRooms = formDataJson.rooms && formDataJson.rooms.length > 0;
+    const hasCottages = formDataJson.cottages && formDataJson.cottages.length > 0;
+    
+    if (!hasRooms && !hasCottages) {
+      validationErrors.push('Please add at least one room or cottage');
+    }
+    
+    // Validate rooms
+    if (hasRooms) {
+      formDataJson.rooms?.forEach((room, index) => {
+        if (!room.name || room.name.trim() === '') {
+          validationErrors.push(`Room ${index + 1}: Name is required`);
+        }
+        if (!room.type || room.type.trim() === '') {
+          validationErrors.push(`Room ${index + 1}: Type is required`);
+        }
+        if (!room.pricePerNight || room.pricePerNight <= 0) {
+          validationErrors.push(`Room ${index + 1}: Price per night is required`);
+        }
+        if (!room.minOccupancy || room.minOccupancy <= 0) {
+          validationErrors.push(`Room ${index + 1}: Minimum occupancy is required`);
+        }
+        if (!room.maxOccupancy || room.maxOccupancy <= 0) {
+          validationErrors.push(`Room ${index + 1}: Maximum occupancy is required`);
+        }
+        if (room.minOccupancy > room.maxOccupancy) {
+          validationErrors.push(`Room ${index + 1}: Minimum occupancy cannot exceed maximum occupancy`);
+        }
+      });
+    }
+    
+    // Validate cottages
+    if (hasCottages) {
+      formDataJson.cottages?.forEach((cottage, index) => {
+        if (!cottage.name || cottage.name.trim() === '') {
+          validationErrors.push(`Cottage ${index + 1}: Name is required`);
+        }
+        if (!cottage.type || cottage.type.trim() === '') {
+          validationErrors.push(`Cottage ${index + 1}: Type is required`);
+        }
+        // Validate pricing based on enabled rate types
+        const hasDayRate = cottage.hasDayRate || (cottage.dayRate && cottage.dayRate > 0);
+        const hasNightRate = cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0);
+        
+        if (!hasDayRate && !hasNightRate) {
+          validationErrors.push(`Cottage ${index + 1}: At least one rate type (Day Rate or Night Rate) must be enabled`);
+        }
+        if (hasDayRate && (!cottage.dayRate || cottage.dayRate <= 0)) {
+          validationErrors.push(`Cottage ${index + 1}: Day rate is required when Day Rate is enabled`);
+        }
+        if (hasNightRate && (!cottage.nightRate || cottage.nightRate <= 0)) {
+          validationErrors.push(`Cottage ${index + 1}: Night rate is required when Night Rate is enabled`);
+        }
+        if (!cottage.minOccupancy || cottage.minOccupancy <= 0) {
+          validationErrors.push(`Cottage ${index + 1}: Minimum occupancy is required`);
+        }
+        if (!cottage.maxOccupancy || cottage.maxOccupancy <= 0) {
+          validationErrors.push(`Cottage ${index + 1}: Maximum occupancy is required`);
+        }
+        if (cottage.minOccupancy > cottage.maxOccupancy) {
+          validationErrors.push(`Cottage ${index + 1}: Minimum occupancy cannot exceed maximum occupancy`);
+        }
+      });
+    }
+    
+    // If there are validation errors, prevent submission
+    if (validationErrors.length > 0) {
+      console.error('=== VALIDATION FAILED ===');
+      console.error('Validation errors:', validationErrors);
+      alert('Please fix the following errors before submitting:\n\n' + validationErrors.join('\n'));
+      return;
+    }
     
     // Extract and save units data to local storage (for persistence when backend doesn't handle it)
     const hotelId = (formDataJson as any)._id || 'new_hotel';
@@ -428,8 +582,11 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('Cottages being sent:', processedData.cottages);
     console.log('Packages being sent:', processedData.packages);
 
-    // For JSON endpoint, send data directly as JSON
-    // This bypasses FormData issues and ensures rooms/cottages/packages are preserved
+    // Reset manual submit flag
+    setIsManualSubmit(false);
+
+    // Send processed data to parent component which will convert to FormData
+    // The backend expects FormData with multipart/form-data for image uploads
     onSave(processedData);
   };
 
@@ -488,7 +645,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   };
 
   const ReviewSection = () => {
-    const watchedValues = formMethods.watch();
+    const watchedValues = useWatch({ control: formMethods.control });
 
     return (
       <div className="space-y-6">
@@ -543,9 +700,25 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     );
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
+  const handleSaveButtonClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsManualSubmit(true);
+    // Trigger form submission
+    const form = e.currentTarget.closest('form') as HTMLFormElement;
+    if (form) {
+      form.requestSubmit();
+    }
+  };
+
   return (
     <FormProvider {...formMethods}>
-      <form className="flex flex-col gap-10" onSubmit={onSubmit}>
+      <form className="flex flex-col gap-10" onSubmit={onSubmit} onKeyDown={handleKeyDown}>
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -597,7 +770,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           ) : (
             <button
               disabled={isLoading}
-              type="submit"
+              type="button"
+              onClick={handleSaveButtonClick}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-500 text-xl disabled:bg-gray-500"
             >
               {isLoading ? "Saving..." : "Save"}

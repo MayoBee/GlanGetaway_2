@@ -1,7 +1,7 @@
 import { useMutation } from "react-query";
 import { useNavigate } from "react-router-dom";
-import ManageHotelForm, { HotelFormData } from "../forms/ManageHotelForm/ManageHotelForm";
-import useAppContext from "../../../shared/hooks/useAppContext";
+import ManageHotelForm, { HotelFormData } from "../../../shared/forms/ManageHotelForm/ManageHotelForm";
+import useAppContext from "../hooks/useAppContext";
 import * as apiClient from "../api-client";
 
 const AddHotel = () => {

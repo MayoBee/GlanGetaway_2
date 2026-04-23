@@ -102,7 +102,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setSearchData((prev) => {
-      let updated: any = { ...prev, [field]: value };
+      const updated: any = { ...prev, [field]: value };
       if (field === "childCount") {
         const count: number = value;
         let ages = prev.childAges || [];
