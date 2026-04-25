@@ -2,7 +2,7 @@ import mongoose, { Document } from "mongoose";
 
 export interface IBooking extends Document {
   _id: string;
-  userId: string;
+  userId?: string;
   hotelId: string;
   firstName: string;
   lastName: string;
@@ -16,6 +16,7 @@ export interface IBooking extends Document {
   checkOutTime: string;
   totalCost: number;
   basePrice: number;
+  bookingType: "online" | "walk_in";
   selectedRooms?: Array<{
     id: string;
     name: string;
@@ -91,13 +92,21 @@ export interface IBooking extends Document {
     screenshotFile?: string;
     rejectionReason?: string;
   };
+  // Walk-in specific details
+  walkInDetails?: {
+    guestIdType?: string;
+    guestIdNumber?: string;
+    onSitePaymentMethod?: string;
+    receiptNumber?: string;
+    processedBy?: string; // Staff member who processed the walk-in
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 const bookingSchema = new mongoose.Schema(
   {
-    userId: { type: String, required: true },
+    userId: { type: String, required: false },
     hotelId: { type: String, required: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
@@ -111,6 +120,11 @@ const bookingSchema = new mongoose.Schema(
     checkOutTime: { type: String, required: true, default: "11:00" },
     totalCost: { type: Number, required: true },
     basePrice: { type: Number, required: true },
+    bookingType: {
+      type: String,
+      enum: ["online", "walk_in"],
+      default: "online",
+    },
     selectedRooms: [{
       id: { type: String, required: true },
       name: { type: String, required: true },
@@ -197,6 +211,14 @@ const bookingSchema = new mongoose.Schema(
       status: { type: String, default: 'pending' },
       screenshotFile: { type: String },
       rejectionReason: { type: String }
+    },
+    // Walk-in specific details
+    walkInDetails: {
+      guestIdType: { type: String },
+      guestIdNumber: { type: String },
+      onSitePaymentMethod: { type: String },
+      receiptNumber: { type: String },
+      processedBy: { type: String } // Staff member who processed the walk-in
     },
     // Audit fields
     // createdAt and updatedAt are automatically handled by timestamps: true

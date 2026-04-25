@@ -30,6 +30,8 @@ import ResortApproval from "./pages/Admin/ResortApproval";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import WebsiteFeedbackManagement from "./pages/Admin/WebsiteFeedbackManagement";
+import ResortDashboard from "./pages/ResortDashboard";
+import KioskMode from "./pages/KioskMode";
 import WebsiteFeedback from "./components/WebsiteFeedback";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ResortReports from "./pages/ResortReports";
@@ -178,6 +180,23 @@ const App = () => {
                     <ResortReports />
                   </Layout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resort/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResortDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Kiosk Mode - No authentication required */}
+            <Route
+              path="/kiosk/:hotelId"
+              element={
+                <KioskMode />
               }
             />
             {/* Secret Admin Login Route - No public links to this */}

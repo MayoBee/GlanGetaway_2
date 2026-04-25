@@ -604,4 +604,176 @@ router.patch(
   }
 );
 
+// Create walk-in booking (resort owner/staff only)
+router.post(
+  "/walk-in",
+  verifyToken,
+  [
+    body("hotelId").notEmpty().withMessage("Hotel ID is required"),
+    body("firstName").notEmpty().withMessage("First name is required"),
+    body("lastName").notEmpty().withMessage("Last name is required"),
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("phone").notEmpty().withMessage("Phone number is required"),
+    body("adultCount").isInt({ min: 1 }).withMessage("Adult count must be at least 1"),
+    body("childCount").isInt({ min: 0 }).withMessage("Child count must be non-negative"),
+    body("checkIn").isISO8601().toDate().withMessage("Valid check-in date is required"),
+    body("checkOut").isISO8601().toDate().withMessage("Valid check-out date is required"),
+    body("totalCost").isFloat({ min: 0 }).withMessage("Total cost must be non-negative"),
+    body("selectedRooms").isArray().withMessage("Selected rooms must be an array"),
+    body("onSitePaymentMethod").notEmpty().withMessage("On-site payment method is required"),
+  ],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || "Validation error" });
+    }
+
+    try {
+      const {
+        hotelId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        adultCount,
+        childCount,
+        checkIn,
+        checkOut,
+        checkInTime,
+        checkOutTime,
+        totalCost,
+        basePrice,
+        selectedRooms,
+        selectedCottages,
+        selectedAmenities,
+        specialRequests,
+        isPwdBooking,
+        isSeniorCitizenBooking,
+        discountApplied,
+        // Walk-in specific fields
+        guestIdType,
+        guestIdNumber,
+        onSitePaymentMethod,
+        receiptNumber,
+      } = req.body;
+
+      // Verify the hotel belongs to the authenticated user (resort owner/staff)
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      if (hotel.userId !== req.userId) {
+        return res.status(403).json({ message: "Access denied. Only resort owners/staff can create walk-in bookings." });
+      }
+
+      // Check room availability for walk-in dates
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+
+      // Find conflicting bookings for the same rooms/cottages
+      const conflictingBookings = await Booking.find({
+        hotelId,
+        status: { $in: ["pending", "confirmed"] },
+        $or: [
+          {
+            checkIn: { $lt: checkOutDate },
+            checkOut: { $gt: checkInDate },
+          },
+        ],
+      });
+
+      // Check for room conflicts
+      const bookedRoomIds = conflictingBookings
+        .flatMap((b) => b.selectedRooms || [])
+        .map((r) => r.id);
+
+      const requestedRoomIds = selectedRooms.map((r: any) => r.id);
+      const roomConflicts = requestedRoomIds.filter((id: string) => bookedRoomIds.includes(id));
+
+      if (roomConflicts.length > 0) {
+        return res.status(409).json({ 
+          message: "Some rooms are already booked for these dates",
+          conflictingRooms: roomConflicts
+        });
+      }
+
+      // Check for cottage conflicts
+      if (selectedCottages && selectedCottages.length > 0) {
+        const bookedCottageIds = conflictingBookings
+          .flatMap((b) => b.selectedCottages || [])
+          .map((c) => c.id);
+
+        const requestedCottageIds = selectedCottages.map((c: any) => c.id);
+        const cottageConflicts = requestedCottageIds.filter((id: string) => bookedCottageIds.includes(id));
+
+        if (cottageConflicts.length > 0) {
+          return res.status(409).json({ 
+            message: "Some cottages are already booked for these dates",
+            conflictingCottages: cottageConflicts
+          });
+        }
+      }
+
+      // Create walk-in booking
+      const walkInBooking = new Booking({
+        userId: undefined, // Walk-ins don't have user accounts
+        hotelId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        adultCount,
+        childCount,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        checkInTime: checkInTime || "12:00",
+        checkOutTime: checkOutTime || "11:00",
+        totalCost,
+        basePrice: basePrice || totalCost,
+        selectedRooms,
+        selectedCottages,
+        selectedAmenities,
+        status: "confirmed", // Walk-ins are immediately confirmed
+        paymentStatus: "paid", // Walk-ins pay on-site
+        paymentMethod: onSitePaymentMethod,
+        specialRequests: specialRequests || "",
+        bookingType: "walk_in",
+        isPwdBooking: isPwdBooking || false,
+        isSeniorCitizenBooking: isSeniorCitizenBooking || false,
+        discountApplied: discountApplied || null,
+        canModify: false, // Walk-ins cannot be modified online
+        verifiedByOwner: true, // Auto-verified by resort staff
+        ownerVerificationNote: "Walk-in booking processed on-site",
+        ownerVerifiedAt: new Date(),
+        walkInDetails: {
+          guestIdType,
+          guestIdNumber,
+          onSitePaymentMethod,
+          receiptNumber,
+          processedBy: req.userId, // Staff member who processed it
+        },
+      });
+
+      await walkInBooking.save();
+
+      // Update hotel analytics
+      await Hotel.findByIdAndUpdate(hotelId, {
+        $inc: {
+          totalBookings: 1,
+          totalRevenue: totalCost,
+        },
+      });
+
+      res.status(201).json({
+        message: "Walk-in booking created successfully",
+        booking: walkInBooking,
+      });
+    } catch (error) {
+      console.error("Error creating walk-in booking:", error);
+      res.status(500).json({ message: "Unable to create walk-in booking" });
+    }
+  }
+);
+
 export default router;

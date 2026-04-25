@@ -1,4 +1,4 @@
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
@@ -12,6 +12,9 @@ import ImageCarousel from "../components/ImageCarousel";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { useState, useEffect } from "react";
 import { parseHotelTypes } from "../../../shared/utils/typeUtils";
+import useAppContext from "../hooks/useAppContext";
+import { Button } from "../../../shared/ui/button";
+import { Users, Monitor } from "lucide-react";
 import {
   MapPin,
   Phone,
@@ -42,10 +45,13 @@ const isValidExternalUrl = (url: string | undefined): boolean => {
 const Detail = () => {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { setRateType } = useBookingSelection();
+  const { user } = useAppContext();
   const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [carouselInitialIndex, setCarouselInitialIndex] = useState(0);
+  const [isResortOwner, setIsResortOwner] = useState(false);
 
   // Check if we're in edit mode and extract booking data
   const editMode = location.state?.editMode || false;
@@ -69,6 +75,23 @@ const Detail = () => {
       loadingMessage: "Loading hotel details...",
     }
   );
+
+  // Check if the logged-in user is the resort owner
+  useEffect(() => {
+    if (hotel && user) {
+      setIsResortOwner(hotel.userId === user._id);
+    }
+  }, [hotel, user]);
+
+  const handleWalkInBooking = () => {
+    // Navigate to resort dashboard with state to auto-open walk-in dialog
+    navigate('/resort/dashboard', { state: { openWalkInDialog: true, hotelId: hotel?._id } });
+  };
+
+  const handleKioskMode = () => {
+    // Navigate to kiosk mode for this resort
+    navigate(`/kiosk/${hotel?._id}`);
+  };
 
   const handleImageClick = (index: number) => {
     setCarouselInitialIndex(index);
@@ -554,9 +577,53 @@ const Detail = () => {
         </div>
       </div>
 
-      
+
       {/* Rooms and Cottages */}
       <FreshAccommodationDisplay hotel={hotel} selectedRateType={selectedRateType} />
+
+      {/* Walk-in Booking Button - Only visible to resort owners */}
+      {isResortOwner && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-green-900 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Walk-in Booking
+              </h3>
+              <p className="text-sm text-green-700 mt-1">
+                Create a walk-in booking for guests who arrive at your resort without a prior reservation.
+              </p>
+            </div>
+            <Button
+              onClick={handleWalkInBooking}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Create Walk-in Booking
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Kiosk Mode Button - Visible to all users */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-purple-900 flex items-center gap-2">
+              <Monitor className="w-5 h-5" />
+              Kiosk Mode
+            </h3>
+            <p className="text-sm text-purple-700 mt-1">
+              Self-service ordering interface for browsing and calculating your order.
+            </p>
+          </div>
+          <Button
+            onClick={handleKioskMode}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            Enter Kiosk Mode
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr]">
         <div className="h-fit">

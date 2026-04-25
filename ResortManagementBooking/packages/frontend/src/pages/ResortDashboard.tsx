@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAppContext from "../hooks/useAppContext";
 import axiosInstance from "../../../shared/auth/api-client";
 import {
@@ -10,6 +10,14 @@ import {
 } from "../../../shared/ui/card";
 import { Button } from "../../../shared/ui/button";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
+import WalkInBookingForm from "../components/WalkInBookingForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../../shared/ui/dialog";
+import { Users } from "lucide-react";
 
 interface DashboardStats {
   monthlyBookings: number;
@@ -35,15 +43,29 @@ interface Notification {
 
 const ResortDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAppContext();
   const { isAdmin } = useRoleBasedAccess();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showWalkInDialog, setShowWalkInDialog] = useState(false);
+  const [hotelData, setHotelData] = useState<any>(null);
+  const [loadingHotel, setLoadingHotel] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Check if navigated from Detail page with walk-in dialog request
+  useEffect(() => {
+    if (location.state?.openWalkInDialog) {
+      fetchHotelData();
+      setShowWalkInDialog(true);
+      // Clear the state to prevent re-opening on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   const fetchDashboardData = async () => {
     try {
@@ -62,12 +84,41 @@ const ResortDashboard = () => {
   const markNotificationRead = async (id: string) => {
     try {
       await axiosInstance.put(`/api/dashboard/notifications/${id}/read`);
-      setNotifications(notifications.map(n => 
+      setNotifications(notifications.map(n =>
         n._id === id ? { ...n, isRead: true } : n
       ));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
+  };
+
+  const fetchHotelData = async () => {
+    setLoadingHotel(true);
+    try {
+      const response = await axiosInstance.get("/api/my-hotels");
+      if (response.data && response.data.length > 0) {
+        setHotelData(response.data[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching hotel data:", error);
+    } finally {
+      setLoadingHotel(false);
+    }
+  };
+
+  const handleOpenWalkInDialog = () => {
+    fetchHotelData();
+    setShowWalkInDialog(true);
+  };
+
+  const handleCloseWalkInDialog = () => {
+    setShowWalkInDialog(false);
+    setHotelData(null);
+  };
+
+  const handleWalkInSuccess = () => {
+    fetchDashboardData(); // Refresh dashboard stats
+    handleCloseWalkInDialog();
   };
 
   const formatCurrency = (amount: number) => {
@@ -111,7 +162,11 @@ const ResortDashboard = () => {
           <p className="text-gray-600">Welcome back, {user?.firstName}!</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate("/resort/rooms")}>Manage Rooms</Button>
+          <Button onClick={handleOpenWalkInDialog} className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Walk-in Booking
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/resort/rooms")}>Manage Rooms</Button>
           <Button variant="outline" onClick={() => navigate("/resort/reports")}>View Reports</Button>
         </div>
       </div>
@@ -323,6 +378,28 @@ const ResortDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Walk-in Booking Dialog */}
+      <Dialog open={showWalkInDialog} onOpenChange={setShowWalkInDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Walk-in Booking</DialogTitle>
+          </DialogHeader>
+          {loadingHotel ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          ) : hotelData ? (
+            <WalkInBookingForm
+              hotel={hotelData}
+              onClose={handleCloseWalkInDialog}
+              onSuccess={handleWalkInSuccess}
+            />
+          ) : (
+            <p className="text-center text-gray-500 py-8">No hotel data available. Please add your resort first.</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
