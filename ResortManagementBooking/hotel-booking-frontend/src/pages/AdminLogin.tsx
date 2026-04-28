@@ -38,6 +38,11 @@ const AdminLogin = () => {
 
   const mutation = useMutation(signIn, {
     onSuccess: async (data) => {
+      // Store JWT token if provided
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
       // Set admin status to true for universal access
       setAdminStatus(true);
 

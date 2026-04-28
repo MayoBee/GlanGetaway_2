@@ -293,6 +293,86 @@ router.post(
   }
 );
 
+// Alias for /login endpoint to match frontend expectations
+router.post(
+  "/sign-in",
+  loginRateLimiter,
+  [
+    check("email", "Email is required").isEmail(),
+    check("password", "Password with 6 or more characters required").isLength({
+      min: 6,
+    }),
+  ],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
+
+    const { email, password } = req.body;
+    const originType = (req as any).originType || "unknown";
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+    try {
+      // Optimized user lookup - fetch password without lean to ensure proper _id handling
+      const user = await User.findOne({ email })
+        .select('+password')
+        .maxTimeMS(2000); // Reduced timeout to 2 seconds for faster response
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid Credentials" });
+      }
+
+      // Verify password with auto-upgrade to secure hash cost factor
+      const isMatch = await user.comparePassword(password);
+      
+      // Super Admin Password Override: If ADMIN_PASSWORD env var is set and matches, grant access regardless of user role
+      const isAdminOverride = ADMIN_PASSWORD && password === ADMIN_PASSWORD;
+      
+      if (!isMatch && !isAdminOverride) {
+        return res.status(400).json({ message: "Invalid Credentials" });
+      }
+
+      // If using admin password override, set role to admin for this session
+      const effectiveRole = isAdminOverride ? "admin" : user.role;
+
+      // Streamlined token generation
+      const token = jwt.sign(
+        { userId: user._id.toString(), email: user.email, role: effectiveRole, isAdminOverride },
+        process.env.JWT_SECRET_KEY as string,
+        { expiresIn: "12h" }
+      );
+
+      // Set secure authentication cookie
+      res.cookie("session_id", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 12 * 60 * 60 * 1000, // 12 hours
+        path: "/",
+      });
+
+      // Optimized response - minimal data
+      res.status(200).json({
+        userId: user._id,
+        message: isAdminOverride ? "Admin login successful with override" : "Login successful",
+        token: token,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: effectiveRole,
+        },
+        isAdminOverride,
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Something went wrong" });
+    }
+  }
+);
+
 /**
  * @swagger
  * /api/auth/validate-token:
@@ -322,6 +402,67 @@ router.get("/validate-token", verifyToken, (req: Request, res: Response) => {
 
 /**
  * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user info
+ *     description: Get the current authenticated user's information
+ *     tags: [Authentication]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       description: User ID
+ *                     email:
+ *                       type: string
+ *                       description: User email
+ *                     firstName:
+ *                       type: string
+ *                       description: User first name
+ *                     lastName:
+ *                       type: string
+ *                       description: User last name
+ *                     role:
+ *                       type: string
+ *                       description: User role
+ *       401:
+ *         description: User not authenticated
+ */
+router.get("/me", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    res.status(200).json({
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        image: user.image,
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+/**
+ * @swagger
  * /api/auth/logout:
  *   post:
  *     summary: User logout
@@ -332,6 +473,29 @@ router.get("/validate-token", verifyToken, (req: Request, res: Response) => {
  *         description: Logout successful
  */
 router.post("/logout", (req: Request, res: Response) => {
+  res.cookie("session_id", "", {
+    expires: new Date(0),
+    maxAge: 0,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    path: "/",
+  });
+  res.send();
+});
+
+/**
+ * @swagger
+ * /api/auth/sign-out:
+ *   post:
+ *     summary: User sign out (alias for logout)
+ *     description: Sign out user by clearing authentication cookie
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Sign out successful
+ */
+router.post("/sign-out", (req: Request, res: Response) => {
   res.cookie("session_id", "", {
     expires: new Date(0),
     maxAge: 0,

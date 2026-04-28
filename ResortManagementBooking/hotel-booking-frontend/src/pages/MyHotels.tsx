@@ -19,6 +19,7 @@ import {
   Trash2,
   Clock,
   CheckCircle,
+  MonitorPlay,
 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import SmartImage from "../components/SmartImage";
@@ -42,6 +43,11 @@ const MyHotels = () => {
     name: string;
   } | null>(null);
   const [isBookingLogOpen, setIsBookingLogOpen] = useState(false);
+
+  const handleOpenKiosk = (hotelId: string) => {
+    // Navigate to kiosk page for this resort
+    window.location.href = `/kiosk/${hotelId}`;
+  };
 
   const deleteHotelMutation = useMutation(deleteMyHotelById, {
     onSuccess: () => {
@@ -387,6 +393,13 @@ const MyHotels = () => {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   Booking Log
+                </button>
+                <button
+                  onClick={() => handleOpenKiosk(hotel._id)}
+                  className="flex-1 bg-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-purple-700 transition-colors text-center flex items-center justify-center"
+                >
+                  <MonitorPlay className="w-4 h-4 mr-2" />
+                  Kiosk
                 </button>
                 <button
                   onClick={() => handleDeleteHotel(hotel._id, hotel.name)}

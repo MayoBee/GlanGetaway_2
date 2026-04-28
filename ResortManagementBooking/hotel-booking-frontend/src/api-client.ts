@@ -1,11 +1,41 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 });
+
+// Add request interceptor to include JWT token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Check for both 'token' and 'session_id' to handle different auth implementations
+    const token = localStorage.getItem('token') || localStorage.getItem('session_id');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle token refresh
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid, clear local storage and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('session_id');
+      localStorage.removeItem('is_super_admin');
+      window.location.href = '/admin-login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth functions
 export const signIn = async (formData: any) => {
@@ -687,6 +717,51 @@ export const cancelAmenitySlotBooking = async (bookingId: string) => {
 
 export const fetchMyAmenityBookings = async () => {
   const response = await axiosInstance.get('/api/amenity-slots/my-bookings');
+  return response.data;
+};
+
+// Walk-in booking API functions
+export const createWalkInBooking = async (formData: any) => {
+  const response = await axiosInstance.post("/api/bookings/walk-in", formData);
+  return response.data;
+};
+
+// Resort Staff Management API functions
+export const createResortStaff = async (staffData: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: string;
+  resortIds: string[];
+  permissions: any;
+}) => {
+  const response = await axiosInstance.post("/api/resort-staff", staffData);
+  return response.data;
+};
+
+export const updateResortStaff = async (staffId: string, staffData: {
+  firstName?: string;
+  lastName?: string;
+  resortIds?: string[];
+  permissions?: any;
+}) => {
+  const response = await axiosInstance.put(`/api/resort-staff/${staffId}`, staffData);
+  return response.data;
+};
+
+export const fetchResortStaff = async () => {
+  const response = await axiosInstance.get("/api/resort-staff");
+  return response.data;
+};
+
+export const deleteResortStaff = async (staffId: string) => {
+  const response = await axiosInstance.delete(`/api/resort-staff/${staffId}`);
+  return response.data;
+};
+
+export const toggleResortStaffStatus = async (staffId: string) => {
+  const response = await axiosInstance.patch(`/api/resort-staff/${staffId}/toggle-status`);
   return response.data;
 };
 

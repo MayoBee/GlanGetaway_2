@@ -47,6 +47,7 @@ import FeatureFlags from "./pages/FeatureFlags";
 import RoomBlocks from "./pages/RoomBlocks";
 import IdentityVerification from "./pages/IdentityVerification";
 import AmenitySlots from "./pages/AmenitySlots";
+import Kiosk from "./pages/Kiosk";
 
 const App = () => {
   return (
@@ -229,6 +230,12 @@ const App = () => {
                   </Layout>
                 </ProtectedRoute>
               }
+            />
+            
+            {/* Kiosk Route - Standalone */}
+            <Route
+              path="/kiosk/:hotelId"
+              element={<Kiosk />}
             />
             
             {/* Admin Routes */}

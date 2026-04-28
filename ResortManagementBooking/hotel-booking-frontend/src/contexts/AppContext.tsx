@@ -6,12 +6,27 @@ import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { useToast } from "../hooks/use-toast";
 import { UserType } from "../../../shared/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 });
+
+// Add request interceptor to include JWT token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Check for both 'token' and 'session_id' to handle different auth implementations
+    const token = localStorage.getItem('token') || localStorage.getItem('session_id');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 const validateToken = async () => {
   try {
