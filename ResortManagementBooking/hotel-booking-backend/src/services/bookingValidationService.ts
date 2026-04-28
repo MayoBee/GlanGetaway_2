@@ -5,12 +5,9 @@
  * the 8-hour modification window enforcement.
  */
 
-interface BookingDocument {
-  status: string;
-  changeWindowDeadline?: Date;
-  canModify?: boolean;
-  save(): Promise<void>;
-}
+import { IBooking } from '../domains/booking/models/booking';
+
+type BookingDocument = IBooking;
 
 export interface ModificationCheckResult {
   canModify: boolean;
