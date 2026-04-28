@@ -2,29 +2,51 @@
   "name": "@glan-getaway/shared",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
   "main": "./index.ts",
+
   "exports": {
     ".": "./index.ts",
     "./hooks/*": "./hooks/*.ts",
+
     "./ui/*": "./ui/*.tsx",
+
     "./types": "./types/index.ts",
+
     "./auth": "./auth/index.ts",
+
     "./components/*": "./components/*.tsx",
+
     "./config/*": "./config/*.ts",
+
     "./forms/ManageHotelForm": "./forms/ManageHotelForm/ManageHotelForm.tsx"
+
   },
+
   "dependencies": {
+
     "@radix-ui/react-dialog": "^1.1.15",
+
     "class-variance-authority": "^0.7.1",
+
     "lucide-react": "^0.542.0",
+
     "react": "^18.2.0",
+
     "react-dom": "^18.2.0",
+
     "tailwind-merge": "^3.3.1"
+
   },
+
   "devDependencies": {
+
     "@types/react": "^18.2.15",
+
     "@types/react-dom": "^18.2.7",
+
     "typescript": "^5.0.2"
+
   }
+
 }
+

@@ -1,2 +1,2 @@
 // Shared package public exports
-export * from "./types";
+module.exports = require("./types");

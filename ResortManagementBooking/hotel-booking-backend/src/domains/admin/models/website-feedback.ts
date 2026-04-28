@@ -68,10 +68,6 @@ websiteFeedbackSchema.pre("save", function (next) {
   next();
 });
 
-const WebsiteFeedback = mongoose.model("WebsiteFeedback", websiteFeedbackSchema);
-
-export default WebsiteFeedback;
-
 // TypeScript interface
 export interface WebsiteFeedbackDocument {
   _id: mongoose.Types.ObjectId;
@@ -90,3 +86,7 @@ export interface WebsiteFeedbackDocument {
   updatedAt: Date;
   resolvedAt?: Date;
 }
+
+const WebsiteFeedback = mongoose.model("WebsiteFeedback", websiteFeedbackSchema);
+
+export default WebsiteFeedback;

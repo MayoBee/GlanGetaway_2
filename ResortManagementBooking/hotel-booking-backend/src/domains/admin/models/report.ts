@@ -71,10 +71,6 @@ reportSchema.pre("save", function (next) {
   next();
 });
 
-const Report = mongoose.model<ReportDocument>("Report", reportSchema);
-
-export default Report;
-
 // TypeScript interface for Report
 export interface ReportDocument {
   _id: mongoose.Types.ObjectId;
@@ -91,3 +87,7 @@ export interface ReportDocument {
   resolvedAt?: Date;
   resolvedBy?: mongoose.Types.ObjectId;
 }
+
+const Report = mongoose.model<ReportDocument>("Report", reportSchema);
+
+export default Report;
