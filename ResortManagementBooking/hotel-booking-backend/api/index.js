@@ -58,7 +58,31 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan("combined"));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allowed origins
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5174',
+      'http://127.0.0.1:5174',
+      'http://localhost:5173',
+      'http://localhost:5175'
+    ].filter(Boolean);
+    
+    // Allow all vercel.app and netlify.app origins
+    if (origin.includes('vercel.app') || origin.includes('netlify.app')) {
+      return callback(null, true);
+    }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(cookieParser());
