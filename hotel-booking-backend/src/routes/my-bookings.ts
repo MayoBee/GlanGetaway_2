@@ -16,8 +16,8 @@ router.get("/", verifyToken, async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    // First, get all bookings for this user
-    const bookings = await Booking.find({ userId: new mongoose.Types.ObjectId(userId) })
+    // First, get all bookings for this user using Mongoose
+    const bookings = await Booking.find({ userId })
       .sort({ createdAt: -1 })
       .lean();
     
@@ -27,10 +27,16 @@ router.get("/", verifyToken, async (req: Request, res: Response) => {
     
     // Group bookings by hotelId
     const hotelBookingsMap = new Map();
+    const orphanBookings: any[] = [];
     
     for (const booking of bookings) {
-      const hotelId = booking.hotelId?.toString();
-      if (!hotelId) continue;
+      const hotelId = booking.hotelId;
+      
+      if (!hotelId) {
+        // Include booking even without hotelId (as "Unknown Hotel")
+        orphanBookings.push({ ...booking, hotelName: "Unknown Hotel" });
+        continue;
+      }
       
       if (!hotelBookingsMap.has(hotelId)) {
         // Fetch hotel info
@@ -39,6 +45,13 @@ router.get("/", verifyToken, async (req: Request, res: Response) => {
           hotelBookingsMap.set(hotelId, {
             ...hotel,
             bookings: []
+          });
+        } else {
+          // Create placeholder for deleted/missing hotels
+          hotelBookingsMap.set(hotelId, { 
+            _id: hotelId, 
+            name: "Hotel No Longer Available",
+            bookings: [] 
           });
         }
       }
@@ -51,6 +64,15 @@ router.get("/", verifyToken, async (req: Request, res: Response) => {
     
     // Convert map to array
     const results = Array.from(hotelBookingsMap.values());
+    
+    // Append orphan bookings (those without hotelId)
+    if (orphanBookings.length > 0) {
+      results.push({
+        _id: 'orphan',
+        name: "Other Bookings",
+        bookings: orphanBookings
+      });
+    }
     
     res.status(200).send(results);
   } catch (error) {
@@ -103,6 +125,7 @@ router.put("/:bookingId", verifyToken, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
     const { bookingId } = req.params;
+    const updateData = req.body;
     
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -149,17 +172,17 @@ router.put("/:bookingId", verifyToken, async (req: Request, res: Response) => {
     ];
     
     // Build update object with only allowed fields
-    const updateData: any = { updatedAt: new Date() };
+    const updateDataObj: any = { updatedAt: new Date() };
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
+        updateDataObj[field] = req.body[field];
       }
     }
     
     // Update the booking with whitelisted data only
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      updateData,
+      updateDataObj,
       { new: true, runValidators: true }
     );
     

@@ -12,7 +12,7 @@ import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
 import { checkAvailability, createAtomicBooking } from "../services/availabilityService";
 
-const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 // Stricter rate limiting for search endpoints to prevent scraping
 const searchLimiter = rateLimit({
@@ -36,7 +36,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     // Accept only image files
     if (file.mimetype.startsWith('image/')) {
@@ -108,9 +108,11 @@ router.get("/search", searchLimiter, async (req: Request, res: Response) => {
       const hotelObj = hotel.toObject();
       return {
         ...hotelObj,
+        // Convert ObjectId to string
+        _id: hotelObj._id.toString(),
         // Handle both old and new field names
-        imageUrls: hotelObj.imageUrls || (hotelObj.image ? [hotelObj.image] : []),
-        starRating: hotelObj.starRating || hotelObj.rating || 0,
+        imageUrls: hotelObj.imageUrls || ((hotelObj as any).image ? [(hotelObj as any).image] : []), 
+        starRating: hotelObj.starRating || (hotelObj as any).rating || 0,
         // Ensure type is always an array
         type: Array.isArray(hotelObj.type) ? hotelObj.type : (typeof hotelObj.type === 'string' ? [hotelObj.type] : [])
       };
@@ -137,16 +139,18 @@ router.get("/", async (req: Request, res: Response) => {
     // DATA PROJECTION: Exclude sensitive fields from hotel list
     const hotels = await Hotel.find({ isApproved: { $ne: false } })
       .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate adultEntranceFee childEntranceFee isApproved')
-      .sort("-lastUpdated");
+      .sort("-updatedAt");
     
     // Transform database fields to match frontend expectations for backward compatibility
     const transformedHotels = hotels.map(hotel => {
       const hotelObj = hotel.toObject();
       return {
         ...hotelObj,
+        // Convert ObjectId to string
+        _id: hotelObj._id.toString(),
         // Handle both old and new field names
-        imageUrls: hotelObj.imageUrls || (hotelObj.image ? [hotelObj.image] : []),
-        starRating: hotelObj.starRating || hotelObj.rating || 0,
+        imageUrls: hotelObj.imageUrls || ((hotelObj as any).image ? [(hotelObj as any).image] : []), 
+        starRating: hotelObj.starRating || (hotelObj as any).rating || 0,
         // Ensure type is always an array
         type: Array.isArray(hotelObj.type) ? hotelObj.type : (typeof hotelObj.type === 'string' ? [hotelObj.type] : [])
       };
@@ -177,17 +181,17 @@ router.get(
       // First, fetch without field selection to see all available fields
       const fullHotel = await Hotel.findById(id);
       console.log("Full hotel data (all fields):", fullHotel);
-      console.log("Full hotel gcashNumber:", fullHotel?.gcashNumber);
+      console.log("Full hotel gcashNumber:", (fullHotel as any)?.gcashNumber);
       
       const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities gcashNumber downPaymentPercentage');
       
       console.log("Hotel data found (with selection):", hotel);
-      console.log("Hotel gcashNumber specifically:", hotel?.gcashNumber);
-      console.log("Hotel has gcashNumber field:", 'gcashNumber' in hotel);
-      console.log("Cottages data:", hotel?.cottages);
+      console.log("Hotel gcashNumber specifically:", (hotel as any)?.gcashNumber);
+      console.log("Hotel has gcashNumber field:", 'gcashNumber' in (hotel as any));
+      console.log("Cottages data:", (hotel as any)?.cottages);
       
-      if (hotel?.cottages) {
-        hotel.cottages.forEach((cottage: any, index: number) => {
+      if ((hotel as any)?.cottages) {
+        (hotel as any).cottages.forEach((cottage: any, index: number) => {
           console.log(`Cottage ${index} from DB:`, {
             id: cottage.id,
             name: cottage.name,
@@ -199,13 +203,13 @@ router.get(
         });
       }
       
-       res.json(hotel);
-     } catch (error) {
-       console.log(error);
-       res.status(500).json({ message: "Error fetching hotel" });
-     }
-   }
- );
+      res.json(hotel);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Error fetching hotel" });
+    }
+  }
+);
 
 router.get(
   "/:hotelId/availability",
@@ -242,35 +246,51 @@ router.post(
     const hotelId = req.params.hotelId;
 
     try {
+      console.log("Creating payment intent for hotel:", hotelId, "user:", req.userId);
+      console.log("Payment amount:", downPaymentAmount, "nights:", numberOfNights);
+      console.log("Request body:", req.body);
+      
       // Check if Stripe is configured
-      if (!process.env.STRIPE_API_KEY) {
+      if (!process.env.STRIPE_SECRET_KEY) {
         console.error("Stripe API key not configured");
         return res.status(500).json({ message: "Payment system not properly configured" });
+      }
+
+      // Validate payment amount
+      const paymentAmountNum = Number(downPaymentAmount);
+      if (!downPaymentAmount || isNaN(paymentAmountNum) || paymentAmountNum <= 0) {
+        console.error("Invalid payment amount:", downPaymentAmount, "converted to:", paymentAmountNum);
+        return res.status(400).json({ message: "Invalid payment amount" });
       }
 
       // Use lean() for faster query - only fetch needed fields including rooms
       const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities').lean();
       if (!hotel) {
+        console.error("Hotel not found:", hotelId);
         return res.status(400).json({ message: "Hotel not found" });
       }
 
-      // Use downPaymentAmount from frontend instead of calculating totalCost
-      const paymentAmount = downPaymentAmount || (hotel.hasNightRate ? hotel.nightRate : hotel.dayRate);
+      // Use the already validated payment amount
+      const paymentAmount = paymentAmountNum;
+      
+      console.log("Final payment amount:", paymentAmount, "Type:", typeof paymentAmount);
 
+      console.log("Calling Stripe API...");
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(paymentAmount * 100), // Convert to cents
-        currency: "php", // Use PHP instead of USD
+        currency: "php",
+        payment_method_types: ['card'],
         metadata: {
           hotelId,
           userId: req.userId,
           numberOfNights: numberOfNights?.toString() || "1",
         },
-        automatic_payment_methods: {
-          enabled: true,
-        },
       });
 
+      console.log("Payment intent created successfully:", paymentIntent.id);
+
       if (!paymentIntent.client_secret) {
+        console.error("Payment intent created but no client secret");
         return res.status(500).json({ message: "Error creating payment intent" });
       }
 
@@ -280,9 +300,17 @@ router.post(
         totalCost: paymentAmount,
       };
 
+      console.log("Sending payment intent response");
       res.send(response);
     } catch (error: any) {
       console.error("Payment intent creation error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        type: error.type,
+        code: error.code,
+        statusCode: error.statusCode,
+        stack: error.stack
+      });
       res.status(500).json({ 
         message: error.message || "Failed to create payment intent" 
       });
@@ -295,12 +323,19 @@ router.post(
   verifyToken,
   async (req: Request, res: Response) => {
     try {
+      console.log("=== BOOKING CREATION ROUTE HIT AT", new Date().toISOString(), "===");
+      console.log("Request method:", req.method);
+      console.log("Request URL:", req.url);
+      console.log("Request IP:", req.ip);
+      console.log("User-Agent:", req.get('User-Agent'));
+
       const { hotelId } = req.params;
       const userId = req.userId;
-      
-      console.log("Booking request received:", req.body);
+
+      console.log("Booking request received:", JSON.stringify(req.body, null, 2));
       console.log("User ID:", userId);
       console.log("Hotel ID:", hotelId);
+      console.log("Request headers:", req.headers);
       
       // Validate required fields
       const { 
@@ -316,6 +351,7 @@ router.post(
         checkOutTime,
         totalCost,
         basePrice,
+        paymentIntentId,
         selectedRooms,
         selectedCottages,
         selectedAmenities,
@@ -325,6 +361,88 @@ router.post(
         isSeniorCitizenBooking,
         discountInfo
       } = req.body;
+
+      // Validate payment intent for card payments
+      if (paymentMethod === "card" && paymentIntentId) {
+        try {
+          console.log("=== PAYMENT INTENT VALIDATION START ===");
+          console.log("Payment Intent ID:", paymentIntentId);
+          console.log("User ID:", userId);
+          console.log("Hotel ID:", hotelId);
+          
+          // Verify payment intent status with Stripe first
+          console.log("Step 1: Retrieving payment intent from Stripe...");
+          console.log("Step 1: Payment Intent ID:", paymentIntentId);
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          console.log("Step 1 Complete: Payment Intent Status:", paymentIntent.status);
+          console.log("Step 1 Complete: Payment Intent Amount:", paymentIntent.amount);
+          console.log("Step 1 Complete: Payment Intent Metadata:", paymentIntent.metadata);
+          
+          if (paymentIntent.status !== "succeeded") {
+            console.log("Step 1 Failed: Payment intent not succeeded:", paymentIntent.status);
+            return res.status(400).json({ 
+              message: "Payment has not been completed. Please complete the payment first." 
+            });
+          }
+          console.log("Step 1 Passed: Payment intent status is succeeded");
+
+          // Check if payment intent is already used
+          console.log("Step 2: Checking if payment intent is already used...");
+          const existingBooking = await Booking.findOne({ paymentIntentId });
+          if (existingBooking) {
+            console.log("Step 2 Failed: Payment intent already used:", paymentIntentId);
+            console.log("Existing booking ID:", existingBooking._id);
+            console.log("Existing booking user ID:", existingBooking.userId);
+            console.log("Existing booking hotel ID:", existingBooking.hotelId);
+            console.log("Current user ID:", userId);
+            console.log("Current hotel ID:", hotelId);
+            
+            // If the existing booking exists and is for the same user and hotel, return the existing booking
+            if (existingBooking.userId.toString() === userId && existingBooking.hotelId.toString() === hotelId) {
+              console.log("Step 2 Alternative: Returning existing booking for same user and hotel");
+              return res.status(200).json({
+                message: "Booking already exists for this payment",
+                bookingId: existingBooking._id,
+                booking: existingBooking
+              });
+            } else {
+              console.log("Step 2 Failed: Payment intent used for different booking");
+              return res.status(409).json({ 
+                message: "This payment has already been used for a different booking" 
+              });
+            }
+          } else {
+            console.log("Step 2 Passed: Payment intent not used yet, proceeding with booking creation");
+          }
+
+          // Verify payment intent metadata matches this booking
+          console.log("Step 3: Verifying payment intent metadata...");
+          console.log("Payment Intent Metadata:", paymentIntent.metadata);
+          console.log("Expected hotelId:", hotelId, "Got:", paymentIntent.metadata.hotelId);
+          console.log("Expected userId:", userId, "Got:", paymentIntent.metadata.userId);
+          console.log("Metadata match - hotelId:", paymentIntent.metadata.hotelId === hotelId);
+          console.log("Metadata match - userId:", paymentIntent.metadata.userId === userId);
+          
+          if (paymentIntent.metadata.hotelId !== hotelId || paymentIntent.metadata.userId !== userId) {
+            console.log("Step 3 Failed: Payment intent metadata mismatch");
+            return res.status(400).json({ 
+              message: "Payment details do not match this booking" 
+            });
+          }
+          console.log("Step 3 Passed: Payment intent metadata matches");
+          
+          console.log("=== PAYMENT INTENT VALIDATION PASSED ===");
+        } catch (stripeError: any) {
+          console.error("=== PAYMENT INTENT VALIDATION ERROR ===");
+          console.error("Error Type:", stripeError.type);
+          console.error("Error Code:", stripeError.code);
+          console.error("Error Message:", stripeError.message);
+          console.error("Full Error:", stripeError);
+          return res.status(400).json({ 
+            message: "Invalid payment intent. Please try again." 
+          });
+        }
+      }
 
       // Verify hotel exists
       const hotel = await Hotel.findById(hotelId);
@@ -342,7 +460,7 @@ router.post(
       checkInDate.setHours(0, 0, 0, 0);
       checkOutDate.setHours(0, 0, 0, 0);
       
-      // Validate checkIn is not in the past
+      // Validate checkIn is not in the past (allow same-day bookings)
       if (checkInDate < now) {
         return res.status(400).json({ message: "Check-in date cannot be in the past" });
       }
@@ -368,12 +486,16 @@ router.post(
         checkOutTime: checkOutTime || "11:00",
         totalCost: totalCost || basePrice || 0,
         basePrice: basePrice || totalCost || 0,
-        selectedRooms: selectedRooms || [],
-        selectedCottages: selectedCottages || [],
-        selectedAmenities: selectedAmenities || [],
+        selectedItems: [
+          ...(selectedRooms || []).map(room => ({ ...room, type: 'room' as const })),
+          ...(selectedCottages || []).map(cottage => ({ ...cottage, type: 'cottage' as const })),
+          ...(selectedAmenities || []).map(amenity => ({ ...amenity, type: 'amenity' as const }))
+        ],
         paymentMethod: paymentMethod || "card",
         specialRequests: specialRequests || "",
         status: "pending",
+        // Include payment intent ID for card payments
+        paymentIntentId: paymentMethod === "card" ? paymentIntentId : undefined,
         // PWD/Senior Citizen tracking from frontend
         isPwdBooking: isPwdBooking || false,
         isSeniorCitizenBooking: isSeniorCitizenBooking || false,
@@ -386,9 +508,28 @@ router.post(
       };
 
       // Use ATOMIC booking to prevent race conditions
+      console.log("=== BOOKING CREATION DEBUG ===");
+      console.log("PASSED ALL VALIDATION - About to create booking");
+      console.log("Final booking data being sent to createAtomicBooking:", JSON.stringify(bookingData, null, 2));
+      console.log("About to call createAtomicBooking with summary:", {
+        userId,
+        hotelId,
+        checkIn,
+        checkOut,
+        selectedRooms: selectedRooms || [],
+        selectedCottages: selectedCottages || [],
+        paymentIntentId,
+        totalCost,
+        basePrice
+      });
+
       const result = await createAtomicBooking(bookingData);
       
+      console.log("createAtomicBooking result:", result);
+      console.log("=== END BOOKING CREATION DEBUG ===");
+      
       if (!result.success) {
+        console.log("Booking failed with error:", result.error);
         return res.status(409).json({ 
           message: result.error || "Booking failed due to availability conflict" 
         });
@@ -399,12 +540,12 @@ router.post(
       // Update hotel booking count
       await Hotel.findByIdAndUpdate(hotelId, {
         $inc: { totalBookings: 1 }
-      });
+      } as any);
       
       // Update user booking count
       await User.findByIdAndUpdate(userId, {
         $inc: { totalBookings: 1 }
-      });
+      } as any);
       
       console.log("Booking created successfully:", booking._id);
       
@@ -537,12 +678,12 @@ router.post(
       // Update hotel booking count
       await Hotel.findByIdAndUpdate(hotelId, {
         $inc: { totalBookings: 1 }
-      });
+      } as any);
       
       // Update user booking count
       await User.findByIdAndUpdate(userId, {
         $inc: { totalBookings: 1 }
-      });
+      } as any);
       
       console.log("GCash Booking created successfully:", booking._id);
       

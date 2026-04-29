@@ -17,11 +17,11 @@ async function addTempResorts() {
     const db = mongoose.connection.db;
     console.log(`📦 Using database: ${db.databaseName}`);
     
-    // Get the admin user ID (or use a default)
-    const adminUser = await db.collection('users').findOne({ email: 'admin@glangetaway.com' });
-    const userId = adminUser?._id?.toString() || 'admin_user_id';
+    // Get the Mayobi Wadz Account user ID
+    const mayobiUser = await db.collection('users').findOne({ email: 'biennickwadingan@gmail.com' });
+    const userId = mayobiUser?._id?.toString() || 'admin_user_id';
     
-    console.log(`👤 Using user ID: ${userId}`);
+    console.log(`👤 Using user ID: ${userId} (Mayobi Wadz Account - biennickwadingan@gmail.com)`);
     
     // Define the temporary resorts
     const tempResorts = [

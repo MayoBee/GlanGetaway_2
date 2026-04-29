@@ -16,20 +16,13 @@ export interface IBooking extends Document {
   checkOutTime: string;
   totalCost: number;
   basePrice: number;
-  selectedRooms?: Array<{
+  // Combined selected items to avoid parallel array indexing issues
+  selectedItems?: Array<{
     id: string;
     name: string;
-    type: string;
-    pricePerNight: number;
-    maxOccupancy: number;
-    description?: string;
-  }>;
-  selectedCottages?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    pricePerNight: number;
-    maxOccupancy: number;
+    type: 'room' | 'cottage' | 'amenity';
+    pricePerNight?: number;
+    maxOccupancy?: number;
     description?: string;
   }>;
   selectedAmenities?: Array<{
@@ -43,6 +36,7 @@ export interface IBooking extends Document {
   status: "pending" | "confirmed" | "cancelled" | "completed" | "refunded";
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   paymentMethod: string;
+  paymentIntentId?: string; // For Stripe payments
   specialRequests: string;
   cancellationReason: string;
   refundAmount: number;
@@ -113,20 +107,13 @@ const bookingSchema = new mongoose.Schema(
     checkOutTime: { type: String, required: true, default: "11:00" },
     totalCost: { type: Number, required: true },
     basePrice: { type: Number, required: true },
-    selectedRooms: [{
+    // Combined selected items to avoid parallel array indexing
+    selectedItems: [{
       id: { type: String, required: true },
       name: { type: String, required: true },
-      type: { type: String, required: true },
-      pricePerNight: { type: Number, required: true },
-      maxOccupancy: { type: Number, required: true },
-      description: { type: String }
-    }],
-    selectedCottages: [{
-      id: { type: String, required: true },
-      name: { type: String, required: true },
-      type: { type: String, required: true },
-      pricePerNight: { type: Number, required: true },
-      maxOccupancy: { type: Number, required: true },
+      type: { type: String, required: true, enum: ['room', 'cottage', 'amenity'] },
+      pricePerNight: { type: Number },
+      maxOccupancy: { type: Number },
       description: { type: String }
     }],
     selectedAmenities: [{
@@ -148,6 +135,7 @@ const bookingSchema = new mongoose.Schema(
       default: "pending",
     },
     paymentMethod: { type: String },
+    paymentIntentId: { type: String }, // For Stripe payments
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },
@@ -217,15 +205,8 @@ bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ paymentStatus: 1, createdAt: -1 });
 bookingSchema.index({ checkIn: 1, status: 1 });
 bookingSchema.index({ hotelId: 1, checkIn: 1, checkOut: 1, status: 1 });
-// Optimized index for availability checks
-bookingSchema.index({
-  hotelId: 1,
-  status: 1,
-  checkIn: 1,
-  checkOut: 1,
-  'selectedRooms.id': 1,
-  'selectedCottages.id': 1
-});
+// Removed problematic indexes with array fields to prevent parallel array conflicts
+// Availability checking now relies on application logic and basic indexes
 
 // Additional required indexes
 bookingSchema.index({ hotelId: 1, status: 1, checkIn: 1, checkOut: 1 });

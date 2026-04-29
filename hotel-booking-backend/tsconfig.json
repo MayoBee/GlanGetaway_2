@@ -1,9 +1,9 @@
 {
+  "exclude": [
+    "scripts/add-temporary-resorts.ts"
+  ],
   "compilerOptions": {
     "outDir": "./dist",
-    "skipLibCheck": true,
-    "noImplicitAny": false,
-    "strict": false,
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */
     // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */

@@ -99,13 +99,69 @@ export const checkAvailability = async (
  * hotel, dates, and room/cottage IDs with status 'confirmed' or 'pending'.
  */
 export const createAtomicBooking = async (bookingData: BookingData): Promise<{ success: boolean; booking?: any; error?: string }> => {
-  const { hotelId, checkIn, checkOut, selectedRooms, selectedCottages } = bookingData;
+  const { hotelId, checkIn, checkOut, selectedItems } = bookingData;
+
+  console.log("🔍 Atomic Booking Debug - Input data:", {
+    hotelId,
+    checkIn,
+    checkOut,
+    selectedItems
+  });
+
+  // Extract room and cottage IDs from combined selectedItems
+  const roomIds = selectedItems?.filter(item => item.type === 'room').map(item => item.id) || [];
+  const cottageIds = selectedItems?.filter(item => item.type === 'cottage').map(item => item.id) || [];
+
+  console.log("🔍 Atomic Booking Debug - Extracted IDs:", {
+    roomIds,
+    cottageIds,
+    roomIdsLength: roomIds.length,
+    cottageIdsLength: cottageIds.length
+  });
   
-  // Extract room and cottage IDs
-  const roomIds = selectedRooms?.map((room: RoomSelection) => room.id) || [];
-  const cottageIds = selectedCottages?.map((cottage: CottageSelection) => cottage.id) || [];
+  // If no specific rooms or cottages are selected, allow the booking (entrance fee only)
+  if (roomIds.length === 0 && cottageIds.length === 0) {
+    console.log("🔍 Atomic Booking Debug - Creating entrance fee booking");
+    try {
+      // Create a booking object without selectedRooms/selectedCottages to avoid index conflicts
+      const { selectedRooms, selectedCottages, ...bookingDataWithoutArrays } = bookingData;
+      const entranceFeeBooking = {
+        ...bookingDataWithoutArrays,
+        selectedAmenities: bookingData.selectedAmenities || []
+      };
+
+      const booking = new Booking(entranceFeeBooking);
+      await booking.save();
+      console.log("🔍 Atomic Booking Debug - Entrance fee booking created successfully:", booking._id);
+      return { success: true, booking };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create entrance fee booking';
+      console.error("🔍 Atomic Booking Debug - Entrance fee booking failed:", errorMessage);
+      console.error("🔍 Atomic Booking Debug - Full error object:", error);
+
+      // Check for MongoDB validation errors
+      if (error && typeof error === 'object' && 'errors' in error) {
+        console.error("🔍 Atomic Booking Debug - Validation errors:", (error as any).errors);
+      }
+
+      // Check for duplicate key error
+      if (error && typeof error === 'object' && 'code' in error) {
+        console.error("🔍 Atomic Booking Debug - MongoDB error code:", (error as any).code);
+      }
+
+      // Check for name property if it's a custom error
+      if (error && typeof error === 'object' && 'name' in error) {
+        console.error("🔍 Atomic Booking Debug - Error name:", (error as any).name);
+      }
+
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
   
-  // Build the conflict detection query
+  // Build the conflict detection query for specific room/cottage bookings
   const conflictQuery: MongoQuery = {
     hotelId,
     status: { $in: ['confirmed', 'pending'] },

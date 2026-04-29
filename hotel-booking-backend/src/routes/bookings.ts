@@ -525,4 +525,94 @@ router.patch(
   })
 );
 
+// Check if payment intent is already used
+router.get(
+  "/check-payment-intent/:paymentIntentId",
+  verifyToken,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { paymentIntentId } = req.params;
+
+    try {
+      // Disable caching for this endpoint
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
+      console.log("=== PAYMENT INTENT CHECK DEBUG ===");
+      console.log("Payment Intent ID:", paymentIntentId);
+      console.log("Request from user:", req.userId);
+      
+      const existingBooking = await Booking.findOne({ paymentIntentId });
+      
+      console.log("Existing booking found:", !!existingBooking);
+      if (existingBooking) {
+        console.log("Booking ID:", existingBooking._id);
+        console.log("Hotel ID:", existingBooking.hotelId);
+        console.log("User ID:", existingBooking.userId);
+        console.log("Status:", existingBooking.status);
+        console.log("Created at:", existingBooking.createdAt);
+      }
+      
+      const response = {
+        exists: !!existingBooking,
+        bookingId: existingBooking?._id
+      };
+      
+      console.log("Response:", response);
+      console.log("=== END PAYMENT INTENT CHECK DEBUG ===");
+      
+      res.status(200).json(response);
+    } catch (error) {
+      console.error("Error checking payment intent:", error);
+      res.status(500).json({ message: "Error checking payment intent" });
+    }
+  })
+);
+
+// Temporary endpoint to clear problematic payment intent
+router.delete(
+  "/cleanup-payment-intent/:paymentIntentId",
+  verifyToken,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { paymentIntentId } = req.params;
+
+    try {
+      console.log("=== CLEANUP PAYMENT INTENT ===");
+      console.log("Payment Intent ID:", paymentIntentId);
+      console.log("Request from user:", req.userId);
+      
+      // Find and remove the payment intent from existing booking
+      const result = await Booking.updateOne(
+        { paymentIntentId },
+        { $unset: { paymentIntentId: "" } }
+      );
+      
+      console.log("Update result:", result);
+      console.log("=== END CLEANUP ===");
+      
+      res.status(200).json({
+        message: "Payment intent cleanup completed",
+        modifiedCount: result.modifiedCount
+      });
+    } catch (error) {
+      console.error("Error cleaning up payment intent:", error);
+      res.status(500).json({ message: "Error cleaning up payment intent" });
+    }
+  })
+);
+
+// Test endpoint to verify logging
+router.get(
+  "/test-logging",
+  verifyToken,
+  asyncHandler(async (req: Request, res: Response) => {
+    console.log("=== TEST LOGGING WORKING ===");
+    console.log("User ID:", req.userId);
+    console.log("Timestamp:", new Date().toISOString());
+    console.log("=== END TEST LOGGING ===");
+    
+    res.status(200).json({ message: "Logging test successful" });
+  })
+);
+
 export default router;

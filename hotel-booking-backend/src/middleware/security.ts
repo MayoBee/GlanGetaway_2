@@ -14,7 +14,7 @@ export const setupTrustProxy = (app: any) => {
 // Rate limiting - more lenient for payment endpoints
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Increased limit for general requests
+  max: 1000, // Increased limit for general requests (development)
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,

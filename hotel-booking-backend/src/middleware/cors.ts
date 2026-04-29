@@ -19,9 +19,15 @@ const parseAllowedOrigins = (): string[] => {
   
   // Development localhost origins (only added in development mode)
   if (process.env.NODE_ENV !== "production") {
+    // Use the frontend port from environment or default to 5174
+    const frontendPort = process.env.FRONTEND_URL?.match(/:(\d+)/)?.[1] || "5174";
     origins.push(
-      "http://localhost:5174",
-      "http://127.0.0.1:5174"
+      `http://localhost:${frontendPort}`,
+      `http://127.0.0.1:${frontendPort}`,
+      `http://localhost:5175`,
+      `http://127.0.0.1:5175`,
+      `http://localhost:5176`,
+      `http://127.0.0.1:5176`
     );
   }
   
