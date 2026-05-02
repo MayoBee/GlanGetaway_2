@@ -77,7 +77,7 @@ export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/amenity-slots/${selectedSlot._id}/book`,
         { bookingId },

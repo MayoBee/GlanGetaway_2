@@ -77,7 +77,7 @@ const EnhancedBookingForm = ({
   const search = useSearchContext();
   const { hotelId } = useParams();
   const navigate = useNavigate();
-  const { showToast } = useAppContext();
+  const { showToast, ensureValidToken } = useAppContext();
 
   // Use local state for form fields to prevent losing data
   const [phone, setPhone] = useState<string>("");
@@ -264,6 +264,13 @@ MM/YY: 12/35 CVC: 123`;
     if (paymentMethod === "gcash") {
       return;
     }
+    
+    // Check token validity before critical payment action
+    const isTokenValid = await ensureValidToken();
+    if (!isTokenValid) {
+      return; // User will be redirected to login
+    }
+    
     if (!stripe || !elements) {
       showToast({
         title: "Payment System Error",
@@ -305,7 +312,13 @@ MM/YY: 12/35 CVC: 123`;
     bookRoom(completeFormData);
   };
 
-  const onGCashSubmit = (paymentData: GCashPaymentData) => {
+  const onGCashSubmit = async (paymentData: GCashPaymentData) => {
+    // Check token validity before critical payment action
+    const isTokenValid = await ensureValidToken();
+    if (!isTokenValid) {
+      return; // User will be redirected to login
+    }
+    
     const formData = {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,

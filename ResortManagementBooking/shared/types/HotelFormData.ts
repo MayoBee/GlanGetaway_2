@@ -70,6 +70,9 @@ export interface HotelFormData {
     units: number;
     description?: string;
     imageUrl?: string;
+    imageFile?: File;
+    isFree?: boolean;
+    category?: string;
     isConfirmed?: boolean;
   }>;
 
@@ -85,6 +88,7 @@ export interface HotelFormData {
     description?: string;
     amenities?: string[];
     imageUrl?: string;
+    imageFile?: File;
     isConfirmed?: boolean;
   }>;
 
@@ -104,6 +108,7 @@ export interface HotelFormData {
     description?: string;
     amenities?: string[];
     imageUrl?: string;
+    imageFile?: File;
     isConfirmed?: boolean;
   }>;
 

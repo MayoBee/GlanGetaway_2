@@ -10,8 +10,8 @@ export const axiosInstance = axios.create({
 // Add request interceptor to include JWT token
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Check for both 'token' and 'session_id' to handle different auth implementations
-    const token = localStorage.getItem('token') || localStorage.getItem('session_id');
+    // Standardize on 'token' for consistency
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,17 +22,56 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle token refresh
+// Add response interceptor to handle token refresh and network errors
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Enhanced error classification
+    const isNetworkError = error.message?.includes('Failed to fetch') || 
+                          error.message?.includes('Network Error') ||
+                          error.code === 'ECONNREFUSED' ||
+                          error.message?.includes('ERR_CONNECTION_REFUSED') ||
+                          error.message?.includes('ERR_CONNECTION_RESET');
+    
+    const isCORS_ERROR = error.message?.includes('CORS') || 
+                        error.message?.includes('Access-Control');
+    
+    const isTimeoutError = error.code === 'ECONNABORTED' || 
+                          error.message?.includes('timeout');
+    
+    // Log error for debugging
+    console.warn('API request error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      type: isNetworkError ? 'Network' : isCORS_ERROR ? 'CORS' : isTimeoutError ? 'Timeout' : 'Server',
+      message: error.message,
+      status: error.response?.status,
+      code: error.code
+    });
+    
     if (error.response?.status === 401) {
-      // Token expired or invalid, clear local storage and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('session_id');
-      localStorage.removeItem('is_super_admin');
-      window.location.href = '/admin-login';
+      // Only clear tokens on actual 401, not on network/CORS issues
+      if (!isNetworkError && !isCORS_ERROR && !isTimeoutError) {
+        console.log('Clearing authentication data due to 401 error');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_email');
+        localStorage.removeItem('user_name');
+        localStorage.removeItem('user_role');
+        localStorage.removeItem('is_super_admin');
+        window.location.href = '/admin-login';
+      }
+      // Do NOT retry 401 errors - this is an anti-pattern without refresh tokens
+      return Promise.reject(error);
     }
+    
+    // Add retry logic only for network errors (5xx, timeouts, connection issues)
+    if (isNetworkError && !error.config.__retryCount) {
+      error.config.__retryCount = 1;
+      error.config.timeout = 10000; // 10 second timeout
+      return axiosInstance(error.config);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -40,30 +79,82 @@ axiosInstance.interceptors.response.use(
 // Auth functions
 export const signIn = async (formData: any) => {
   const response = await axiosInstance.post("/api/auth/sign-in", formData);
-  return response.data;
+  const data = response.data;
+
+  // Debug: Log response data to verify token presence
+  console.log('🔍 SignIn response data:', data);
+
+  // Store authentication data to localStorage for immediate UI state update
+  if (data) {
+    try {
+      // Store token (standardized on 'token' key)
+      if (data.token) {
+        console.log('🔍 Storing token to localStorage:', data.token);
+        localStorage.setItem('token', data.token);
+      } else {
+        console.log('🔍 No token field in response data');
+      }
+
+      // Store user data for persistence
+      if (data.userId || data.id) {
+        localStorage.setItem('user_id', data.userId || data.id);
+      }
+      if (data.user?.email) {
+        localStorage.setItem('user_email', data.user.email);
+      }
+      if (data.user?.firstName || data.user?.lastName) {
+        const name = [data.user?.firstName, data.user?.lastName].filter(Boolean).join(' ') || data.user?.email;
+        localStorage.setItem('user_name', name);
+      }
+      if (data.user?.role) {
+        localStorage.setItem('user_role', data.user.role);
+      }
+      console.log('🔍 Authentication data stored successfully');
+    } catch (storageError) {
+      console.error('🔍 Error storing authentication data to localStorage:', storageError);
+      throw new Error('Failed to store authentication data');
+    }
+  } else {
+    console.log('🔍 No data returned from sign-in response');
+  }
+  
+  return data;
 };
 
 export const signOut = async () => {
-  const response = await axiosInstance.post("/api/auth/sign-out");
-  return response.data;
+  try {
+    const response = await axiosInstance.post("/api/auth/sign-out");
+    
+    // Clear all authentication data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('is_super_admin');
+    
+    return response.data;
+  } catch (error) {
+    // Even if the API call fails, clear local storage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('is_super_admin');
+    
+    throw error;
+  }
 };
 
 export const validateToken = async () => {
-  try {
-    const response = await axiosInstance.get("/api/auth/validate-token");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axiosInstance.get("/api/auth/validate-token");
+  return response.data;
 };
 
 export const fetchCurrentUser = async () => {
-  try {
-    const response = await axiosInstance.get("/api/auth/me");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  const response = await axiosInstance.get("/api/auth/me");
+  return response.data;
 };
 
 export const getApiBaseUrl = () => API_BASE_URL;
@@ -213,7 +304,29 @@ export const createPaymentIntent = async (hotelId: string, downPaymentAmount: st
 // Register
 export const register = async (formData: any) => {
   const response = await axiosInstance.post("/api/users/register", formData);
-  return response.data;
+  const data = response.data;
+  
+  // Store authentication data to localStorage if registration includes auto-login
+  if (data && data.token) {
+    // Store token (standardized on 'token' key)
+    localStorage.setItem('token', data.token);
+    
+    // Store user data for persistence
+    if (data.userId || data.id) {
+      localStorage.setItem('user_id', data.userId || data.id);
+    }
+    if (data.email) {
+      localStorage.setItem('user_email', data.email);
+    }
+    if (data.name || data.firstName) {
+      localStorage.setItem('user_name', data.name || data.firstName);
+    }
+    if (data.role) {
+      localStorage.setItem('user_role', data.role);
+    }
+  }
+  
+  return data;
 };
 
 // Business Stats
@@ -323,6 +436,16 @@ export const clearAllStorage = () => {
       .replace(/^ +/, "")
       .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
   });
+};
+
+// Development utility to clear authentication data only
+export const clearAuthStorage = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('user_name');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('is_super_admin');
 };
 
 // Website Feedback API functions
@@ -752,7 +875,7 @@ export const updateResortStaff = async (staffId: string, staffData: {
 
 export const fetchResortStaff = async () => {
   const response = await axiosInstance.get("/api/resort-staff");
-  return response.data;
+  return response.data.data || [];
 };
 
 export const deleteResortStaff = async (staffId: string) => {

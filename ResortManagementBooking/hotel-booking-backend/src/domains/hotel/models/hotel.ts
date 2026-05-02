@@ -47,7 +47,6 @@ const PackageSchema = new mongoose.Schema({
   includedCottages: [{ type: String }],
   includedRooms: [{ type: String }],
   includedAmenities: [{ type: String }],
-  includedAdultEntranceFee: { type: Boolean, default: false },
   includedChildEntranceFee: { type: Boolean, default: false },
 }, { _id: false });
 
@@ -143,12 +142,6 @@ const hotelSchema = new mongoose.Schema<HotelType>(
     approvedAt: { type: Date },
     rejectionReason: { type: String },
     // Entrance fee fields
-    adultEntranceFee: {
-      dayRate: { type: Number, default: 0 },
-      nightRate: { type: Number, default: 0 },
-      pricingModel: { type: String, enum: ["per_head", "per_group"], default: "per_head" },
-      groupQuantity: { type: Number, default: 1 },
-    },
     childEntranceFee: [
       {
         id: { type: String, required: true },
@@ -171,6 +164,26 @@ const hotelSchema = new mongoose.Schema<HotelType>(
         message: 'GCash number must be 11 digits starting with 09 (e.g., 09XXXXXXXXX)'
       }
     },
+    // Staff management fields
+    staff: [{
+      staffUserId: { type: String, required: true },
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
+      email: { type: String, required: true },
+      position: { type: String, required: true },
+      department: { type: String, required: true },
+      role: { type: String, enum: ["user", "admin", "resort_owner", "front_desk", "housekeeping", "superAdmin"], required: true },
+      hireDate: { type: Date, required: true },
+      isActive: { type: Boolean, default: true },
+      mustChangePassword: { type: Boolean, default: false },
+      permissions: [{
+        canManageBookings: { type: Boolean, default: false },
+        canManageRooms: { type: Boolean, default: false },
+        canManagePricing: { type: Boolean, default: false },
+        canManageAmenities: { type: Boolean, default: false },
+        canViewReports: { type: Boolean, default: false },
+      }],
+    }],
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

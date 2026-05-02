@@ -64,7 +64,14 @@ const Register = () => {
         description: "Your account has been created successfully! Welcome to Glan Getaway.",
         type: "SUCCESS"
       });
-      await queryClient.invalidateQueries("validateToken");
+      
+      // Add delay to allow backend to process token
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force React Query to refetch authentication data
+      queryClient.invalidateQueries(["validateToken", "currentUser"]);
+      
+      // Navigate after token is processed
       navigate("/");
     },
     onError: (error: Error) => {
@@ -208,7 +215,13 @@ const Register = () => {
                     type="email"
                     className="pl-10 pr-3 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Enter your email"
-                    {...register("email", { required: "Email is required" })}
+                    {...register("email", { 
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Please enter a valid email address"
+                      }
+                    })}
                   />
                 </div>
                 {errors.email && (
@@ -293,6 +306,9 @@ const Register = () => {
                         value: 6,
                         message: "Password must be at least 6 characters",
                       },
+                      validate: {
+                        noSpaces: (value) => !/\s/.test(value) || "Password cannot contain spaces",
+                      }
                     })}
                   />
                   <Button

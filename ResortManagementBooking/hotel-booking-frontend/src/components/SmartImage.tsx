@@ -21,6 +21,14 @@ interface SmartImageProps {
 
 const DEFAULT_FALLBACK_IMAGE = '/placeholder-resort.jpg';
 
+// Enhanced fallback images for Unsplash failures
+const UNSPLASH_FALLBACKS = [
+  'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1571896349842-33c89424de5d?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&auto=format&fit=crop'
+];
+
 const SmartImage: React.FC<SmartImageProps> = ({
   src,
   alt,
@@ -60,6 +68,16 @@ const SmartImage: React.FC<SmartImageProps> = ({
     // Add fallback image as last resort if provided
     if (fallbackImageUrl && !sourcesArray.includes(fallbackImageUrl)) {
       sourcesArray.push(fallbackImageUrl);
+    }
+    
+    // Add Unsplash fallbacks if this looks like an Unsplash URL that might timeout
+    const hasUnsplashUrl = sourcesArray.some(src => src.includes('unsplash.com'));
+    if (hasUnsplashUrl) {
+      UNSPLASH_FALLBACKS.forEach(fallback => {
+        if (!sourcesArray.includes(fallback)) {
+          sourcesArray.push(fallback);
+        }
+      });
     }
     
     const apiBaseUrl = getApiBaseUrl();
@@ -154,7 +172,38 @@ const SmartImage: React.FC<SmartImageProps> = ({
       // Create test image to verify it loads
       const testImg = new Image();
       
+      // Set timeout for image loading (especially for Unsplash URLs)
+      const timeoutId = setTimeout(() => {
+        logImageEvent('LOAD_TIMEOUT', { 
+          source, 
+          sourceIndex, 
+          attemptCount,
+          timeout: 10000
+        });
+        
+        // For Unsplash URLs, move to next source immediately on timeout
+        if (source.includes('unsplash.com')) {
+          if (sourceIndex < sources.length - 1) {
+            tryNextSource(sourceIndex + 1, 0);
+          } else {
+            setIsLoading(false);
+            setHasError(true);
+            onError?.(new Error(`Unsplash image timeout: ${source}`));
+          }
+        } else if (attemptCount < maxRetries) {
+          // Retry non-Unsplash URLs
+          setTimeout(() => {
+            tryNextSource(sourceIndex, attemptCount + 1);
+          }, retryDelay * (attemptCount + 1));
+        } else {
+          setIsLoading(false);
+          setHasError(true);
+          onError?.(new Error(`Image timeout after ${maxRetries} retries: ${source}`));
+        }
+      }, 10000); // 10 second timeout
+      
       testImg.onload = () => {
+        clearTimeout(timeoutId);
         logImageEvent('LOAD_SUCCESS', { 
           source, 
           sourceIndex, 
@@ -167,6 +216,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
       };
       
       testImg.onerror = (error) => {
+        clearTimeout(timeoutId);
         logImageEvent('LOAD_ERROR', { 
           source, 
           sourceIndex, 

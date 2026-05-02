@@ -193,6 +193,30 @@ const MyBookings = () => {
     }
   };
 
+  // Check if booking is within 8-hour modification window
+  const isWithinModificationWindow = (booking: BookingType): boolean => {
+    const bookingCreatedAt = new Date(booking.createdAt || booking.checkIn);
+    const now = new Date();
+    const timeDifference = now.getTime() - bookingCreatedAt.getTime();
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+    
+    return hoursDifference <= 8;
+  };
+
+  const getModificationTooltip = (booking: BookingType): string => {
+    const bookingCreatedAt = new Date(booking.createdAt || booking.checkIn);
+    const now = new Date();
+    const timeDifference = now.getTime() - bookingCreatedAt.getTime();
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+    const hoursRemaining = Math.max(0, 8 - hoursDifference);
+    
+    if (hoursDifference >= 8) {
+      return "Booking modifications are only allowed within 8 hours of booking creation.";
+    }
+    
+    return `Modifications allowed for ${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m more`;
+  };
+
   const handleEdit = (booking: BookingType, hotel: any) => {
     // Navigate to resort detail page with booking data for editing
     navigate(`/detail/${hotel._id}`, {
@@ -374,13 +398,15 @@ const MyBookings = () => {
                                 {deletingBookingId === booking._id ? "Deleting..." : "Delete"}
                               </Button>
                             )}
-                            {/* Edit button - only show for pending/unconfirmed bookings */}
+                            {/* Edit button - only show for pending/unconfirmed bookings within 8-hour window */}
                             {(booking.status === "pending" || !booking.status) && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleEdit(booking, hotel)}
-                                className="ml-2"
+                                disabled={!isWithinModificationWindow(booking)}
+                                className={`ml-2 ${!isWithinModificationWindow(booking) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title={getModificationTooltip(booking)}
                               >
                                 <Edit className="w-4 h-4 mr-1" />
                                 Edit

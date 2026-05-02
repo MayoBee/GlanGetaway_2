@@ -16,7 +16,7 @@ import {
   csrfMiddleware,
   getCsrfToken
 } from "./middleware/security";
-
+import { applyComplianceMiddleware } from "./middleware/compliance";
 import { mountRoutes } from "./routes";
 import { featureFlagMiddleware } from "./middleware/feature-flag";
 import { metrics } from "./core/metrics";
@@ -116,6 +116,7 @@ export const createAndConfigureApp = () => {
   app.use(securityMiddleware);
   setupTrustProxy(app);
   setupRateLimiting(app);
+  applyComplianceMiddleware(app);
   
   app.use(compression());
   app.use(morgan("combined"));

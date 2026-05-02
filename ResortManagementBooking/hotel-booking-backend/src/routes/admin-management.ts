@@ -83,6 +83,19 @@ router.put("/promote-to-admin/:userId", verifyToken, [
       return res.status(400).json({ message: "Cannot modify Admin role" });
     }
 
+    // Check if user has an approved resort owner application
+    const approvedApplication = await RolePromotionRequest.findOne({
+      userId: userId,
+      status: 'approved'
+    });
+
+    if (!approvedApplication) {
+      return res.status(400).json({ 
+        message: "User must have an approved resort owner application before promotion",
+        requiresApplication: true
+      });
+    }
+
     const oldRole = user.role || "user";
     user.set("role", "resort_owner");
     await user.save();

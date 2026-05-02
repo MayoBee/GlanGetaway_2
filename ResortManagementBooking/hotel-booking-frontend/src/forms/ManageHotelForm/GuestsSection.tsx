@@ -21,8 +21,6 @@ const GuestsSection = () => {
   const isInitializingRef = useRef(false);
   const confirmedAgeGroupsRef = useRef<Set<string>>(new Set());
 
-  const adultPricingModel = watch("adultEntranceFee.pricingModel");
-
   const handleAddChildAgeGroup = () => {
     const newAgeGroupId = `ageGroup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     append({
@@ -87,114 +85,6 @@ const GuestsSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Adult Entrance Fee Section */}
-      <div className="bg-gray-100 p-6 rounded-lg">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">Adult Entrance Fee</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Day Rate */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Day Rate (₱)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                {...register("adultEntranceFee.dayRate", {
-                  required: "Day rate is required",
-                  min: { value: 0, message: "Rate must be positive" },
-                  valueAsNumber: true,
-                })}
-              />
-            </div>
-            {errors.adultEntranceFee?.dayRate && (
-              <span className="text-red-500 text-sm">
-                {errors.adultEntranceFee.dayRate.message}
-              </span>
-            )}
-          </div>
-
-          {/* Night Rate */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Night Rate (₱)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                {...register("adultEntranceFee.nightRate", {
-                  required: "Night rate is required",
-                  min: { value: 0, message: "Rate must be positive" },
-                  valueAsNumber: true,
-                })}
-              />
-            </div>
-            {errors.adultEntranceFee?.nightRate && (
-              <span className="text-red-500 text-sm">
-                {errors.adultEntranceFee.nightRate.message}
-              </span>
-            )}
-          </div>
-
-          {/* Pricing Model */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Pricing Model
-            </label>
-            <select
-              className="w-full border rounded px-3 py-2 font-normal"
-              {...register("adultEntranceFee.pricingModel", {
-                required: "Pricing model is required",
-              })}
-            >
-              <option value="per_head">Per Head</option>
-              <option value="per_group">Per Group</option>
-            </select>
-            {errors.adultEntranceFee?.pricingModel && (
-              <span className="text-red-500 text-sm">
-                {errors.adultEntranceFee.pricingModel.message}
-              </span>
-            )}
-          </div>
-
-          {/* Group Quantity (only shown when per_group is selected) */}
-          {adultPricingModel === "per_group" && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Group Quantity
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="1"
-                  className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                  {...register("adultEntranceFee.groupQuantity", {
-                    required: "Group quantity is required for group pricing",
-                    min: { value: 1, message: "Group quantity must be at least 1" },
-                    valueAsNumber: true,
-                  })}
-                />
-              </div>
-              {errors.adultEntranceFee?.groupQuantity && (
-                <span className="text-red-500 text-sm">
-                  {errors.adultEntranceFee.groupQuantity.message}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Child Entrance Fee Section */}
       <div className="bg-gray-100 p-6 rounded-lg">

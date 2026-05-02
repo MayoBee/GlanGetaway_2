@@ -263,6 +263,58 @@ router.delete("/:staffId", verifyToken, requireRole(["resort_owner"]), async (re
   }
 });
 
+// Toggle staff status (activate/deactivate)
+router.patch("/:staffId/toggle-status", verifyToken, requireRole(["resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { staffId } = req.params;
+    const ownerUserId = req.userId;
+
+    // Find the staff user
+    const staffUser = await User.findById(staffId);
+    if (!staffUser) {
+      return res.status(404).json({ success: false, message: "Staff member not found" });
+    }
+
+    // Check if this staff is assigned to any of the owner's resorts
+    const ownerResorts = await Hotel.find({ 
+      userId: ownerUserId,
+      "staff.staffUserId": staffId 
+    });
+
+    if (ownerResorts.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Staff member is not assigned to your resorts" 
+      });
+    }
+
+    // Toggle user status
+    staffUser.isActive = !staffUser.isActive;
+    await staffUser.save();
+
+    // Update staff status in all owner's resorts
+    await Hotel.updateMany(
+      { 
+        userId: ownerUserId,
+        "staff.staffUserId": staffId 
+      },
+      { $set: { "staff.$.isActive": staffUser.isActive } }
+    );
+
+    res.json({
+      success: true,
+      message: `Staff member ${staffUser.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: {
+        staffId: staffUser._id,
+        isActive: staffUser.isActive
+      }
+    });
+  } catch (error) {
+    console.error("Error toggling staff status:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 // Get resorts assigned to current front desk user
 router.get("/assigned-resorts", verifyToken, requireRole(["front_desk", "housekeeping"]), async (req: Request, res: Response) => {
   try {

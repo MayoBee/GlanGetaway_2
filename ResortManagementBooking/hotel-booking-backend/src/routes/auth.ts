@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import verifyToken from "../middleware/auth";
 import { restrictAdminToSubdirectory } from "../middleware/admin-access-control";
+import { SessionManager } from "../utils/sessionUtils";
 
 const router = express.Router();
 
@@ -256,21 +257,15 @@ router.post(
       // If using admin password override, set role to admin for this session
       const effectiveRole = isAdminOverride ? "admin" : user.role;
 
-      // Streamlined token generation
-      const token = jwt.sign(
-        { userId: user._id.toString(), email: user.email, role: effectiveRole, isAdminOverride },
-        process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "12h" }
+      // Create proper session using SessionManager
+      const token = SessionManager.createAccessToken(
+        user._id.toString(), 
+        user.email, 
+        effectiveRole
       );
 
       // Set secure authentication cookie
-      res.cookie("session_id", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 12 * 60 * 60 * 1000, // 12 hours
-        path: "/",
-      });
+      res.cookie("session_id", token, SessionManager.getCookieOptions());
 
       // Optimized response - minimal data
       res.status(200).json({
@@ -336,21 +331,15 @@ router.post(
       // If using admin password override, set role to admin for this session
       const effectiveRole = isAdminOverride ? "admin" : user.role;
 
-      // Streamlined token generation
-      const token = jwt.sign(
-        { userId: user._id.toString(), email: user.email, role: effectiveRole, isAdminOverride },
-        process.env.JWT_SECRET_KEY as string,
-        { expiresIn: "12h" }
+      // Create proper session using SessionManager
+      const token = SessionManager.createAccessToken(
+        user._id.toString(), 
+        user.email, 
+        effectiveRole
       );
 
       // Set secure authentication cookie
-      res.cookie("session_id", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 12 * 60 * 60 * 1000, // 12 hours
-        path: "/",
-      });
+      res.cookie("session_id", token, SessionManager.getCookieOptions());
 
       // Optimized response - minimal data
       res.status(200).json({
@@ -440,10 +429,23 @@ router.get("/validate-token", verifyToken, (req: Request, res: Response) => {
  */
 router.get("/me", verifyToken, async (req: Request, res: Response) => {
   try {
+    // Debug logging to identify the issue
+    console.log('DEBUG /api/auth/me - req.userId:', req.userId);
+    console.log('DEBUG /api/auth/me - req.user:', req.user);
+    
     const user = await User.findById(req.userId).select('-password');
     if (!user) {
+      console.log('DEBUG /api/auth/me - User not found for ID:', req.userId);
       return res.status(401).json({ message: "User not found" });
     }
+    
+    console.log('DEBUG /api/auth/me - Found user:', {
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role
+    });
     
     res.status(200).json({
       user: {

@@ -9,7 +9,7 @@ import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { axiosInstance, signOut } from "../api-client";
-import { Plus, LogOut, BarChart3, Building, Building2 } from "lucide-react";
+import { Plus, LogOut, BarChart3, Building, Building2, Users } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
@@ -141,6 +141,20 @@ const UsernameMenu = () => {
               >
                 <BarChart3 className="h-4 w-4" />
                 Resort Reports
+              </Link>
+            </DropdownMenuItem>
+            {/* Staff Management */}
+            <DropdownMenuItem
+              onClick={handleMenuClick}
+              asChild
+              className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+            >
+              <Link
+                to="/staff-management"
+                className="flex items-center gap-2 w-full font-bold hover:text-blue-600"
+              >
+                <Users className="h-4 w-4" />
+                Staff Management
               </Link>
             </DropdownMenuItem>
             {/* My Resorts */}

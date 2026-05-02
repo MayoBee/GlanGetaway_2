@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { cancelAllRequests, isRequestCanceled } from "../../lib/auth-api-client";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { axiosInstance } from "../../lib/auth-api-client";
@@ -16,10 +17,11 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import SmartImage from "../../components/SmartImage";
-import { Loader2, Eye, CheckCircle, XCircle, Calendar, User, MapPin, Star } from "lucide-react";
+import { Loader2, Eye, CheckCircle, XCircle, Calendar, User, MapPin, Star, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 const ResortApproval: React.FC = () => {
+  const navigate = useNavigate();
   const { isAdmin } = useAdminBypass();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -155,8 +157,20 @@ const ResortApproval: React.FC = () => {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Resort Approval Management</h1>
-        <p className="text-gray-600">Review and approve resort submissions from administrators</p>
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Exit
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Resort Approval Management</h1>
+            <p className="text-gray-600">Review and approve resort submissions from administrators</p>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -427,4 +441,3 @@ const ResortApproval: React.FC = () => {
 };
 
 export default ResortApproval;
-

@@ -36,7 +36,7 @@ const AutoLogin = () => {
         });
 
         if (validateResponse.data && validateResponse.data.userId) {
-          localStorage.setItem("session_id", token);
+          localStorage.setItem("token", token);
 
           try {
             const userResponse = await axiosInstance.get("/api/users/me", {
@@ -48,7 +48,9 @@ const AutoLogin = () => {
             const userInfo: UserInfo = userResponse.data;
             localStorage.setItem("user_id", userInfo.id || "");
             localStorage.setItem("user_email", userInfo.email || "");
-            if (userInfo.name) localStorage.setItem("user_name", userInfo.name);
+            // Always store combined name for display, fallback to email
+            const name = [userInfo.firstName, userInfo.lastName].filter(Boolean).join(" ") || userInfo.email;
+            localStorage.setItem("user_name", name);
             if (userInfo.firstName) localStorage.setItem("user_firstName", userInfo.firstName);
             if (userInfo.lastName) localStorage.setItem("user_lastName", userInfo.lastName);
             if (userInfo.role) localStorage.setItem("user_role", userInfo.role);

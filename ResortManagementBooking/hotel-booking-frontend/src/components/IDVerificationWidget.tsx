@@ -46,7 +46,7 @@ export const IDVerificationWidget: React.FC<IDVerificationWidgetProps> = ({
     setStep("uploading");
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
 
       // Submit verification
       const response = await axios.post(

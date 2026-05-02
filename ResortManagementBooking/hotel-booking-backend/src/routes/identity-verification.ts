@@ -4,7 +4,7 @@ import IdentityVerification from "../models/identity-verification";
 import Booking from "../models/booking";
 import User from "../models/user";
 import { v2 as cloudinary } from "cloudinary";
-import { UserRole } from "../../../packages/shared/types";
+import { UserRole } from "../../../shared/types";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -32,7 +32,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await User.findById(req.userId);
-    if (!user || (user.role !== UserRole.Admin && user.role !== UserRole.SuperAdmin)) {
+    if (!user || (user.role !== "admin" && user.role !== "superAdmin")) {
       return res.status(403).json({ message: "Admin privileges required" });
     }
     next();

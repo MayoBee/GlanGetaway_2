@@ -1,21 +1,35 @@
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import useSearchContext from "../hooks/useSearchContext";
-import { useQueryWithLoading } from "../hooks/useLoadingHooks";
+import { useQuery } from "react-query";
 import { searchHotels } from "../api-client";
-import { useEffect, useState } from "react";
-import SearchResultsCard from "../components/SearchResultsCard";
-import { TreePalm } from "lucide-react";
-import Pagination from "../components/Pagination";
+import { HotelType } from "../../../shared/types";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import SearchResultCard from "../components/SearchResultsCard";
+import {
+  Search as SearchIcon,
+  Filter,
+  ChevronDown,
+  X,
+} from "lucide-react";
+import SearchBar from "../components/SearchBar";
 import StarRatingFilter from "../components/StarRatingFilter";
 import HotelTypesFilter from "../components/HotelTypesFilter";
 import FacilitiesFilter from "../components/FacilitiesFilter";
 import PriceFilter from "../components/PriceFilter";
-import SearchBar from "../components/SearchBar";
+import SearchResultCardSkeleton from "../components/SearchResultCardSkeleton";
 
 const Search = () => {
   const [urlSearchParams] = useSearchParams();
   const search = useSearchContext();
   const [page, setPage] = useState<number>(1);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [stars, setStars] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>([]);
+  const [facilities, setFacilities] = useState<string[]>([]);
+  const [maxPrice, setMaxPrice] = useState<number>(0);
+  const [sortOption, setSortOption] = useState<string>("");
 
   // Sync URL params to search context when navigating with query string (e.g. Hotels nav link)
   useEffect(() => {
@@ -34,11 +48,6 @@ const Search = () => {
       );
     }
   }, [urlSearchParams.toString()]);
-  const [selectedStars, setSelectedStars] = useState<string[]>([]);
-  const [selectedHotelTypes, setSelectedHotelTypes] = useState<string[]>([]);
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
-  const [selectedPrice, setSelectedPrice] = useState<number | undefined>();
-  const [sortOption, setSortOption] = useState<string>("");
 
   const searchParams = {
     destination: search.destination?.trim() || "",
@@ -47,25 +56,22 @@ const Search = () => {
     adultCount: search.adultCount.toString(),
     childCount: search.childCount.toString(),
     page: page.toString(),
-    stars: selectedStars,
-    types: selectedHotelTypes,
-    facilities: selectedFacilities,
-    maxPrice: selectedPrice?.toString(),
+    stars: stars,
+    types: types,
+    facilities: facilities,
+    maxPrice: maxPrice.toString(),
     sortOption,
   };
 
-  const { data: hotelData } = useQueryWithLoading(
+  const { data: hotelData, isLoading } = useQuery(
     ["searchHotels", searchParams],
-    () => searchHotels(searchParams),
-    {
-      loadingMessage: "Searching for perfect hotels...",
-    }
+    () => searchHotels(searchParams)
   );
 
   const handleStarsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const starRating = event.target.value;
 
-    setSelectedStars((prevStars) =>
+    setStars((prevStars) =>
       event.target.checked
         ? [...prevStars, starRating]
         : prevStars.filter((star) => star !== starRating)
@@ -77,7 +83,7 @@ const Search = () => {
   ) => {
     const hotelType = event.target.value;
 
-    setSelectedHotelTypes((prevHotelTypes) =>
+    setTypes((prevHotelTypes) =>
       event.target.checked
         ? [...prevHotelTypes, hotelType]
         : prevHotelTypes.filter((hotel) => hotel !== hotelType)
@@ -87,7 +93,7 @@ const Search = () => {
   const handleFacilityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const facility = event.target.value;
 
-    setSelectedFacilities((prevFacilities) =>
+    setFacilities((prevFacilities) =>
       event.target.checked
         ? [...prevFacilities, facility]
         : prevFacilities.filter((prevFacility) => prevFacility !== facility)
@@ -95,139 +101,187 @@ const Search = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Modify Your Search
-        </h2>
-        <SearchBar />
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Filter Bar - Fixed Bottom */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="p-4">
+          <Button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between h-12 min-h-[44px]"
+            variant="outline"
+            size="lg"
+          >
+            <span className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              <span className="font-medium">Filters</span>
+              {(stars.length > 0 || types.length > 0 || facilities.length > 0 || maxPrice > 0) && (
+                <Badge variant="secondary" className="ml-1">
+                  {stars.length + types.length + facilities.length + (maxPrice > 0 ? 1 : 0)}
+                </Badge>
+              )}
+            </span>
+            <ChevronDown
+              className={`w-5 h-5 transition-transform ${
+                showMobileFilters ? "rotate-180" : ""
+              }`}
+            />
+          </Button>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5">
-        <div className="rounded-lg border border-slate-300 p-5 h-fit lg:sticky lg:top-10 order-2 lg:order-1">
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold border-b border-slate-300 pb-5">
-              Filter by:
-            </h3>
-            <StarRatingFilter
-              selectedStars={selectedStars}
-              onChange={handleStarsChange}
-            />
-            <HotelTypesFilter
-              selectedHotelTypes={selectedHotelTypes}
-              onChange={handleHotelTypeChange}
-            />
-            <FacilitiesFilter
-              selectedFacilities={selectedFacilities}
-              onChange={handleFacilityChange}
-            />
-            <PriceFilter
-              selectedPrice={selectedPrice}
-              onChange={(value?: number) => setSelectedPrice(value)}
-            />
+      {/* Mobile Filter Drawer */}
+      {showMobileFilters && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowMobileFilters(false)}
+          />
+          {/* Filter Panel */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[70vh] overflow-y-auto">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Filters</h3>
+                <Button
+                  onClick={() => setShowMobileFilters(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-[44px] min-w-[44px]"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <StarRatingFilter
+                  selectedStars={stars}
+                  onChange={handleStarsChange}
+                />
+                <HotelTypesFilter
+                  selectedHotelTypes={types}
+                  onChange={handleHotelTypeChange}
+                />
+                <FacilitiesFilter
+                  selectedFacilities={facilities}
+                  onChange={handleFacilityChange}
+                />
+                <PriceFilter
+                  selectedPrice={maxPrice || undefined}
+                  onChange={(value) => setMaxPrice(value || 0)}
+                />
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex flex-col gap-5 order-1 lg:order-2">
-          <div className="flex justify-between items-center">
-            <span className="text-xl font-bold">
-              {hotelData?.pagination.total} Resorts found
-              {search.destination ? ` in ${search.destination}` : " (showing all resorts)"}
-            </span>
-            <select
-              value={sortOption}
-              onChange={(event) => setSortOption(event.target.value)}
-              className="p-2 border rounded-md"
-            >
-              <option value="">Sort By</option>
-              <option value="starRating">Star Rating</option>
-              <option value="pricePerNightAsc">
-                Price Per Night (low to high)
-              </option>
-              <option value="pricePerNightDesc">
-                Price Per Night (high to low)
-              </option>
-            </select>
+      )}
+
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 pb-20 md:pb-0">
+        {/* Filters Sidebar - Desktop Only */}
+        <div className="hidden lg:block">
+          <div className="sticky top-4 space-y-6">
+            <div className="space-y-4">
+              <StarRatingFilter
+                selectedStars={stars}
+                onChange={handleStarsChange}
+              />
+              <HotelTypesFilter
+                selectedHotelTypes={types}
+                onChange={handleHotelTypeChange}
+              />
+              <FacilitiesFilter
+                selectedFacilities={facilities}
+                onChange={handleFacilityChange}
+              />
+              <PriceFilter
+                selectedPrice={maxPrice || undefined}
+                onChange={(value) => setMaxPrice(value || 0)}
+              />
+            </div>
           </div>
-          {hotelData?.data.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <div className="text-gray-400 mb-4">
-  <TreePalm className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+        </div>
+
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg shadow-sm border p-4">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Modify Your Search
+          </h2>
+          <SearchBar />
+        </div>
+
+        {/* Search Results */}
+        <div className="px-4 sm:px-0">
+          {isLoading ? (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Loading skeleton cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {[...Array(6)].map((_, index) => (
+                  <SearchResultCardSkeleton key={index} />
+                ))}
               </div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No resorts found
-              </h3>
-              <p className="text-gray-500 max-w-md">
-                {search.destination ? (
-                  <>
-                    We couldn't find any resorts in {" "}
-                    <span className="font-medium">{search.destination}</span>
-                    {selectedStars.length > 0 && (
-                      <>
-                        {" "}
-                        with {selectedStars.length === 1 ? "a" : ""}{" "}
-                        {selectedStars.join(", ")} star rating
-                      </>
-                    )}
-                    {selectedPrice && <> under ₱{selectedPrice} per night</>}.
-                  </>
-                ) : (
-                  <>
-                    We couldn't find any resorts matching your criteria
-                    {selectedStars.length > 0 && (
-                      <>
-                        {" "}
-                        with {selectedStars.length === 1 ? "a" : ""}{" "}
-                        {selectedStars.join(", ")} star rating
-                      </>
-                    )}
-                    {selectedPrice && <> under ₱{selectedPrice} per night</>}.
-                    {!selectedStars.length && !selectedPrice && (
-                      <> Try adding some resorts to the database first.</>
-                    )}
-                  </>
-                )}
-              </p>
-              <div className="mt-6 space-y-2 text-sm text-gray-400">
-                <p>
-                  Try adjusting your filters or search for a different
-                  destination.
+            </div>
+          ) : hotelData?.data?.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <div className="max-w-md mx-auto">
+                <div className="mb-6">
+                  <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                    <SearchIcon className="w-12 h-12 text-gray-400" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No Results Found
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  We couldn't find any resorts matching your criteria. Try adjusting your filters or search parameters.
                 </p>
-                {selectedStars.length > 0 ||
-                selectedHotelTypes.length > 0 ||
-                selectedFacilities.length > 0 ||
-                selectedPrice ? (
-                  <button
+                <div className="space-y-3">
+                  <Button
                     onClick={() => {
-                      setSelectedStars([]);
-                      setSelectedHotelTypes([]);
-                      setSelectedFacilities([]);
-                      setSelectedPrice(undefined);
-                      setSortOption("");
+                      setStars([]);
+                      setTypes([]);
+                      setFacilities([]);
+                      setMaxPrice(0);
                     }}
-                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    variant="outline"
+                    className="w-full sm:w-auto min-h-[44px]"
                   >
-                    Clear all filters
-                  </button>
-                ) : null}
+                    Clear All Filters
+                  </Button>
+                  <Button
+                    onClick={() => window.location.reload()}
+                    className="w-full sm:w-auto min-h-[44px]"
+                  >
+                    Refresh Search
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
-            <>
-              {hotelData?.data.map(
-                (hotel: import("../../../shared/types").HotelType) => (
-                  <SearchResultsCard key={hotel._id} hotel={hotel} />
-                )
-              )}
-              <div>
-                <Pagination
-                  page={hotelData?.pagination.page || 1}
-                  pages={hotelData?.pagination.pages || 1}
-                  onPageChange={(page) => setPage(page)}
-                />
+            <div className="space-y-4">
+              {/* Results Count */}
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  {hotelData?.data?.length} resorts found
+                </p>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+                >
+                  <option value="">Sort by</option>
+                  <option value="pricePerNightAsc">Price: Low to High</option>
+                  <option value="pricePerNightDesc">Price: High to Low</option>
+                  <option value="starRatingAsc">Star Rating: Low to High</option>
+                  <option value="starRatingDesc">Star Rating: High to Low</option>
+                </select>
               </div>
-            </>
+
+              {/* Hotel Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {hotelData?.data?.map((hotel: HotelType) => (
+                  <SearchResultCard hotel={hotel} key={hotel._id} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

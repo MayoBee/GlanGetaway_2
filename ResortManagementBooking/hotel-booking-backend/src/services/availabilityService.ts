@@ -30,6 +30,10 @@ interface BookingData {
   selectedCottages?: Array<{ id: string; [key: string]: any }>;
 }
 
+interface TransactionOptions {
+  session?: any;
+}
+
 interface RoomSelection {
   id: string;
   units?: number;
@@ -98,7 +102,8 @@ export const checkAvailability = async (
  * Logic: Insert booking ONLY IF no conflicting booking exists for the same
  * hotel, dates, and room/cottage IDs with status 'confirmed' or 'pending'.
  */
-export const createAtomicBooking = async (bookingData: BookingData): Promise<{ success: boolean; booking?: any; error?: string }> => {
+export const createAtomicBooking = async (bookingData: BookingData, options?: TransactionOptions): Promise<{ success: boolean; booking?: any; error?: string }> => {
+  const session = options?.session;
   const { hotelId, checkIn, checkOut, selectedRooms, selectedCottages } = bookingData;
   
   // Extract room and cottage IDs
@@ -146,7 +151,8 @@ export const createAtomicBooking = async (bookingData: BookingData): Promise<{ s
       { 
         new: true, 
         upsert: true, // Create if not found (which it never will be due to the query)
-        runValidators: true 
+        runValidators: true,
+        session: session
       }
     );
     
@@ -155,7 +161,11 @@ export const createAtomicBooking = async (bookingData: BookingData): Promise<{ s
     } else {
       // This shouldn't happen with upsert, but handle it
       const booking = new Booking(bookingData);
-      await booking.save();
+      if (session) {
+        await booking.save({ session });
+      } else {
+        await booking.save();
+      }
       return { success: true, booking };
     }
   } catch (error: unknown) {

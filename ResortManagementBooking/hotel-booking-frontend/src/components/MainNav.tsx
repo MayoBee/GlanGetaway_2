@@ -21,7 +21,7 @@ import { getHotelsSearchUrl } from "../lib/nav-utils";
 const NAV_AUTH_WIDTH = "min-w-[120px]";
 
 const navLinkClass =
-  "flex items-center text-gray-800 hover:text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-all duration-200";
+  "flex items-center text-gray-800 hover:text-gray-900 px-4 py-3 rounded-lg font-medium hover:bg-gray-100 transition-all duration-200 min-h-[44px] active:scale-[0.98]";
 
 const MainNav = () => {
   const { isLoggedIn } = useAppContext();
@@ -43,9 +43,9 @@ const MainNav = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className={`${navLinkClass} flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-primary-600 rounded-lg`}
+              className={`${navLinkClass} flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-primary-600 rounded-lg`}
             >
-              Management
+              <span>Management</span>
               <ChevronDown className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
@@ -81,9 +81,9 @@ const MainNav = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className={`${navLinkClass} flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-primary-600 rounded-lg`}
+            className={`${navLinkClass} flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-primary-600 rounded-lg`}
           >
-            API
+            <span>API</span>
             <ChevronDown className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
@@ -116,7 +116,7 @@ const MainNav = () => {
           <Link to="/sign-in">
             <Button
               variant="ghost"
-              className="font-bold bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 border-2 border-white/80"
+              className="font-bold bg-white text-primary-600 hover:bg-primary-50 hover:text-primary-700 border-2 border-white/80 h-10 min-h-[44px] px-4 active:scale-[0.98]"
             >
               Log In
             </Button>

@@ -35,7 +35,7 @@ const AuthCallback = () => {
     }
 
     if (token && userId) {
-      localStorage.setItem("session_id", token);
+      localStorage.setItem("token", token);
       localStorage.setItem("user_id", userId);
       if (email) localStorage.setItem("user_email", email);
       const name = [firstName, lastName].filter(Boolean).join(" ") || email;

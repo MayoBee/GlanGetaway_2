@@ -495,6 +495,21 @@ router.patch(
       return res.status(400).json({ message: "This is not a GCash booking" });
     }
 
+    // CRITICAL: Check for duplicate reference numbers when verifying
+    if (status === "verified" && booking.gcashPayment?.referenceNumber) {
+      const existingPayment = await Booking.findOne({
+        _id: { $ne: bookingId }, // Exclude current booking
+        'gcashPayment.referenceNumber': booking.gcashPayment.referenceNumber,
+        'gcashPayment.status': 'verified'
+      });
+      
+      if (existingPayment) {
+        return res.status(400).json({ 
+          message: "This GCash reference number has already been used for another booking" 
+        });
+      }
+    }
+
     // Update GCash payment status
     if (booking.gcashPayment) {
       booking.gcashPayment.status = status === "verified" ? "verified" : "rejected";

@@ -2,9 +2,110 @@ import React, { useState, useEffect, useRef } from "react";
 import { HotelFormData } from "../../types/HotelFormData";
 import { HotelType } from "../../types";
 import ImageUpload from "../../components/ImageUpload";
-import { Bed, Home, Coffee, Package, Plus, X, Users, FileText } from "lucide-react";
-import SmartImage from "../../../hotel-booking-frontend/src/components/SmartImage";
+import { Bed, Home, Coffee, Package, Plus, X, Users, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import SmartImage from "../../components/SmartImage";
 import { filterValidImageUrls } from "../../utils/imageUtils";
+
+// Form validation types
+interface ValidationRule {
+  validate: (value: any) => boolean;
+  message: string;
+  type?: 'error' | 'warning';
+}
+
+interface FieldValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  showValidation: boolean;
+}
+
+// Validation rules
+const validationRules = {
+  required: (message = 'This field is required'): ValidationRule => ({
+    validate: (value) => value && String(value).trim().length > 0,
+    message,
+    type: 'error'
+  }),
+  
+  minLength: (min: number, message?: string): ValidationRule => ({
+    validate: (value) => !value || String(value).length >= min,
+    message: message || `Must be at least ${min} characters`,
+    type: 'error'
+  }),
+  
+  maxLength: (max: number, message?: string): ValidationRule => ({
+    validate: (value) => !value || String(value).length <= max,
+    message: message || `Must be no more than ${max} characters`,
+    type: 'error'
+  }),
+  
+  numeric: (message = 'Please enter a valid number'): ValidationRule => ({
+    validate: (value) => !value || !isNaN(Number(value)),
+    message,
+    type: 'error'
+  }),
+  
+  positiveNumber: (message = 'Please enter a positive number'): ValidationRule => ({
+    validate: (value) => !value || Number(value) > 0,
+    message,
+    type: 'error'
+  }),
+  
+  email: (message = 'Please enter a valid email address'): ValidationRule => ({
+    validate: (value) => {
+      if (!value) return true;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(value);
+    },
+    message,
+    type: 'error'
+  }),
+  
+  phone: (message = 'Please enter a valid phone number'): ValidationRule => ({
+    validate: (value) => {
+      if (!value) return true;
+      const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+      return phoneRegex.test(value) && value.replace(/\D/g, '').length >= 10;
+    },
+    message,
+    type: 'error'
+  })
+};
+
+// Validation Message Component
+const ValidationMessage: React.FC<{ message?: string; type?: 'error' | 'success' | 'warning'; className?: string }> = ({
+  message,
+  type = 'error',
+  className
+}) => {
+  if (!message) return null;
+
+  const baseStyles = "flex items-center gap-2 text-sm mt-1 transition-all duration-200";
+  const typeStyles = {
+    error: "text-red-600",
+    success: "text-green-600", 
+    warning: "text-yellow-600"
+  };
+
+  const icons = {
+    error: <AlertCircle className="h-4 w-4" />,
+    success: <CheckCircle className="h-4 w-4" />,
+    warning: <AlertCircle className="h-4 w-4" />
+  };
+
+  return (
+    <div className={`${baseStyles} ${typeStyles[type]} ${className || ''}`}>
+      {icons[type]}
+      <span>{message}</span>
+    </div>
+  );
+};
+
+// Skeleton Loader Component
+const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
+  <div className={`animate-pulse rounded-md bg-gray-200 ${className || ''}`} />
+);
 
 type Props = {
   hotel?: HotelType;
@@ -25,7 +126,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
   // Temporary state for modal forms
   const [tempCustomRoom, setTempCustomRoom] = useState<any>(null);
   const [tempCustomCottage, setTempCustomCottage] = useState<any>(null);
-  const [tempCustomAmenity, setTempCustomAmenity] = useState<any>(null);
+const [tempCustomAmenity, setTempCustomAmenity] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    type: 'included' | 'addon';
+    price?: number;
+    quantity: number;
+    imageUrl?: string;
+} | null>(null);
   
   const [formData, setFormData] = useState<HotelFormData>({
     name: "",
@@ -90,8 +199,56 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
+  // Form validation state
+  const [fieldValidation, setFieldValidation] = useState<Record<string, FieldValidation>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  
   // Ref for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Validate field function
+  const validateField = (fieldName: string, value: any, rules: ValidationRule[]): FieldValidation => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    rules.forEach(rule => {
+      if (!rule.validate(value)) {
+        if (rule.type === 'warning') {
+          warnings.push(rule.message);
+        } else {
+          errors.push(rule.message);
+        }
+      }
+    });
+
+    const isValid = errors.length === 0;
+    const showValidation = touchedFields[fieldName] || errors.length > 0;
+
+    return { isValid, errors, warnings, showValidation };
+  };
+  
+  // Update field validation
+  const updateFieldValidation = (fieldName: string, value: any, rules: ValidationRule[]) => {
+    const validation = validateField(fieldName, value, rules);
+    setFieldValidation(prev => ({ ...prev, [fieldName]: validation }));
+  };
+  
+  // Handle field blur
+  const handleFieldBlur = (fieldName: string) => {
+    setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
+  };
+  
+  // Check if form is valid
+  const isFormValid = () => {
+    const requiredFields = ['name', 'city', 'barangay', 'purok', 'country', 'description', 'starRating'];
+    return requiredFields.every(field => {
+      const validation = fieldValidation[field];
+      const hasValidationErrors = validation?.errors && validation.errors.length > 0;
+      const fieldValue = formData[field as keyof HotelFormData];
+      const isEmpty = !fieldValue || String(fieldValue).trim().length === 0;
+      return !hasValidationErrors && !isEmpty;
+    });
+  };
 
   // Clear image previews when hotel data changes (for edit mode) or component unmounts
   useEffect(() => {
@@ -100,7 +257,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
       setImagePreviewUrls([]);
       setSelectedFiles([]);
     };
-  }, []);
+  }, [hotel]);
 
   // File handler function - simplified and fixed
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,7 +286,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
     const validFiles: File[] = [];
     let processedCount = 0;
 
-    fileArray.forEach((file) => {
+    fileArray.forEach((file: File) => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         alert(`File "${file.name}" is not an image and will be skipped.`);
@@ -156,7 +313,9 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
         if (processedCount === fileArray.length) {
           setImagePreviewUrls(prev => [...prev, ...newPreviewUrls]);
           setSelectedFiles(prev => [...prev, ...validFiles]);
-          handleInputChange('imageFiles', validFiles);
+          // Note: imageFiles is not in HotelFormData interface, this might need to be handled differently
+          // For now, just update the preview URLs and selected files
+          console.log('Files processed:', validFiles.length);
         }
       };
       reader.onerror = () => {
@@ -169,13 +328,6 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
     // Clear the input so the same file can be selected again
     e.target.value = '';
   };
-
-  // Clear image previews when hotel data changes (for edit mode) or component unmounts
-  useEffect(() => {
-    return () => {
-      setImagePreviewUrls([]);
-    };
-  }, [hotel]);
 
   useEffect(() => {
     if (hotel) {
@@ -216,8 +368,8 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
           name: hotel.name || "",
           city: hotel.city || "",
           country: hotel.country || "",
-          barangay: "",
-          purok: "",
+          barangay: hotel.barangay || "",
+          purok: hotel.purok || "",
           description: hotel.description || "",
           type: hotel.type || [],
           starRating: hotel.starRating || 3,
@@ -236,7 +388,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
           hasNightRateTimeRestrictions: false,
 
           // New fields with default values
-          contact: (hotel as any)?.contact || {
+          contact: hotel?.contact || {
             phone: "",
             email: "",
             website: "",
@@ -244,7 +396,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
             instagram: "",
             tiktok: "",
           },
-          policies: (hotel as any)?.policies || {
+          policies: hotel?.policies || {
             checkInTime: "",
             checkOutTime: "",
             dayCheckInTime: "",
@@ -253,26 +405,84 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
             nightCheckOutTime: "",
             resortPolicies: [],
           },
-          amenities: (hotel as any)?.amenities || [],
-          rooms: (hotel as any)?.rooms || [],
-          cottages: (hotel as any)?.cottages || [],
-          discounts: (hotel as any)?.discounts || {
+          amenities: (hotel?.amenities || []).map(amenity => ({
+            id: amenity.id,
+            name: amenity.name,
+            price: amenity.price,
+            units: 1,
+            description: amenity.description,
+            imageUrl: '',
+            imageFile: undefined,
+            isFree: false,
+            category: '',
+            isConfirmed: amenity.isConfirmed
+          })),
+          rooms: (hotel?.rooms || []).map(room => ({
+            id: room.id,
+            name: room.name,
+            type: room.type,
+            pricePerNight: room.pricePerNight,
+            minOccupancy: room.minOccupancy,
+            maxOccupancy: room.maxOccupancy,
+            units: 1,
+            description: room.description,
+            amenities: room.amenities,
+            imageUrl: '',
+            imageFile: undefined,
+            isConfirmed: room.isConfirmed
+          })),
+          cottages: (hotel?.cottages || []).map(cottage => ({
+            id: cottage.id,
+            name: cottage.name,
+            type: cottage.type,
+            pricePerNight: cottage.pricePerNight,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate,
+            hasDayRate: cottage.hasDayRate,
+            hasNightRate: cottage.hasNightRate,
+            minOccupancy: cottage.minOccupancy,
+            maxOccupancy: cottage.maxOccupancy,
+            units: 1,
+            description: cottage.description,
+            amenities: cottage.amenities,
+            imageUrl: '',
+            imageFile: undefined,
+            isConfirmed: cottage.isConfirmed
+          })),
+          discounts: hotel?.discounts || {
             seniorCitizenEnabled: true,
             seniorCitizenPercentage: 20,
             pwdEnabled: true,
             pwdPercentage: 20
           },
-          packages: (hotel as any)?.packages || [],
-          adultEntranceFee: (hotel as any)?.adultEntranceFee || {
+           packages: (hotel?.packages || []).map(pkg => ({
+             id: pkg.id,
+             name: pkg.name,
+             description: pkg.description,
+             price: pkg.price,
+             imageUrl: '',
+             imageFile: undefined,
+             includedRooms: (pkg.includedRooms || []).map(id => ({ roomId: id, units: 1 })),
+             includedCottages: (pkg.includedCottages || []).map(id => ({ cottageId: id, units: 1 })),
+             includedAmenities: (pkg.includedAmenities || []).map(id => ({ amenityId: id, quantity: 1 })),
+             customAddOns: [],
+             customRooms: [],
+             customCottages: [],
+             customAmenities: [],
+             includedAdultEntranceFee: pkg.includedAdultEntranceFee || false,
+             includedChildEntranceFee: pkg.includedChildEntranceFee || false,
+             isConfirmed: pkg.isConfirmed
+           })),
+          adultEntranceFee: hotel?.adultEntranceFee || {
             dayRate: 0,
             nightRate: 0,
             pricingModel: "per_head",
             groupQuantity: 1,
           },
-          childEntranceFee: (hotel as any)?.childEntranceFee || [],
-          downPaymentPercentage: (hotel as any)?.downPaymentPercentage || 50,
-          gcashNumber: (hotel as any)?.gcashNumber || "",
-          isFeatured: (hotel as any)?.isFeatured || false,
+          childEntranceFee: hotel?.childEntranceFee || [],
+          downPaymentPercentage: hotel?.downPaymentPercentage || 50,
+          gcashNumber: hotel?.gcashNumber || "",
+          isFeatured: hotel?.isFeatured || false,
         };
       }
 
@@ -329,13 +539,34 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
     setFormData((prev: HotelFormData) => ({
       ...prev,
       [section]: {
-        ...(prev[section] as any),
+        ...(prev[section] as Record<string, any>),
         [field]: value
       }
     }));
   };
 
   const nextStep = () => {
+    // Validate current step before proceeding
+    if (currentStep === 1) {
+      const requiredFields = ['name', 'city', 'barangay', 'purok', 'country', 'description', 'starRating'];
+      const hasErrors = requiredFields.some(field => {
+        const validation = fieldValidation[field];
+        const hasValidationErrors = validation?.errors && validation.errors.length > 0;
+        const fieldValue = formData[field as keyof HotelFormData];
+        const isEmpty = !fieldValue || String(fieldValue).trim().length === 0;
+        return hasValidationErrors || isEmpty;
+      });
+      
+      // Additional validation for type field (array must have at least one selection)
+      const typeValidationError = formData.type && formData.type.length > 0 ? false : true;
+      
+      if (hasErrors || typeValidationError) {
+        // Mark all required fields as touched to show validation errors
+        requiredFields.forEach(field => handleFieldBlur(field));
+        return;
+      }
+    }
+    
     if (currentStep < 6) setCurrentStep(currentStep + 1);
   };
 
@@ -353,20 +584,19 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
       name: "",
       type: "Standard",
       description: "",
-      pricePerNight: 0,
+      pricePerNight: 1500,
       minOccupancy: 1,
       maxOccupancy: 2,
       units: 1,
       amenities: [],
-      imageUrl: "",
-      imageFile: undefined
+      imageUrl: ""
     });
     setShowCustomRoomModal(true);
   };
 
   const saveCustomRoom = () => {
     if (activePackageIndex !== null && tempCustomRoom) {
-      const updated = [...formData.packages!];
+      const updated = [...(formData.packages || [])];
       updated[activePackageIndex] = {
         ...updated[activePackageIndex],
         customRooms: [...(updated[activePackageIndex].customRooms || []), tempCustomRoom]
@@ -376,6 +606,33 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
       setTempCustomRoom(null);
       setActivePackageIndex(null);
     }
+  };
+
+  const deleteCustomRoom = (pkgIndex: number, roomIndex: number) => {
+    const updated = [...(formData.packages || [])];
+    updated[pkgIndex] = {
+      ...updated[pkgIndex],
+      customRooms: updated[pkgIndex].customRooms?.filter((_, i) => i !== roomIndex) || []
+    };
+    handleInputChange('packages', updated);
+  };
+
+  const deleteCustomCottage = (pkgIndex: number, cottageIndex: number) => {
+    const updated = [...(formData.packages || [])];
+    updated[pkgIndex] = {
+      ...updated[pkgIndex],
+      customCottages: updated[pkgIndex].customCottages?.filter((_, i) => i !== cottageIndex) || []
+    };
+    handleInputChange('packages', updated);
+  };
+
+  const deleteCustomAmenity = (pkgIndex: number, amenityIndex: number) => {
+    const updated = [...(formData.packages || [])];
+    updated[pkgIndex] = {
+      ...updated[pkgIndex],
+      customAmenities: updated[pkgIndex].customAmenities?.filter((_, i) => i !== amenityIndex) || []
+    };
+    handleInputChange('packages', updated);
   };
 
   // Custom Cottage Modal Functions
@@ -392,15 +649,14 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
       maxOccupancy: 4,
       units: 1,
       amenities: [],
-      imageUrl: "",
-      imageFile: undefined
+      imageUrl: ""
     });
     setShowCustomCottageModal(true);
   };
 
   const saveCustomCottage = () => {
     if (activePackageIndex !== null && tempCustomCottage) {
-      const updated = [...formData.packages!];
+      const updated = [...(formData.packages || [])];
       updated[activePackageIndex] = {
         ...updated[activePackageIndex],
         customCottages: [...(updated[activePackageIndex].customCottages || []), tempCustomCottage]
@@ -412,25 +668,24 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
     }
   };
 
-  // Custom Amenity Modal Functions
-  const openCustomAmenityModal = (pkgIndex: number) => {
-    setActivePackageIndex(pkgIndex);
-    setTempCustomAmenity({
-      id: Date.now().toString(),
-      name: "",
-      description: "",
-      type: "included" as 'included' | 'addon',
-      price: 0,
-      quantity: 1,
-      imageUrl: "",
-      imageFile: undefined
-    });
-    setShowCustomAmenityModal(true);
-  };
+   // Custom Amenity Modal Functions
+   const openCustomAmenityModal = (pkgIndex: number) => {
+     setActivePackageIndex(pkgIndex);
+     setTempCustomAmenity({
+       id: Date.now().toString(),
+       name: "",
+       description: "",
+       type: "included",
+       price: 0,
+       quantity: 1,
+       imageUrl: ""
+     });
+     setShowCustomAmenityModal(true);
+   };
 
   const saveCustomAmenity = () => {
     if (activePackageIndex !== null && tempCustomAmenity) {
-      const updated = [...formData.packages!];
+      const updated = [...(formData.packages || [])];
       updated[activePackageIndex] = {
         ...updated[activePackageIndex],
         customAmenities: [...(updated[activePackageIndex].customAmenities || []), tempCustomAmenity]
@@ -442,53 +697,75 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
     }
   };
 
-  const deleteCustomRoom = (pkgIndex: number, roomIndex: number) => {
-    const updated = [...formData.packages!];
-    updated[pkgIndex] = {
-      ...updated[pkgIndex],
-      customRooms: updated[pkgIndex].customRooms?.filter((_, i) => i !== roomIndex) || []
-    };
-    handleInputChange('packages', updated);
-  };
-
-  const deleteCustomCottage = (pkgIndex: number, cottageIndex: number) => {
-    const updated = [...formData.packages!];
-    updated[pkgIndex] = {
-      ...updated[pkgIndex],
-      customCottages: updated[pkgIndex].customCottages?.filter((_, i) => i !== cottageIndex) || []
-    };
-    handleInputChange('packages', updated);
-  };
-
-  const deleteCustomAmenity = (pkgIndex: number, amenityIndex: number) => {
-    const updated = [...formData.packages!];
-    updated[pkgIndex] = {
-      ...updated[pkgIndex],
-      customAmenities: updated[pkgIndex].customAmenities?.filter((_, i) => i !== amenityIndex) || []
-    };
-    handleInputChange('packages', updated);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Final validation before submission
+    const requiredFields = ['name', 'city', 'barangay', 'purok', 'country', 'description', 'starRating'];
+    const hasErrors = requiredFields.some(field => {
+      const validation = fieldValidation[field];
+      const hasValidationErrors = validation?.errors && validation.errors.length > 0;
+      const fieldValue = formData[field as keyof HotelFormData];
+      const isEmpty = !fieldValue || String(fieldValue).trim().length === 0;
+      return hasValidationErrors || isEmpty;
+    });
+    
+    // Additional validation for type field (array must have at least one selection)
+    const typeValidationError = formData.type && formData.type.length > 0 ? false : true;
+    
+    if (hasErrors || typeValidationError) {
+      // Mark all required fields as touched to show validation errors
+      requiredFields.forEach(field => handleFieldBlur(field));
+      // Scroll to first error
+      const firstErrorField = requiredFields.find(field => {
+        const validation = fieldValidation[field];
+        const hasValidationErrors = validation?.errors && validation.errors.length > 0;
+        const fieldValue = formData[field as keyof HotelFormData];
+        const isEmpty = !fieldValue || String(fieldValue).trim().length === 0;
+        return hasValidationErrors || isEmpty;
+      });
+      if (firstErrorField) {
+        const element = document.querySelector(`[data-field="${firstErrorField}"]`) as HTMLElement;
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     console.log('=== FORM SUBMISSION DEBUG ===');
     console.log('Complete form data:', JSON.stringify(formData, null, 2));
 
-    // Convert units from strings to numbers for consistency
+    // Convert units from strings to numbers for consistency and remove imageFile properties
     const processedData = {
       ...formData,
-      amenities: formData.amenities?.map((amenity: any) => ({
-        ...amenity,
-        units: parseInt(String(amenity.units)) || 1
-      })),
-      cottages: formData.cottages?.map((cottage: any) => ({
-        ...cottage,
-        units: parseInt(String(cottage.units)) || 1
-      })),
-      rooms: formData.rooms?.map((room: any) => ({
-        ...room,
-        units: parseInt(String(room.units)) || 1
-      }))
+      amenities: formData.amenities?.map((amenity) => {
+        // Safely destructure with fallback
+        const { imageFile, ...amenityData } = amenity || {};
+        return {
+          ...amenityData,
+          units: parseInt(String(amenity?.units)) || 1
+        };
+      }),
+      cottages: formData.cottages?.map((cottage) => {
+        // Safely destructure with fallback
+        const { imageFile, ...cottageData } = cottage || {};
+        return {
+          ...cottageData,
+          units: parseInt(String(cottage?.units)) || 1
+        };
+      }),
+      rooms: formData.rooms?.map((room) => {
+        // Safely destructure with fallback
+        const { imageFile, ...roomData } = room || {};
+        return {
+          ...roomData,
+          units: parseInt(String(room?.units)) || 1
+        };
+      }),
+      packages: formData.packages?.map((pkg) => {
+        // Safely destructure with fallback
+        const { imageFile, ...pkgData } = pkg || {};
+        return pkgData;
+      })
     };
 
     console.log('Processed form data:', {
@@ -526,35 +803,56 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Progress Bar */}
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
+      {/* Progress Bar - Mobile Responsive */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          {steps.map((step) => (
-            <div key={step.number} className="flex items-center">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                  currentStep >= step.number
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-600'
-                }`}
-              >
-                {step.number}
-              </div>
-              {step.number < 6 && (
+        {/* Desktop Progress */}
+        <div className="hidden md:block">
+          <div className="flex items-center justify-between mb-4">
+            {steps.map((step) => (
+              <div key={step.number} className="flex items-center">
                 <div
-                  className={`w-16 h-1 mx-2 ${
-                    currentStep > step.number ? 'bg-blue-600' : 'bg-gray-200'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                    currentStep >= step.number
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
                   }`}
-                />
-              )}
-            </div>
-          ))}
+                >
+                  {step.number}
+                </div>
+                {step.number < 6 && (
+                  <div
+                    className={`w-16 h-1 mx-2 transition-colors ${
+                      currentStep > step.number ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between text-sm text-gray-600">
+            {steps.map((step) => (
+              <span key={step.number} className="w-20 text-center">{step.title}</span>
+            ))}
+          </div>
         </div>
-        <div className="flex justify-between text-sm text-gray-600">
-          {steps.map((step) => (
-            <span key={step.number} className="w-20 text-center">{step.title}</span>
-          ))}
+        
+        {/* Mobile Progress */}
+        <div className="md:hidden">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-gray-600">
+              Step {currentStep} of {steps.length}
+            </span>
+            <span className="text-sm text-gray-600">
+              {steps[currentStep - 1]?.title}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / steps.length) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -565,15 +863,31 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
             {/* Details Section */}
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-xl font-semibold mb-6 text-gray-800">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Resort Name *</label>
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('name', e.target.value);
+                      updateFieldValidation('name', e.target.value, [
+                        validationRules.required('Resort name is required'),
+                        validationRules.minLength(2, 'Resort name must be at least 2 characters'),
+                        validationRules.maxLength(100, 'Resort name must be less than 100 characters')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('name')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.name?.showValidation && fieldValidation.name?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     required
+                  />
+                  <ValidationMessage 
+                    message={fieldValidation.name?.errors[0]} 
+                    type="error" 
                   />
                 </div>
                 <div>
@@ -581,9 +895,24 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                   <input
                     type="text"
                     value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('city', e.target.value);
+                      updateFieldValidation('city', e.target.value, [
+                        validationRules.required('City is required'),
+                        validationRules.minLength(2, 'City name must be at least 2 characters')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('city')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.city?.showValidation && fieldValidation.city?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     required
+                  />
+                  <ValidationMessage 
+                    message={fieldValidation.city?.errors[0]} 
+                    type="error" 
                   />
                 </div>
                 <div>
@@ -591,10 +920,24 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                   <input
                     type="text"
                     value={formData.barangay}
-                    onChange={(e) => handleInputChange('barangay', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('barangay', e.target.value);
+                      updateFieldValidation('barangay', e.target.value, [
+                        validationRules.required('Barangay is required')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('barangay')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.barangay?.showValidation && fieldValidation.barangay?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     placeholder="Local administrative division"
                     required
+                  />
+                  <ValidationMessage 
+                    message={fieldValidation.barangay?.errors[0]} 
+                    type="error" 
                   />
                 </div>
                 <div>
@@ -602,10 +945,24 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                   <input
                     type="text"
                     value={formData.purok}
-                    onChange={(e) => handleInputChange('purok', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('purok', e.target.value);
+                      updateFieldValidation('purok', e.target.value, [
+                        validationRules.required('Purok is required')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('purok')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.purok?.showValidation && fieldValidation.purok?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     placeholder="Smaller subdivision within barangay"
                     required
+                  />
+                  <ValidationMessage 
+                    message={fieldValidation.purok?.errors[0]} 
+                    type="error" 
                   />
                 </div>
                 <div>
@@ -613,17 +970,41 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                   <input
                     type="text"
                     value={formData.country}
-                    onChange={(e) => handleInputChange('country', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('country', e.target.value);
+                      updateFieldValidation('country', e.target.value, [
+                        validationRules.required('Country is required')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('country')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.country?.showValidation && fieldValidation.country?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     required
+                  />
+                  <ValidationMessage 
+                    message={fieldValidation.country?.errors[0]} 
+                    type="error" 
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Star Rating *</label>
                   <select
                     value={formData.starRating}
-                    onChange={(e) => handleInputChange('starRating', parseInt(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    onChange={(e) => {
+                      handleInputChange('starRating', parseInt(e.target.value));
+                      updateFieldValidation('starRating', e.target.value, [
+                        validationRules.required('Star rating is required')
+                      ]);
+                    }}
+                    onBlur={() => handleFieldBlur('starRating')}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                      fieldValidation.starRating?.showValidation && fieldValidation.starRating?.errors.length > 0
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     required
                   >
                     {[1, 2, 3, 4, 5].map(rating => (
@@ -636,11 +1017,27 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                 <label className="block text-sm font-medium mb-2 text-gray-700">Description *</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange('description', e.target.value);
+                    updateFieldValidation('description', e.target.value, [
+                      validationRules.required('Description is required'),
+                      validationRules.minLength(10, 'Description must be at least 10 characters'),
+                      validationRules.maxLength(2000, 'Description must be less than 2000 characters')
+                    ]);
+                  }}
+                  onBlur={() => handleFieldBlur('description')}
                   rows={10}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px] sm:min-h-0 ${
+                    fieldValidation.description?.showValidation && fieldValidation.description?.errors.length > 0
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="Provide a detailed description of your resort, its amenities, and what makes it special..."
                   required
+                />
+                <ValidationMessage 
+                  message={fieldValidation.description?.errors[0]} 
+                  type="error" 
                 />
               </div>
             </div>
@@ -661,7 +1058,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                   <span className="text-sm font-medium text-gray-700">Day Rate (until 5PM)</span>
                 </label>
                 {formData.hasDayRate && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2 text-gray-700">Price</label>
                       <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
@@ -780,9 +1177,9 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         handleInputChange('type', [...(formData.type || []), type]);
                       }
                     }}
-                    className={`px-4 py-3 rounded-lg font-medium transition ${
+                    className={`px-4 py-3 rounded-lg font-medium transition min-h-[44px] active:scale-[0.98] ${
                       formData.type?.includes(type)
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -803,16 +1200,26 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
             {/* Guests Section - Adult Entrance Fees */}
             <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
               <h3 className="text-xl font-semibold mb-6 text-gray-800">Adult Entrance Fees</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Day Rate *</label>
                   <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
-                    <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium">₱</span>
+                    <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium min-h-[44px] flex items-center">₱</span>
                     <input
                       type="number"
                       value={formData.adultEntranceFee?.dayRate || ''}
-                      onChange={(e) => handleNestedChange('adultEntranceFee', 'dayRate', parseFloat(e.target.value) || 0)}
-                      className="flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0"
+                      onChange={(e) => {
+                        handleNestedChange('adultEntranceFee', 'dayRate', parseFloat(e.target.value) || 0);
+                        updateFieldValidation('adultDayRate', e.target.value, [
+                          validationRules.positiveNumber('Day rate must be a positive number')
+                        ]);
+                      }}
+                      onBlur={() => handleFieldBlur('adultDayRate')}
+                      className={`flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0 min-h-[44px] ${
+                        fieldValidation.adultDayRate?.showValidation && fieldValidation.adultDayRate?.errors.length > 0
+                          ? 'text-red-500'
+                          : ''
+                      }`}
                       min="0"
                       required
                     />
@@ -891,7 +1298,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
               ) : (
                 <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
                   <div className="overflow-y-auto space-y-4 pr-2" style={{maxHeight: '200px'}}>
-                    {formData.childEntranceFee.map((group, index) => (
+                    {(formData.childEntranceFee || []).map((group, index) => (
                       <div key={group.id} className="border border-gray-200 rounded-lg bg-white p-4">
                         {/* Card Header */}
                         <div className="flex items-center justify-between mb-4">
@@ -903,15 +1310,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               </span>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleInputChange('childEntranceFee', formData.childEntranceFee!.filter((_, i) => i !== index));
-                            }}
-                            className="text-red-500 hover:text-red-700 transition"
-                          >
-                            ✕
-                          </button>
+              <button
+                              type="button"
+                              onClick={() => {
+                                handleInputChange('childEntranceFee', (formData.childEntranceFee || []).filter((_, i) => i !== index));
+                              }}
+                              className="text-red-500 hover:text-red-700 transition"
+                            >
+                              ✕
+                            </button>
                         </div>
                         
                         {/* Card Content - Always Visible */}
@@ -923,9 +1330,9 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={group.minAge}
                             onChange={(e) => {
-                              const updated = [...formData.childEntranceFee!];
-                              updated[index] = { ...updated[index], minAge: parseInt(e.target.value) || 0 };
-                              handleInputChange('childEntranceFee', updated);
+                               const updated = [...(formData.childEntranceFee || [])];
+                               updated[index] = { ...updated[index], minAge: parseInt(e.target.value) || 0 };
+                               handleInputChange('childEntranceFee', updated);
                             }}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                             min="0"
@@ -936,10 +1343,10 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <div>
                           <label className="block text-sm font-medium mb-2 text-gray-700">Max Age *</label>
                           <input
-                            type="number"
+                             type="number"
                             value={group.maxAge}
                             onChange={(e) => {
-                              const updated = [...formData.childEntranceFee!];
+                              const updated = [...(formData.childEntranceFee || [])];
                               updated[index] = { ...updated[index], maxAge: parseInt(e.target.value) || 0 };
                               handleInputChange('childEntranceFee', updated);
                             }}
@@ -957,7 +1364,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="number"
                               value={group.dayRate}
                               onChange={(e) => {
-                                const updated = [...formData.childEntranceFee!];
+                                const updated = [...(formData.childEntranceFee || [])];
                                 updated[index] = { ...updated[index], dayRate: parseFloat(e.target.value) || 0 };
                                 handleInputChange('childEntranceFee', updated);
                               }}
@@ -975,7 +1382,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="number"
                               value={group.nightRate}
                               onChange={(e) => {
-                                const updated = [...formData.childEntranceFee!];
+                                const updated = [...(formData.childEntranceFee || [])];
                                 updated[index] = { ...updated[index], nightRate: parseFloat(e.target.value) || 0 };
                                 handleInputChange('childEntranceFee', updated);
                               }}
@@ -990,7 +1397,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <select
                             value={group.pricingModel}
                             onChange={(e) => {
-                              const updated = [...formData.childEntranceFee!];
+                              const updated = [...(formData.childEntranceFee || [])];
                               updated[index] = { ...updated[index], pricingModel: e.target.value as 'per_head' | 'per_group' };
                               handleInputChange('childEntranceFee', updated);
                             }}
@@ -1007,7 +1414,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="number"
                               value={group.groupQuantity || 1}
                               onChange={(e) => {
-                                const updated = [...formData.childEntranceFee!];
+                                const updated = [...(formData.childEntranceFee || [])];
                                 updated[index] = { ...updated[index], groupQuantity: parseInt(e.target.value) || 1 };
                                 handleInputChange('childEntranceFee', updated);
                               }}
@@ -1018,32 +1425,32 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         )}
                       </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = [...formData.childEntranceFee!];
-                            updated[index] = { ...updated[index], isConfirmed: !updated[index].isConfirmed };
-                            handleInputChange('childEntranceFee', updated);
-                          }}
-                          className={`px-4 py-2 rounded-lg transition ${
-                            group.isConfirmed
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {group.isConfirmed ? '✓ Confirmed' : 'Confirm'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleInputChange('childEntranceFee', formData.childEntranceFee!.filter((_, i) => i !== index));
-                          }}
-                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                       <div className="flex gap-2">
+                         <button
+                           type="button"
+                           onClick={() => {
+                             const updated = [...(formData.childEntranceFee || [])];
+                             updated[index] = { ...updated[index], isConfirmed: !updated[index].isConfirmed };
+                             handleInputChange('childEntranceFee', updated);
+                           }}
+                           className={`px-4 py-2 rounded-lg transition ${
+                             group.isConfirmed
+                               ? 'bg-green-600 text-white'
+                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                           }`}
+                         >
+                           {group.isConfirmed ? '✓ Confirmed' : 'Confirm'}
+                         </button>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             handleInputChange('childEntranceFee', (formData.childEntranceFee || []).filter((_, i) => i !== index));
+                           }}
+                           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                         >
+                           Delete
+                         </button>
+                       </div>
                     </div>
                     ))}
                   </div>
@@ -1119,7 +1526,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
               ) : (
                 <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
                   <div className="overflow-y-auto space-y-4 pr-2" style={{maxHeight: '200px'}}>
-                    {formData.rooms.map((room, index) => (
+                    {(formData.rooms || []).map((room, index) => (
                       <div key={room.id} className="border border-gray-200 rounded-lg bg-white p-4">
                         {/* Card Header */}
                         <div className="flex items-center justify-between mb-4">
@@ -1134,7 +1541,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <button
                             type="button"
                             onClick={() => {
-                              handleInputChange('rooms', formData.rooms!.filter((_, i) => i !== index));
+                              handleInputChange('rooms', formData.rooms?.filter((_, i) => i !== index) || []);
                             }}
                             className="text-red-500 hover:text-red-700 transition"
                           >
@@ -1147,12 +1554,12 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               <ImageUpload
                         value={room.imageUrl}
                         onChange={(url) => {
-                          const updated = [...formData.rooms!];
+                          const updated = [...(formData.rooms || [])];
                           updated[index] = { ...updated[index], imageUrl: url };
                           handleInputChange('rooms', updated);
                         }}
                         onFileChange={(file) => {
-                          const updated = [...formData.rooms!];
+                          const updated = [...(formData.rooms || [])];
                           updated[index] = { ...updated[index], imageFile: file };
                           handleInputChange('rooms', updated);
                         }}
@@ -1166,7 +1573,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="text"
                             value={room.name}
                             onChange={(e) => {
-                              const updated = [...formData.rooms!];
+                              const updated = [...(formData.rooms || [])];
                               updated[index] = { ...updated[index], name: e.target.value };
                               handleInputChange('rooms', updated);
                             }}
@@ -1178,7 +1585,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <select
                             value={room.type}
                             onChange={(e) => {
-                              const updated = [...formData.rooms!];
+                              const updated = [...(formData.rooms || [])];
                               updated[index] = { ...updated[index], type: e.target.value };
                               handleInputChange('rooms', updated);
                             }}
@@ -1199,7 +1606,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="number"
                               value={room.pricePerNight}
                               onChange={(e) => {
-                                const updated = [...formData.rooms!];
+                                const updated = [...(formData.rooms || [])];
                                 updated[index] = { ...updated[index], pricePerNight: parseFloat(e.target.value) || 0 };
                                 handleInputChange('rooms', updated);
                               }}
@@ -1215,7 +1622,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={room.minOccupancy}
                             onChange={(e) => {
-                              const updated = [...formData.rooms!];
+                              const updated = [...(formData.rooms || [])];
                               updated[index] = { ...updated[index], minOccupancy: parseInt(e.target.value) || 1 };
                               handleInputChange('rooms', updated);
                             }}
@@ -1229,7 +1636,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={room.maxOccupancy}
                             onChange={(e) => {
-                              const updated = [...formData.rooms!];
+                              const updated = [...(formData.rooms || [])];
                               updated[index] = { ...updated[index], maxOccupancy: parseInt(e.target.value) || 2 };
                               handleInputChange('rooms', updated);
                             }}
@@ -1243,7 +1650,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={room.units}
                             onChange={(e) => {
-                              const updated = [...formData.rooms!];
+                              const updated = [...(formData.rooms || [])];
                               updated[index] = { ...updated[index], units: parseInt(e.target.value) || 1 };
                               handleInputChange('rooms', updated);
                             }}
@@ -1257,7 +1664,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <textarea
                           value={room.description}
                           onChange={(e) => {
-                            const updated = [...formData.rooms!];
+                            const updated = [...(formData.rooms || [])];
                             updated[index] = { ...updated[index], description: e.target.value };
                             handleInputChange('rooms', updated);
                           }}
@@ -1270,7 +1677,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            const updated = [...formData.rooms!];
+                            const updated = [...(formData.rooms || [])];
                             updated[index] = { ...updated[index], isConfirmed: !updated[index].isConfirmed };
                             handleInputChange('rooms', updated);
                           }}
@@ -1285,7 +1692,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            handleInputChange('rooms', formData.rooms!.filter((_, i) => i !== index));
+                            handleInputChange('rooms', formData.rooms?.filter((_, i) => i !== index) || []);
                           }}
                           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                         >
@@ -1339,7 +1746,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
               ) : (
                 <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
                   <div className="overflow-y-auto space-y-4 pr-2" style={{maxHeight: '200px'}}>
-                    {formData.cottages.map((cottage, index) => (
+                    {(formData.cottages || []).map((cottage, index) => (
                       <div key={cottage.id} className="border border-gray-200 rounded-lg bg-white p-4">
                         {/* Card Header */}
                         <div className="flex items-center justify-between mb-4">
@@ -1354,7 +1761,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <button
                             type="button"
                             onClick={() => {
-                              handleInputChange('cottages', formData.cottages!.filter((_, i) => i !== index));
+                              handleInputChange('cottages', formData.cottages?.filter((_, i) => i !== index) || []);
                             }}
                             className="text-red-500 hover:text-red-700 transition"
                           >
@@ -1367,12 +1774,12 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               <ImageUpload
                         value={cottage.imageUrl}
                         onChange={(url) => {
-                          const updated = [...formData.cottages!];
+                          const updated = [...(formData.cottages || [])];
                           updated[index] = { ...updated[index], imageUrl: url };
                           handleInputChange('cottages', updated);
                         }}
                         onFileChange={(file) => {
-                          const updated = [...formData.cottages!];
+                          const updated = [...(formData.cottages || [])];
                           updated[index] = { ...updated[index], imageFile: file };
                           handleInputChange('cottages', updated);
                         }}
@@ -1386,7 +1793,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="text"
                             value={cottage.name}
                             onChange={(e) => {
-                              const updated = [...formData.cottages!];
+                              const updated = [...(formData.cottages || [])];
                               updated[index] = { ...updated[index], name: e.target.value };
                               handleInputChange('cottages', updated);
                             }}
@@ -1398,7 +1805,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <select
                             value={cottage.type}
                             onChange={(e) => {
-                              const updated = [...formData.cottages!];
+                              const updated = [...(formData.cottages || [])];
                               updated[index] = { ...updated[index], type: e.target.value };
                               handleInputChange('cottages', updated);
                             }}
@@ -1416,7 +1823,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={cottage.units}
                             onChange={(e) => {
-                              const updated = [...formData.cottages!];
+                              const updated = [...(formData.cottages || [])];
                               updated[index] = { ...updated[index], units: parseInt(e.target.value) || 1 };
                               handleInputChange('cottages', updated);
                             }}
@@ -1432,7 +1839,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="checkbox"
                               checked={cottage.hasDayRate}
                               onChange={(e) => {
-                                const updated = [...formData.cottages!];
+                                const updated = [...(formData.cottages || [])];
                                 updated[index] = { ...updated[index], hasDayRate: e.target.checked };
                                 handleInputChange('cottages', updated);
                               }}
@@ -1447,7 +1854,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                 type="number"
                                 value={cottage.dayRate}
                                 onChange={(e) => {
-                                  const updated = [...formData.cottages!];
+                                  const updated = [...(formData.cottages || [])];
                                   updated[index] = { ...updated[index], dayRate: parseFloat(e.target.value) || 0 };
                                   handleInputChange('cottages', updated);
                                 }}
@@ -1464,7 +1871,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="checkbox"
                               checked={cottage.hasNightRate}
                               onChange={(e) => {
-                                const updated = [...formData.cottages!];
+                                const updated = [...(formData.cottages || [])];
                                 updated[index] = { ...updated[index], hasNightRate: e.target.checked };
                                 handleInputChange('cottages', updated);
                               }}
@@ -1479,7 +1886,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                 type="number"
                                 value={cottage.nightRate}
                                 onChange={(e) => {
-                                  const updated = [...formData.cottages!];
+                                  const updated = [...(formData.cottages || [])];
                                   updated[index] = { ...updated[index], nightRate: parseFloat(e.target.value) || 0 };
                                   handleInputChange('cottages', updated);
                                 }}
@@ -1498,7 +1905,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={cottage.minOccupancy}
                             onChange={(e) => {
-                              const updated = [...formData.cottages!];
+                              const updated = [...(formData.cottages || [])];
                               updated[index] = { ...updated[index], minOccupancy: parseInt(e.target.value) || 1 };
                               handleInputChange('cottages', updated);
                             }}
@@ -1512,7 +1919,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             type="number"
                             value={cottage.maxOccupancy}
                             onChange={(e) => {
-                              const updated = [...formData.cottages!];
+                              const updated = [...(formData.cottages || [])];
                               updated[index] = { ...updated[index], maxOccupancy: parseInt(e.target.value) || 10 };
                               handleInputChange('cottages', updated);
                             }}
@@ -1526,7 +1933,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <textarea
                           value={cottage.description}
                           onChange={(e) => {
-                            const updated = [...formData.cottages!];
+                            const updated = [...(formData.cottages || [])];
                             updated[index] = { ...updated[index], description: e.target.value };
                             handleInputChange('cottages', updated);
                           }}
@@ -1539,7 +1946,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            const updated = [...formData.cottages!];
+                            const updated = [...(formData.cottages || [])];
                             updated[index] = { ...updated[index], isConfirmed: !updated[index].isConfirmed };
                             handleInputChange('cottages', updated);
                           }}
@@ -1554,7 +1961,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            handleInputChange('cottages', formData.cottages!.filter((_, i) => i !== index));
+                            handleInputChange('cottages', formData.cottages?.filter((_, i) => i !== index) || []);
                           }}
                           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                         >
@@ -1605,7 +2012,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
               ) : (
                 <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
                   <div className="overflow-y-auto space-y-4 pr-2" style={{maxHeight: '200px'}}>
-                    {formData.amenities.map((amenity, index) => (
+                    {formData.amenities?.map((amenity, index) => (
                       <div key={amenity.id} className="border border-gray-200 rounded-lg bg-white p-4">
                         {/* Card Header */}
                         <div className="flex items-center justify-between mb-4">
@@ -1620,7 +2027,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <button
                             type="button"
                             onClick={() => {
-                              handleInputChange('amenities', formData.amenities!.filter((_, i) => i !== index));
+                              handleInputChange('amenities', formData.amenities?.filter((_, i) => i !== index) || []);
                             }}
                             className="text-red-500 hover:text-red-700 transition"
                           >
@@ -1630,33 +2037,34 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         
                         {/* Card Content - Always Visible */}
                         <div>
-                              <ImageUpload
-                        value={amenity.imageUrl}
-                        onChange={(url) => {
-                          const updated = [...formData.amenities!];
-                          updated[index] = { ...updated[index], imageUrl: url };
-                          handleInputChange('amenities', updated);
-                        }}
-                        onFileChange={(file) => {
-                          const updated = [...formData.amenities!];
-                          updated[index] = { ...updated[index], imageFile: file };
-                          handleInputChange('amenities', updated);
-                        }}
-                        label="Amenity Image"
-                        className="mb-4"
-                      />
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                          <ImageUpload
+                            value={amenity.imageUrl}
+                            onChange={(url) => {
+                              const updated = [...(formData.amenities || [])];
+                              updated[index] = { ...updated[index], imageUrl: url };
+                              handleInputChange('amenities', updated);
+                            }}
+                            onFileChange={(file) => {
+                              const updated = [...(formData.amenities || [])];
+                              updated[index] = { ...updated[index], imageFile: file };
+                              handleInputChange('amenities', updated);
+                            }}
+                            label="Amenity Image"
+                            className="mb-4"
+                          />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
                           <label className="block text-sm font-medium mb-2 text-gray-700">Amenity Name</label>
                           <input
                             type="text"
                             value={amenity.name}
                             onChange={(e) => {
-                              const updated = [...formData.amenities!];
+                              const updated = [...(formData.amenities || [])];
                               updated[index] = { ...updated[index], name: e.target.value };
                               handleInputChange('amenities', updated);
                             }}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px]"
+                            placeholder="Enter amenity name"
                           />
                         </div>
                         <div>
@@ -1664,11 +2072,11 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <select
                             value={amenity.category}
                             onChange={(e) => {
-                              const updated = [...formData.amenities!];
+                              const updated = [...(formData.amenities || [])];
                               updated[index] = { ...updated[index], category: e.target.value };
                               handleInputChange('amenities', updated);
                             }}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px]"
                           >
                             <option value="General">General</option>
                             <option value="Wellness">Wellness</option>
@@ -1682,9 +2090,9 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <label className="flex items-center space-x-2 mb-2">
                             <input
                               type="checkbox"
-                              checked={amenity.isFree}
+                              checked={amenity.isFree} 
                               onChange={(e) => {
-                                const updated = [...formData.amenities!];
+                                const updated = [...(formData.amenities || [])];
                                 updated[index] = { ...updated[index], isFree: e.target.checked };
                                 handleInputChange('amenities', updated);
                               }}
@@ -1694,16 +2102,16 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           </label>
                           {!amenity.isFree && (
                             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
-                              <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium">₱</span>
+                              <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium min-h-[44px] flex items-center">₱</span>
                               <input
                                 type="number"
                                 value={amenity.price}
                                 onChange={(e) => {
-                                  const updated = [...formData.amenities!];
+                                  const updated = [...(formData.amenities || [])];
                                   updated[index] = { ...updated[index], price: parseFloat(e.target.value) || 0 };
                                   handleInputChange('amenities', updated);
                                 }}
-                                className="flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0"
+                                className="flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0 min-h-[44px]"
                                 min="0"
                                 required
                               />
@@ -1716,12 +2124,13 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <textarea
                           value={amenity.description}
                           onChange={(e) => {
-                            const updated = [...formData.amenities!];
+                            const updated = [...(formData.amenities || [])];
                             updated[index] = { ...updated[index], description: e.target.value };
                             handleInputChange('amenities', updated);
                           }}
                           rows={2}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition min-h-[44px]"
+                          placeholder="Enter amenity description"
                         />
                       </div>
                       </div>
@@ -1729,13 +2138,13 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            const updated = [...formData.amenities!];
+                            const updated = [...(formData.amenities || [])];
                             updated[index] = { ...updated[index], isConfirmed: !updated[index].isConfirmed };
                             handleInputChange('amenities', updated);
                           }}
-                          className={`px-4 py-2 rounded-lg transition ${
+                          className={`px-4 py-2 rounded-lg transition min-h-[44px] active:scale-[0.98] ${
                             amenity.isConfirmed
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           }`}
                         >
@@ -1744,9 +2153,9 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            handleInputChange('amenities', formData.amenities!.filter((_, i) => i !== index));
+                            handleInputChange('amenities', formData.amenities?.filter((_, i) => i !== index) || []);
                           }}
-                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition min-h-[44px] active:scale-[0.98]"
                         >
                           Delete
                         </button>
@@ -1798,49 +2207,50 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
               ) : (
                 <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
                   <div className="overflow-y-auto space-y-4 pr-2" style={{maxHeight: '200px'}}>
-                    {formData.packages.map((pkg, pkgIndex) => (
+                    {formData.packages?.map((pkg, pkgIndex) => (
                       <div key={pkg.id} className="p-4 border border-gray-200 rounded-lg bg-white">
-                      {/* Package Header with Delete Button */}
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={pkg.name}
-                            onChange={(e) => {
-                              const updated = [...formData.packages!];
-                              updated[pkgIndex] = { ...updated[pkgIndex], name: e.target.value };
-                              handleInputChange('packages', updated);
-                            }}
-                            className="w-full text-lg font-semibold px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                            placeholder="Package Name (e.g., Summer Getaway Package)"
+                        {/* Package Header with Delete Button */}
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              value={pkg.name}
+                              onChange={(e) => {
+                                const updated = [...(formData.packages || [])];
+                                updated[pkgIndex] = { ...updated[pkgIndex], name: e.target.value };
+                                handleInputChange('packages', updated);
+                              }}
+                              className="w-full text-lg font-semibold px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition min-h-[44px]"
+                              placeholder="Package Name (e.g., Summer Getaway Package)"
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            handleInputChange('packages', formData.packages!.filter((_, i) => i !== pkgIndex));
+                            handleInputChange('packages', (formData.packages || []).filter((_, i) => i !== pkgIndex));
                           }}
-                          className="ml-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition flex-shrink-0"
+                          className="ml-3 bg-red-500 text-white rounded-full w-10 h-10 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-red-600 transition flex-shrink-0 active:scale-[0.98]"
+                          aria-label="Delete package"
                         >
                           ×
                         </button>
                       </div>
 
                       {/* Basic Package Information */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div className="relative">
                           <label className="block text-sm font-medium mb-2 text-gray-700">Package Price (₱)</label>
                           <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition">
-                            <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium">₱</span>
+                            <span className="px-4 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 font-medium min-h-[44px] flex items-center">₱</span>
                             <input
                               type="number"
                               value={pkg.price}
                               onChange={(e) => {
-                                const updated = [...formData.packages!];
+                                const updated = [...(formData.packages || [])];
                                 updated[pkgIndex] = { ...updated[pkgIndex], price: parseFloat(e.target.value) || 0 };
                                 handleInputChange('packages', updated);
                               }}
-                              className="flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0"
+                              className="flex-1 px-4 py-3 border-0 focus:outline-none focus:ring-0 min-h-[44px]"
                               min="0"
                               required
                             />
@@ -1854,12 +2264,12 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                const updated = [...formData.packages!];
+                                const updated = [...(formData.packages || [])];
                                 updated[pkgIndex] = { ...updated[pkgIndex], imageFile: file };
                                 handleInputChange('packages', updated);
                               }
                             }}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition min-h-[44px]"
                           />
                         </div>
                       </div>
@@ -1869,24 +2279,24 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <textarea
                           value={pkg.description}
                           onChange={(e) => {
-                            const updated = [...formData.packages!];
+                            const updated = [...(formData.packages || [])];
                             updated[pkgIndex] = { ...updated[pkgIndex], description: e.target.value };
                             handleInputChange('packages', updated);
                           }}
                           rows={3}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                          placeholder="Describe what this package includes..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition min-h-[44px]"
+                          placeholder="Describe what's included in this package..."
                         />
                       </div>
 
-                      {/* Inventory Integration - Rooms */}
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                      {/* Included Rooms Section */}
+                      <div className="mb-4">
                         <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                           <span>🛏️</span> Included Rooms
                         </h4>
                         {formData.rooms && formData.rooms.length > 0 ? (
                           <div className="space-y-2">
-                            {formData.rooms.map((room) => {
+                            {(formData.rooms || []).map((room) => {
                               const includedRoom = pkg.includedRooms?.find(ir => ir.roomId === room.id);
                               return (
                                 <div key={room.id} className="flex items-center gap-3 p-2 bg-white rounded border">
@@ -1894,7 +2304,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                     type="checkbox"
                                     checked={!!includedRoom}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
+                                      const updated = [...(formData.packages || [])];
                                       if (e.target.checked) {
                                         updated[pkgIndex] = {
                                           ...updated[pkgIndex],
@@ -1919,13 +2329,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                         type="number"
                                         value={includedRoom.units}
                                         onChange={(e) => {
-                                          const updated = [...formData.packages!];
+                                          const updated = [...(formData.packages || [])];
                                           const roomIndex = updated[pkgIndex].includedRooms?.findIndex(ir => ir.roomId === room.id);
                                           if (roomIndex !== undefined && roomIndex >= 0) {
-                                            updated[pkgIndex].includedRooms![roomIndex] = {
-                                              ...updated[pkgIndex].includedRooms![roomIndex],
-                                              units: Math.min(parseInt(e.target.value) || 1, room.units)
-                                            };
+                                            if (updated[pkgIndex].includedRooms) {
+                                              updated[pkgIndex].includedRooms[roomIndex] = {
+                                                ...updated[pkgIndex].includedRooms[roomIndex],
+                                                units: Math.min(parseInt(e.target.value) || 1, room.units)
+                                              };
+                                            }
                                             handleInputChange('packages', updated);
                                           }
                                         }}
@@ -1951,7 +2363,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         </h4>
                         {formData.cottages && formData.cottages.length > 0 ? (
                           <div className="space-y-2">
-                            {formData.cottages.map((cottage) => {
+                            {(formData.cottages || []).map((cottage) => {
                               const includedCottage = pkg.includedCottages?.find(ic => ic.cottageId === cottage.id);
                               return (
                                 <div key={cottage.id} className="flex items-center gap-3 p-2 bg-white rounded border">
@@ -1959,7 +2371,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                     type="checkbox"
                                     checked={!!includedCottage}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
+                                      const updated = [...(formData.packages || [])];
                                       if (e.target.checked) {
                                         updated[pkgIndex] = {
                                           ...updated[pkgIndex],
@@ -1984,13 +2396,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                         type="number"
                                         value={includedCottage.units}
                                         onChange={(e) => {
-                                          const updated = [...formData.packages!];
+                                          const updated = [...(formData.packages || [])];
                                           const cottageIndex = updated[pkgIndex].includedCottages?.findIndex(ic => ic.cottageId === cottage.id);
                                           if (cottageIndex !== undefined && cottageIndex >= 0) {
-                                            updated[pkgIndex].includedCottages![cottageIndex] = {
-                                              ...updated[pkgIndex].includedCottages![cottageIndex],
-                                              units: Math.min(parseInt(e.target.value) || 1, cottage.units)
-                                            };
+                                            if (updated[pkgIndex].includedCottages) {
+                                              updated[pkgIndex].includedCottages[cottageIndex] = {
+                                                ...updated[pkgIndex].includedCottages[cottageIndex],
+                                                units: Math.min(parseInt(e.target.value) || 1, cottage.units)
+                                              };
+                                            }
                                             handleInputChange('packages', updated);
                                           }
                                         }}
@@ -2024,7 +2438,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                     type="checkbox"
                                     checked={!!includedAmenity}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
+                                      const updated = [...(formData.packages || [])];
                                       if (e.target.checked) {
                                         updated[pkgIndex] = {
                                           ...updated[pkgIndex],
@@ -2049,13 +2463,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                         type="number"
                                         value={includedAmenity.quantity}
                                         onChange={(e) => {
-                                          const updated = [...formData.packages!];
+                                          const updated = [...(formData.packages || [])];
                                           const amenityIndex = updated[pkgIndex].includedAmenities?.findIndex(ia => ia.amenityId === amenity.id);
                                           if (amenityIndex !== undefined && amenityIndex >= 0) {
-                                            updated[pkgIndex].includedAmenities![amenityIndex] = {
-                                              ...updated[pkgIndex].includedAmenities![amenityIndex],
-                                              quantity: parseInt(e.target.value) || 1
-                                            };
+                                            if (updated[pkgIndex].includedAmenities) {
+                                              updated[pkgIndex].includedAmenities[amenityIndex] = {
+                                                ...updated[pkgIndex].includedAmenities[amenityIndex],
+                                                quantity: parseInt(e.target.value) || 1
+                                              };
+                                            }
                                             handleInputChange('packages', updated);
                                           }
                                         }}
@@ -2082,7 +2498,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                           <button
                             type="button"
                             onClick={() => {
-                              const updated = [...formData.packages!];
+                              const updated = [...(formData.packages || [])];
                               updated[pkgIndex] = {
                                 ...updated[pkgIndex],
                                 customAddOns: [...(updated[pkgIndex].customAddOns || []), {
@@ -2105,11 +2521,16 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               <div key={addOn.id} className="flex items-start gap-2 p-2 bg-white rounded border">
                                 <div className="flex-1 grid grid-cols-2 gap-2">
                                   <input
-                                    type="text"
+                                     type="text"
                                     value={addOn.name}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
-                                      updated[pkgIndex].customAddOns![addOnIndex] = { ...addOn, name: e.target.value };
+                                      const updated = [...(formData.packages || [])];
+                                      updated[pkgIndex] = {
+                                        ...updated[pkgIndex],
+                                        customAddOns: updated[pkgIndex].customAddOns.map((a, i) => 
+                                          i === addOnIndex ? { ...a, name: e.target.value } : a
+                                        )
+                                      };
                                       handleInputChange('packages', updated);
                                     }}
                                     className="px-2 py-1 border border-gray-300 rounded text-sm"
@@ -2119,8 +2540,13 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                     type="number"
                                     value={addOn.price}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
-                                      updated[pkgIndex].customAddOns![addOnIndex] = { ...addOn, price: parseFloat(e.target.value) || 0 };
+                                      const updated = [...(formData.packages || [])];
+                                      updated[pkgIndex] = {
+                                        ...updated[pkgIndex],
+                                        customAddOns: updated[pkgIndex].customAddOns.map((a, i) => 
+                                          i === addOnIndex ? { ...a, price: parseFloat(e.target.value) || 0 } : a
+                                        )
+                                      };
                                       handleInputChange('packages', updated);
                                     }}
                                     className="px-2 py-1 border border-gray-300 rounded text-sm"
@@ -2128,11 +2554,16 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                     min="0"
                                   />
                                   <input
-                                    type="text"
+                                     type="text"
                                     value={addOn.description}
                                     onChange={(e) => {
-                                      const updated = [...formData.packages!];
-                                      updated[pkgIndex].customAddOns![addOnIndex] = { ...addOn, description: e.target.value };
+                                      const updated = [...(formData.packages || [])];
+                                      updated[pkgIndex] = {
+                                        ...updated[pkgIndex],
+                                        customAddOns: updated[pkgIndex].customAddOns.map((a, i) => 
+                                          i === addOnIndex ? { ...a, description: e.target.value } : a
+                                        )
+                                      };
                                       handleInputChange('packages', updated);
                                     }}
                                     className="col-span-2 px-2 py-1 border border-gray-300 rounded text-sm"
@@ -2142,7 +2573,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const updated = [...formData.packages!];
+                                    const updated = [...(formData.packages || [])];
                                     updated[pkgIndex] = {
                                       ...updated[pkgIndex],
                                       customAddOns: updated[pkgIndex].customAddOns?.filter((_, i) => i !== addOnIndex) || []
@@ -2284,7 +2715,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="checkbox"
                               checked={pkg.includedAdultEntranceFee}
                               onChange={(e) => {
-                                const updated = [...formData.packages!];
+                                const updated = [...(formData.packages || [])];
                                 updated[pkgIndex] = { ...updated[pkgIndex], includedAdultEntranceFee: e.target.checked };
                                 handleInputChange('packages', updated);
                               }}
@@ -2297,7 +2728,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               type="checkbox"
                               checked={pkg.includedChildEntranceFee}
                               onChange={(e) => {
-                                const updated = [...formData.packages!];
+                                const updated = [...(formData.packages || [])];
                                 updated[pkgIndex] = { ...updated[pkgIndex], includedChildEntranceFee: e.target.checked };
                                 handleInputChange('packages', updated);
                               }}
@@ -2313,7 +2744,7 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                         <button
                           type="button"
                           onClick={() => {
-                            const updated = [...formData.packages!];
+                            const updated = [...(formData.packages || [])];
                             updated[pkgIndex] = { ...updated[pkgIndex], isConfirmed: !updated[pkgIndex].isConfirmed };
                             handleInputChange('packages', updated);
                           }}
@@ -2658,10 +3089,6 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               onClick={() => {
                                 setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
                                 setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-                                // Also clear imageFiles from formData if all removed
-                                if (imagePreviewUrls.length === 1) {
-                                  handleInputChange('imageFiles', undefined);
-                                }
                               }}
                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600"
                             >
@@ -2691,15 +3118,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
                               className="w-full h-32 object-cover rounded-lg"
                               fallbackText="Resort Image"
                             />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleInputChange('imageUrls', formData.imageUrls!.filter((_, i) => i !== index));
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                            >
-                              ×
-                            </button>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 handleInputChange('imageUrls', (formData.imageUrls || []).filter((_, i) => i !== index));
+                               }}
+                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                             >
+                               ×
+                             </button>
                           </div>
                         ))}
                       </div>
@@ -2797,13 +3224,13 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between gap-4">
+        {/* Navigation Buttons - Mobile First */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 bg-white p-4 sm:p-0 border-t sm:border-t-0 -mx-4 sm:mx-0">
           {currentStep > 1 && (
             <button
               type="button"
               onClick={prevStep}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
+              className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition min-h-[44px] active:scale-[0.98]"
             >
               Previous
             </button>
@@ -2812,44 +3239,43 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
             <button
               type="button"
               onClick={nextStep}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition ml-auto"
+              className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition min-h-[44px] active:scale-[0.98] sm:ml-auto"
             >
               Next
             </button>
           ) : (
-            <>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 disabled:bg-gray-500 transition"
+                  className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 disabled:bg-gray-500 transition min-h-[44px] active:scale-[0.98]"
                 >
                   Cancel
                 </button>
               )}
               <button
-                disabled={isLoading}
+                disabled={isLoading || !isFormValid()}
                 type="submit"
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-500 transition"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-500 transition min-h-[44px] active:scale-[0.98]"
               >
                 {isLoading ? "Saving..." : "Save Resort"}
               </button>
-            </>
+            </div>
           )}
         </div>
       </form>
 
-      {/* Custom Room Modal */}
+      {/* Custom Room Modal - Mobile Optimized */}
       {showCustomRoomModal && tempCustomRoom && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Add Custom Room</h3>
             <div className="space-y-4">
               <ImageUpload
                 value={tempCustomRoom.imageUrl}
                 onChange={(url) => setTempCustomRoom({ ...tempCustomRoom, imageUrl: url })}
-                onFileChange={(file) => setTempCustomRoom({ ...tempCustomRoom, imageFile: file })}
                 label="Room Image"
               />
               <div>
@@ -2956,16 +3382,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
         </div>
       )}
 
-      {/* Custom Cottage Modal */}
+      {/* Custom Cottage Modal - Mobile Optimized */}
       {showCustomCottageModal && tempCustomCottage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Add Custom Cottage</h3>
             <div className="space-y-4">
               <ImageUpload
                 value={tempCustomCottage.imageUrl}
                 onChange={(url) => setTempCustomCottage({ ...tempCustomCottage, imageUrl: url })}
-                onFileChange={(file) => setTempCustomCottage({ ...tempCustomCottage, imageFile: file })}
                 label="Cottage Image"
               />
               <div>
@@ -3075,16 +3500,15 @@ const ManageHotelForm = ({ onSubmit, onCancel, isLoading, hotel }: Props) => {
         </div>
       )}
 
-      {/* Custom Amenity Modal */}
+      {/* Custom Amenity Modal - Mobile Optimized */}
       {showCustomAmenityModal && tempCustomAmenity && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Add Custom Amenity</h3>
             <div className="space-y-4">
               <ImageUpload
                 value={tempCustomAmenity.imageUrl}
                 onChange={(url) => setTempCustomAmenity({ ...tempCustomAmenity, imageUrl: url })}
-                onFileChange={(file) => setTempCustomAmenity({ ...tempCustomAmenity, imageFile: file })}
                 label="Amenity Image"
               />
               <div>

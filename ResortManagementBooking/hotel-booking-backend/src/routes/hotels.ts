@@ -11,6 +11,7 @@ import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
 import { checkAvailability, createAtomicBooking } from "../services/availabilityService";
+import { TimezoneManager } from "../utils/timezoneUtils";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
@@ -38,11 +39,19 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    // Accept only image files
-    if (file.mimetype.startsWith('image/')) {
+    // Block dangerous extensions regardless of MIME type
+    const blockedExtensions = ['.exe', '.pdf', '.svg', '.js', '.html', '.php', '.zip', '.tar', '.gz'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (blockedExtensions.includes(ext)) {
+      return cb(new Error(`File type ${ext} is not allowed for security reasons`));
+    }
+    
+    // Only allow standard image MIME types
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only JPEG, PNG, and WebP image files are allowed'));
     }
   }
 });
@@ -96,7 +105,7 @@ router.get("/search", searchLimiter, async (req: Request, res: Response) => {
 
     // DATA PROJECTION: Exclude sensitive fields from search results
     const hotels = await Hotel.find(query)
-      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate adultEntranceFee childEntranceFee isApproved')
+      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate childEntranceFee isApproved')
       .sort(sortOptions)
       .skip(skip)
       .limit(pageSize);
@@ -136,7 +145,7 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     // DATA PROJECTION: Exclude sensitive fields from hotel list
     const hotels = await Hotel.find({ isApproved: { $ne: false } })
-      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate adultEntranceFee childEntranceFee isApproved')
+      .select('name city country starRating type facilities imageUrls nightRate dayRate hasNightRate hasDayRate childEntranceFee isApproved')
       .sort("-lastUpdated");
     
     // Transform database fields to match frontend expectations for backward compatibility
@@ -179,7 +188,7 @@ router.get(
       console.log("Full hotel data (all fields):", fullHotel);
       console.log("Full hotel gcashNumber:", fullHotel?.gcashNumber);
       
-      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities gcashNumber downPaymentPercentage');
+      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities gcashNumber downPaymentPercentage');
       
       console.log("Hotel data found (with selection):", hotel);
       console.log("Hotel gcashNumber specifically:", hotel?.gcashNumber);
@@ -249,7 +258,7 @@ router.post(
       }
 
       // Use lean() for faster query - only fetch needed fields including rooms
-      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities').lean();
+      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities').lean();
       if (!hotel) {
         return res.status(400).json({ message: "Hotel not found" });
       }
@@ -332,25 +341,22 @@ router.post(
         return res.status(404).json({ message: "Hotel not found" });
       }
 
-      // DATE VALIDATION: Prevent time-travel bookings
-      const checkInDate = new Date(checkIn);
-      const checkOutDate = new Date(checkOut);
-      const now = new Date();
+      // TIMEZONE-SAFE DATE VALIDATION
       
-      // Set now to start of day for fair comparison
-      now.setHours(0, 0, 0, 0);
-      checkInDate.setHours(0, 0, 0, 0);
-      checkOutDate.setHours(0, 0, 0, 0);
+      // Get client timezone from headers or use default
+      const clientTimezone = req.headers['x-timezone'] as string;
+      const validation = TimezoneManager.validateBookingDates(checkIn, checkOut, clientTimezone);
       
-      // Validate checkIn is not in the past
-      if (checkInDate < now) {
-        return res.status(400).json({ message: "Check-in date cannot be in the past" });
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          message: validation.error,
+          timezone: TimezoneManager.getCurrentTimezone(),
+          clientTimezone: clientTimezone || 'not provided'
+        });
       }
       
-      // Validate checkOut is after checkIn
-      if (checkOutDate <= checkInDate) {
-        return res.status(400).json({ message: "Check-out date must be after check-in date" });
-      }
+      // Use normalized dates from validation
+      const { checkIn: normalizedCheckIn, checkOut: normalizedCheckOut } = validation.normalizedDates!;
 
       // Prepare booking data
       const bookingData = {
@@ -362,8 +368,8 @@ router.post(
         phone: phone || "",
         adultCount: adultCount || 1,
         childCount: childCount || 0,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
+        checkIn: normalizedCheckIn,
+        checkOut: normalizedCheckOut,
         checkInTime: checkInTime || "12:00",
         checkOutTime: checkOutTime || "11:00",
         totalCost: totalCost || basePrice || 0,
@@ -385,34 +391,49 @@ router.post(
         canModify: true
       };
 
-      // Use ATOMIC booking to prevent race conditions
-      const result = await createAtomicBooking(bookingData);
+      // Start transaction for complete booking flow
+      const session = await mongoose.startSession();
+      session.startTransaction();
       
-      if (!result.success) {
-        return res.status(409).json({ 
-          message: result.error || "Booking failed due to availability conflict" 
+      try {
+        // Use ATOMIC booking to prevent race conditions (with transaction session)
+        const result = await createAtomicBooking(bookingData, { session });
+        
+        if (!result.success) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(409).json({ 
+            message: result.error || "Booking failed due to availability conflict" 
+          });
+        }
+        
+        const booking = result.booking;
+        
+        // Update hotel booking count
+        await Hotel.findByIdAndUpdate(hotelId, {
+          $inc: { totalBookings: 1 }
+        }, { session });
+        
+        // Update user booking count
+        await User.findByIdAndUpdate(userId, {
+          $inc: { totalBookings: 1 }
+        }, { session });
+        
+        await session.commitTransaction();
+        session.endSession();
+        
+        console.log("Booking created successfully:", booking._id);
+        
+        res.status(201).json({
+          message: "Booking created successfully",
+          bookingId: booking._id,
+          booking
         });
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
       }
-      
-      const booking = result.booking;
-      
-      // Update hotel booking count
-      await Hotel.findByIdAndUpdate(hotelId, {
-        $inc: { totalBookings: 1 }
-      });
-      
-      // Update user booking count
-      await User.findByIdAndUpdate(userId, {
-        $inc: { totalBookings: 1 }
-      });
-      
-      console.log("Booking created successfully:", booking._id);
-      
-      res.status(201).json({
-        message: "Booking created successfully",
-        bookingId: booking._id,
-        booking
-      });
     } catch (error) {
       console.error("Booking error:", error);
       res.status(500).json({ 
@@ -493,64 +514,77 @@ router.post(
         screenshotFile: req.file ? `/uploads/${req.file.filename}` : undefined
       };
       
-      // Create the booking with GCash payment
-      const booking = new Booking({
-        userId,
-        hotelId,
-        firstName,
-        lastName,
-        email,
-        phone: phone || "",
-        adultCount: parseInt(adultCount) || 1,
-        childCount: parseInt(childCount) || 0,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        checkInTime: checkInTime || "12:00",
-        checkOutTime: checkOutTime || "11:00",
-        totalCost: parseFloat(totalCost) || parseFloat(basePrice) || 0,
-        basePrice: parseFloat(basePrice) || parseFloat(totalCost) || 0,
-        selectedRooms: selectedRooms ? JSON.parse(selectedRooms) : [],
-        selectedCottages: selectedCottages ? JSON.parse(selectedCottages) : [],
-        selectedAmenities: selectedAmenities ? JSON.parse(selectedAmenities) : [],
-        paymentMethod: "gcash",
-        specialRequests: specialRequests || "",
-        status: "pending",
-        // Handle discount information from form
-        isPwdBooking: req.body.pwdGuests > 0,
-        isSeniorCitizenBooking: req.body.seniorCitizens > 0,
-        discountApplied: (req.body.seniorCitizens > 0 || req.body.pwdGuests > 0) ? {
-          type: req.body.seniorCitizens > 0 ? "senior_citizen" : "pwd",
-          percentage: 20,
-          amount: (parseFloat(totalCost) || parseFloat(basePrice) || 0) * 0.2
-        } : undefined,
-        // GCash payments always remain pending per business rules
-        paymentStatus: "pending",
-        // Set 8-hour change window
-        changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
-        canModify: true,
-        // Store GCash payment details
-        gcashPayment: gcashPaymentDetails
-      });
+      // Start transaction for complete GCash booking flow
+      const session = await mongoose.startSession();
+      session.startTransaction();
       
-      await booking.save();
-      
-      // Update hotel booking count
-      await Hotel.findByIdAndUpdate(hotelId, {
-        $inc: { totalBookings: 1 }
-      });
-      
-      // Update user booking count
-      await User.findByIdAndUpdate(userId, {
-        $inc: { totalBookings: 1 }
-      });
-      
-      console.log("GCash Booking created successfully:", booking._id);
-      
-      res.status(201).json({
-        message: "GCash booking created successfully. Payment is pending verification.",
-        bookingId: booking._id,
-        booking
-      });
+      try {
+        // Create the booking with GCash payment
+        const booking = new Booking({
+          userId,
+          hotelId,
+          firstName,
+          lastName,
+          email,
+          phone: phone || "",
+          adultCount: parseInt(adultCount) || 1,
+          childCount: parseInt(childCount) || 0,
+          checkIn: new Date(checkIn),
+          checkOut: new Date(checkOut),
+          checkInTime: checkInTime || "12:00",
+          checkOutTime: checkOutTime || "11:00",
+          totalCost: parseFloat(totalCost) || parseFloat(basePrice) || 0,
+          basePrice: parseFloat(basePrice) || parseFloat(totalCost) || 0,
+          selectedRooms: selectedRooms ? JSON.parse(selectedRooms) : [],
+          selectedCottages: selectedCottages ? JSON.parse(selectedCottages) : [],
+          selectedAmenities: selectedAmenities ? JSON.parse(selectedAmenities) : [],
+          paymentMethod: "gcash",
+          specialRequests: specialRequests || "",
+          status: "pending",
+          // Handle discount information from form
+          isPwdBooking: req.body.pwdGuests > 0,
+          isSeniorCitizenBooking: req.body.seniorCitizens > 0,
+          discountApplied: (req.body.seniorCitizens > 0 || req.body.pwdGuests > 0) ? {
+            type: req.body.seniorCitizens > 0 ? "senior_citizen" : "pwd",
+            percentage: 20,
+            amount: (parseFloat(totalCost) || parseFloat(basePrice) || 0) * 0.2
+          } : undefined,
+          // GCash payments always remain pending per business rules
+          paymentStatus: "pending",
+          // Set 8-hour change window
+          changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
+          canModify: true,
+          // Store GCash payment details
+          gcashPayment: gcashPaymentDetails
+        });
+        
+        await booking.save({ session });
+        
+        // Update hotel booking count
+        await Hotel.findByIdAndUpdate(hotelId, {
+          $inc: { totalBookings: 1 }
+        }, { session });
+        
+        // Update user booking count
+        await User.findByIdAndUpdate(userId, {
+          $inc: { totalBookings: 1 }
+        }, { session });
+        
+        await session.commitTransaction();
+        session.endSession();
+        
+        console.log("GCash Booking created successfully:", booking._id);
+        
+        res.status(201).json({
+          message: "GCash booking created successfully. Payment is pending verification.",
+          bookingId: booking._id,
+          booking
+        });
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+      }
     } catch (error) {
       console.error("GCash Booking error:", error);
       res.status(500).json({ 

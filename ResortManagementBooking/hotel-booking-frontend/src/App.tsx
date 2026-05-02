@@ -35,6 +35,7 @@ import ResortDashboard from "./pages/ResortDashboard";
 import ResortReports from "./pages/ResortReports";
 import AdminDashboard from './pages/AdminDashboard';
 import AdminManagement from './pages/AdminManagement';
+import AdminApplicationReview from './pages/AdminApplicationReview';
 import ResortApproval from './pages/Admin/ResortApproval';
 import AdminReports from './pages/AdminReports';
 import AdminAnalytics from './pages/AdminAnalytics';
@@ -212,9 +213,19 @@ const App = () => {
             <Route
               path="/resort/reports"
               element={
-                <ProtectedRoute requiredPermission="canManageOwnResorts">
+                <ProtectedRoute>
                   <Layout>
                     <ResortReports />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff-management"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <StaffManagement />
                   </Layout>
                 </ProtectedRoute>
               }
@@ -264,6 +275,16 @@ const App = () => {
                 <AdminRouteGuard>
                   <Layout>
                     <AdminManagement />
+                  </Layout>
+                </AdminRouteGuard>
+              }
+            />
+            <Route
+              path="/admin/applications"
+              element={
+                <AdminRouteGuard>
+                  <Layout>
+                    <AdminApplicationReview />
                   </Layout>
                 </AdminRouteGuard>
               }

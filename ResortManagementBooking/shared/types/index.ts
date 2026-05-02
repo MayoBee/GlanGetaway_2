@@ -24,6 +24,8 @@ export interface HotelType {
   name: string;
   city: string;
   country: string;
+  barangay?: string;
+  purok?: string;
   description: string;
   type: string[];
   starRating: number;
@@ -35,7 +37,17 @@ export interface HotelType {
   hasDayRate?: boolean;
   hasNightRate?: boolean;
   pricePerNight?: number;
-  amenities?: any[];
+  amenities?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    units: number;
+    description?: string;
+    imageUrl?: string;
+    isFree?: boolean;
+    category?: string;
+    isConfirmed?: boolean;
+  }>;
   rooms?: Array<{
     id: string;
     name: string;
@@ -43,8 +55,11 @@ export interface HotelType {
     pricePerNight: number;
     minOccupancy: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
     amenities?: string[];
+    imageUrl?: string;
+    imageFile?: File;
     isConfirmed?: boolean;
   }>;
   cottages?: Array<{
@@ -58,10 +73,119 @@ export interface HotelType {
     hasNightRate: boolean;
     minOccupancy: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
     amenities?: string[];
+    imageUrl?: string;
+    imageFile?: File;
     isConfirmed?: boolean;
   }>;
+  contact?: {
+    phone: string;
+    email: string;
+    website: string;
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
+  policies?: {
+    checkInTime: string;
+    checkOutTime: string;
+    dayCheckInTime: string;
+    dayCheckOutTime: string;
+    nightCheckInTime: string;
+    nightCheckOutTime: string;
+    resortPolicies?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      isConfirmed?: boolean;
+    }>;
+  };
+  discounts?: {
+    seniorCitizenEnabled: boolean;
+    seniorCitizenPercentage: number;
+    pwdEnabled: boolean;
+    pwdPercentage: number;
+  };
+  packages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    imageUrl?: string;
+    imageFile?: File;
+    includedRooms: Array<{
+      roomId: string;
+      units: number;
+    }>;
+    includedCottages: Array<{
+      cottageId: string;
+      units: number;
+    }>;
+    includedAmenities: Array<{
+      amenityId: string;
+      quantity: number;
+    }>;
+    customAddOns: Array<{
+      id: string;
+      name: string;
+      description: string;
+      price?: number;
+    }>;
+    customRooms: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      pricePerNight: number;
+      minOccupancy: number;
+      maxOccupancy: number;
+      units: number;
+      amenities?: string[];
+    }>;
+    customCottages: Array<{
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      dayRate: number;
+      nightRate: number;
+      minOccupancy: number;
+      maxOccupancy: number;
+      units: number;
+      amenities?: string[];
+    }>;
+    customAmenities: Array<{
+      id: string;
+      name: string;
+      description: string;
+      type: 'included' | 'addon';
+      price?: number;
+      quantity: number;
+    }>;
+    includedAdultEntranceFee: boolean;
+    includedChildEntranceFee: boolean;
+    isConfirmed?: boolean;
+  }>;
+  adultEntranceFee?: {
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number;
+  };
+  childEntranceFee?: Array<{
+    id: string;
+    minAge: number;
+    maxAge: number;
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number;
+    isConfirmed?: boolean;
+  }>;
+  gcashNumber?: string;
+  isFeatured?: boolean;
   downPaymentPercentage?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -102,20 +226,6 @@ export interface GCashPaymentInfo {
   paymentTime: string;
 }
 
-export interface HotelFormData {
-  name: string;
-  city: string;
-  country: string;
-  description: string;
-  type: string[];
-  pricePerNight: number;
-  starRating: number;
-  facilities: string[];
-  imageUrls: string[];
-  imageFiles?: FileList;
-  adultCount?: number;
-  childCount?: number;
-}
 
 export interface HotelSearchResponse {
   data: HotelType[];

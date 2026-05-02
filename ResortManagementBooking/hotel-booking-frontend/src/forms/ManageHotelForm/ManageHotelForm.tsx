@@ -116,12 +116,6 @@ export type HotelFormData = {
     pwdPercentage: number;
   };
   // Entrance fee fields
-  adultEntranceFee?: {
-    dayRate: number;
-    nightRate: number;
-    pricingModel: "per_head" | "per_group";
-    groupQuantity?: number;
-  };
   childEntranceFee?: Array<{
     id: string;
     minAge: number;
@@ -170,6 +164,7 @@ export type HotelFormData = {
       description: string;
       quantity: number;
       inclusionType: 'included' | 'addon';
+      imageUrl?: string;
     }>;
     includedAdultEntranceFee: boolean;
     includedChildEntranceFee: boolean;
@@ -290,12 +285,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       },
       packages: [],
       isFeatured: false,
-      adultEntranceFee: {
-        dayRate: 0,
-        nightRate: 0,
-        pricingModel: "per_head",
-        groupQuantity: 1,
-      },
       childEntranceFee: [],
       downPaymentPercentage: 50,
       gcashNumber: "",
@@ -328,10 +317,13 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         }));
       };
       
-      // Ensure contact and policies are properly initialized
-      const formData = {
-        ...mergedHotelData,
-        // Handle the new day/night rate fields with fallbacks
+      // Map HotelType to HotelFormData with proper defaults for missing required properties
+      const formData: HotelFormData = {
+        name: mergedHotelData.name,
+        city: mergedHotelData.city,
+        country: mergedHotelData.country,
+        description: mergedHotelData.description,
+        type: mergedHotelData.type,
         dayRate: mergedHotelData.dayRate || 0,
         nightRate: mergedHotelData.nightRate || 0,
         hasDayRate: mergedHotelData.hasDayRate !== undefined ? mergedHotelData.hasDayRate : false,
@@ -340,6 +332,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         dayRateCheckOutTime: (mergedHotelData as any).dayRateCheckOutTime || "05:00 PM",
         nightRateCheckInTime: (mergedHotelData as any).nightRateCheckInTime || "02:00 PM",
         nightRateCheckOutTime: (mergedHotelData as any).nightRateCheckOutTime || "02:00 PM",
+        hasNightRateTimeRestrictions: (mergedHotelData as any).hasNightRateTimeRestrictions || false,
+        starRating: mergedHotelData.starRating,
+        facilities: mergedHotelData.facilities,
+        imageUrls: mergedHotelData.imageUrls || [],
         contact: mergedHotelData.contact || {
           phone: "",
           email: "",
@@ -376,6 +372,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
             units: parseInt(String(cottage.units)) || 1
           }))
         ),
+        isFeatured: mergedHotelData.isFeatured || false,
         discounts: mergedHotelData.discounts || {
           seniorCitizenEnabled: true,
           seniorCitizenPercentage: 20,
@@ -386,17 +383,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           currentValues.packages || [],
           mergedHotelData.packages || []
         ),
-        adultEntranceFee: mergedHotelData.adultEntranceFee || {
-          dayRate: 0,
-          nightRate: 0,
-          pricingModel: "per_head",
-          groupQuantity: 1,
-        },
-        childEntranceFee: preserveConfirmedStates(
+                childEntranceFee: preserveConfirmedStates(
           currentValues.childEntranceFee || [],
           mergedHotelData.childEntranceFee || []
         ),
-        imageUrls: mergedHotelData.imageUrls || [],
         downPaymentPercentage: mergedHotelData.downPaymentPercentage || 50,
         gcashNumber: mergedHotelData.gcashNumber || "",
       };

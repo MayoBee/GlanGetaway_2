@@ -51,14 +51,14 @@ async function checkAndUpdateAdminRoles() {
           firstName: 'Admin',
           lastName: 'User',
           password: 'admin123456', // You should change this
-          role: UserRole.SuperAdmin,
+          role: 'superAdmin',
           emailVerified: true,
           isActive: true
         });
       } else {
         // Update existing user to admin
         console.log(`Updating existing user to admin: ${targetEmail}`);
-        adminUser.role = UserRole.SuperAdmin;
+        adminUser.role = 'superAdmin';
       }
       
       await adminUser.save();

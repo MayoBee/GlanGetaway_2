@@ -6,6 +6,9 @@ import path from "path";
 
 import userRoutes from "./users";
 import authRoutes from "./auth";
+import authRefreshRoutes from "./auth-refresh";
+import complianceRoutes from "./compliance";
+import deploymentRoutes from "./deployment";
 import myHotelRoutes from "./my-hotels";
 import hotelRoutes from "./hotels";
 import bookingRoutes from "./my-bookings";
@@ -47,6 +50,9 @@ export const mountRoutes = (app: Express) => {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api/auth", authRefreshRoutes);
+  app.use("/api/compliance", complianceRoutes);
+  app.use("/api/deployment", deploymentRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/my-hotels", myHotelRoutes);
   app.use("/api/hotels", hotelRoutes);

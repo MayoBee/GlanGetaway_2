@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Settings as SettingsIcon, Shield, Bell, Lock, User, Globe, Save } from "lucide-react";
+import { Settings as SettingsIcon, Shield, Bell, Lock, User, Globe, Save, ArrowLeft } from "lucide-react";
 import { signOut } from "../api-client";
 import { useNavigate } from "react-router-dom";
 
@@ -47,13 +47,25 @@ const AdminSettings: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-          <SettingsIcon className="w-8 h-8 mr-3 text-primary-600" />
-          Admin Settings
-        </h1>
-        <p className="text-gray-600">
-          Manage your admin account settings and preferences
-        </p>
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Exit
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+              <SettingsIcon className="w-8 h-8 mr-3 text-primary-600" />
+              Admin Settings
+            </h1>
+            <p className="text-gray-600">
+              Manage your admin account settings and preferences
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6">

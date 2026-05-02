@@ -90,7 +90,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/quick-block`,
         {
@@ -131,7 +131,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/${activeBlock.id}/release`,
         {},
@@ -157,7 +157,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/${activeBlock.id}/extend`,
         { additionalMinutes: 15 },

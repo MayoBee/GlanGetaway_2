@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { signIn, getApiBaseUrl } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -25,22 +25,24 @@ export type SignInFormData = {
   password: string;
 };
 
-
 const SignIn = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const {
     register,
     formState: { errors },
     handleSubmit,
     setValue,
-  } = useForm<SignInFormData>();
+    trigger,
+  } = useForm<SignInFormData>({
+    mode: 'onChange', // Validate on change for better UX
+  });
 
 
   const mutation = useMutation(signIn, {
@@ -52,6 +54,13 @@ const SignIn = () => {
         type: "SUCCESS",
       });
 
+      // Add delay to allow backend to process token
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force React Query to refetch authentication data
+      queryClient.invalidateQueries(["validateToken", "currentUser"]);
+      
+      // Navigate after token is processed
       navigate(location.state?.from?.pathname || "/");
     },
     onError: (error: Error) => {
@@ -69,7 +78,13 @@ const SignIn = () => {
     },
   });
 
-  const onSubmit = (data: SignInFormData) => {
+  const onSubmit = async (data: SignInFormData) => {
+    // Trigger validation for all fields before submission
+    const isValid = await trigger();
+    if (!isValid) {
+      return;
+    }
+
     // Clean data to prevent circular reference issues
     const cleanData = {
       email: String(data.email).trim(),
@@ -133,7 +148,13 @@ const SignIn = () => {
                     type="email"
                     className="pl-10 pr-3 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Enter your email"
-                    {...register("email", { required: "Email is required" })}
+                    {...register("email", { 
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Please enter a valid email address"
+                      }
+                    })}
                   />
                 </div>
                 {errors.email && (
@@ -172,6 +193,9 @@ const SignIn = () => {
                         value: 6,
                         message: "Password must be at least 6 characters",
                       },
+                      validate: {
+                        noSpaces: (value) => !/\s/.test(value) || "Password cannot contain spaces",
+                      }
                     })}
                   />
                   <Button

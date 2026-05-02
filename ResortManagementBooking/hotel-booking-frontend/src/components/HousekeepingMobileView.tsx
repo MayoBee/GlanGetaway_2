@@ -33,7 +33,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const url = staffId
         ? `${getApiBaseUrl()}/api/housekeeping-tasks/staff/${staffId}`
         : `${getApiBaseUrl()}/api/housekeeping-tasks/test-hotel-id`;
@@ -69,7 +69,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/scan`,
         {},
@@ -89,7 +89,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
     if (!currentTask) return;
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/checklist`,
         { itemIndex, status },
@@ -113,7 +113,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/complete`,
         { depositAmount: 0 }, // No deposit refund for demo

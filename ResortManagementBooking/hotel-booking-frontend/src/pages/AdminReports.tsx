@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "react-query";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import { axiosInstance } from "../api-client";
@@ -6,6 +7,7 @@ import { fetchReports, updateReport } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useAdminBypass } from "../hooks/useAdminBypass";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -15,7 +17,8 @@ import {
   User,
   Calendar,
   Flag,
-  ShieldOff
+  ShieldOff,
+  ArrowLeft
 } from "lucide-react";
 
 interface Report {
@@ -45,6 +48,7 @@ interface Report {
 }
 
 const AdminReports: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useAppContext();
   const { isAdmin } = useAdminBypass();
   const [filter, setFilter] = useState<string>("all");
@@ -185,8 +189,20 @@ const AdminReports: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Report Management</h1>
-        <p className="text-gray-600">Review and manage user-submitted reports</p>
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Exit
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Report Management</h1>
+            <p className="text-gray-600">Review and manage user-submitted reports</p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}

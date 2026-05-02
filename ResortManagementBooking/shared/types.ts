@@ -69,6 +69,9 @@ export type UserType = {
   accountVerified?: boolean; // Verified by super admin
   accountVerifiedBy?: string;
   accountVerifiedAt?: Date;
+  // Password management fields
+  mustChangePassword?: boolean;
+  passwordChangedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -79,6 +82,8 @@ export type HotelType = {
   name: string;
   city: string;
   country: string;
+  barangay?: string;
+  purok?: string;
   description: string;
   type: string[];
   facilities: string[];
@@ -90,8 +95,12 @@ export type HotelType = {
   dayRateCheckOutTime: string;
   nightRateCheckInTime: string;
   nightRateCheckOutTime: string;
+  hasNightRateTimeRestrictions?: boolean;
   starRating: number;
   imageUrls: string[];
+  imageFiles?: FileList;
+  image?: string; // Legacy field for backward compatibility
+  rating?: number; // Legacy field for backward compatibility
   lastUpdated: Date;
   // Remove embedded bookings - using separate collection now
   // bookings: BookingType[];
@@ -138,6 +147,7 @@ export type HotelType = {
     name: string;
     price: number;
     description?: string;
+    imageFile?: File;
     isConfirmed?: boolean;
   }>;
   rooms?: Array<{
@@ -198,22 +208,24 @@ export type HotelType = {
     includedCottages: string[];
     includedRooms: string[];
     includedAmenities: string[];
-    includedAdultEntranceFee: boolean;
+    customAmenities?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      quantity: number;
+      inclusionType: 'included' | 'addon';
+      imageUrl?: string;
+    }>;
     includedChildEntranceFee: boolean;
     isConfirmed?: boolean;
   }>;
   // Approval system fields
+  status?: "pending" | "approved" | "declined";
   isApproved?: boolean;
   approvedBy?: string;
   approvedAt?: Date;
   rejectionReason?: string;
   // Entrance fee fields
-  adultEntranceFee?: {
-    dayRate: number;
-    nightRate: number;
-    pricingModel: "per_head" | "per_group";
-    groupQuantity?: number; // Only required if pricingModel is "per_group"
-  };
   childEntranceFee?: Array<{
     id: string;
     minAge: number;
@@ -226,6 +238,27 @@ export type HotelType = {
   }>;
   downPaymentPercentage?: number;
   gcashNumber?: string;
+  // Staff management fields
+  staff?: Array<{
+    staffUserId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    position: string;
+    department: string;
+    role: "user" | "admin" | "resort_owner" | "front_desk" | "housekeeping" | "superAdmin";
+    hireDate: Date;
+    isActive: boolean;
+    mustChangePassword: boolean;
+    permissions: Array<{
+      canManageBookings: boolean;
+      canManageRooms: boolean;
+      canManagePricing: boolean;
+      canManageAmenities: boolean;
+      canViewReports: boolean;
+    }>;
+  }>;
+  // Audit fields
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -349,3 +382,5 @@ export type PaymentIntentResponse = {
   clientSecret: string;
   totalCost: number;
 };
+
+export type UserRole = "user" | "admin" | "resort_owner" | "front_desk" | "housekeeping" | "superAdmin";

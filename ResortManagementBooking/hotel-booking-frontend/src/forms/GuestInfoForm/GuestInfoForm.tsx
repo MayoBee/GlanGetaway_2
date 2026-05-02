@@ -20,6 +20,8 @@ import BookingSummary from "../../components/BookingSummary";
 import { axiosInstance } from "../../api-client";
 import { fetchHotelById, updateBooking, fetchMyBookings } from "../../api-client";
 import { useQuery } from "react-query";
+import { PricingEngine } from "../../utils/pricingEngine";
+import { FieldValidator, ValidationMessage, validationRules } from "../../components/ui/form-validation";
 
 type Props = {
   hotelId: string;
@@ -69,7 +71,10 @@ const GuestInfoForm = ({
     selectedRateType
   } = useBookingSelection();
 
-  // Time state variables - initialize with booking data if in edit mode
+  // Time state variables - initialize with booking data 
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [fieldValidation, setFieldValidation] = useState<Record<string, boolean>>({});
   const [checkInTime, setCheckInTime] = useState<string>(
     editMode && bookingData?.checkInTime ? bookingData.checkInTime : search.checkInTime
   );
@@ -124,73 +129,15 @@ const GuestInfoForm = ({
     };
   };
 
-  // Calculate entrance fee total based on adults, children, and their ages
+  // Calculate entrance fee total using centralized pricing engine
   const calculateEntranceFeeTotal = () => {
-    if (!hotel) return 0;
-
-    let total = 0;
-    const rate = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
-
-    // Adult entrance fees
-    if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
-      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-        // Per group pricing - one charge covers groupQuantity people
-        const groupsNeeded = Math.ceil(adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
-        total += groupsNeeded * hotel.adultEntranceFee[rate];
-      } else {
-        // Per head pricing
-        total += adultCount * hotel.adultEntranceFee[rate];
-      }
-    }
-
-    // Child entrance fees
-    if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0) {
-      childAges.forEach((age) => {
-        // Find the appropriate age group for this child
-        const ageGroup = hotel.childEntranceFee?.find(
-          (group) => age >= group.minAge && age <= group.maxAge
-        );
-        
-        if (ageGroup) {
-          // Child falls within a defined age group
-          if (ageGroup[rate] > 0) {
-            if (ageGroup.pricingModel === 'per_group') {
-              // Per group pricing - one charge covers groupQuantity people
-              const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
-              total += groupsNeeded * ageGroup[rate];
-            } else {
-              // Per head pricing
-              total += ageGroup[rate];
-            }
-          }
-          // If ageGroup[rate] is 0, it means free entrance for this age group
-        } else {
-          // Child does not fall within any defined age group - charge adult rate
-          if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
-            if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-              // Per group pricing - one charge covers groupQuantity people
-              const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
-              total += groupsNeeded * hotel.adultEntranceFee[rate];
-            } else {
-              // Per head pricing
-              total += hotel.adultEntranceFee[rate];
-            }
-          }
-        }
-      });
-    } else if (childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
-      // No child age groups defined but there are children - charge all children adult rates
-      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-        // Per group pricing - one charge covers groupQuantity people
-        const groupsNeeded = Math.ceil(childCount / (hotel.adultEntranceFee.groupQuantity || 1));
-        total += groupsNeeded * hotel.adultEntranceFee[rate];
-      } else {
-        // Per head pricing
-        total += childCount * hotel.adultEntranceFee[rate];
-      }
-    }
-
-    return total;
+    return PricingEngine.calculateEntranceFees(
+      adultCount,
+      childCount,
+      childAges,
+      hotel,
+      selectedRateType
+    );
   };
 
   // Fetch availability for the selected dates
@@ -198,7 +145,11 @@ const GuestInfoForm = ({
     if (!checkIn || !checkOut) return;
 
     try {
-      const response = await axiosInstance.get(`/api/hotels/${hotelId}/bookings`);
+      const response = await axiosInstance.get(`/api/hotels/${hotelId}/bookings`, {
+        timeout: 15000, // 15 second timeout
+        retry: 2, // Retry twice for network errors
+        retryDelay: 1000 // 1 second delay between retries
+      });
       const bookings = response.data;
       const unavailable: Date[] = [];
       const selectedStart = new Date(checkIn);
@@ -224,8 +175,33 @@ const GuestInfoForm = ({
 
       setUnavailableDates(unavailable);
       setAvailabilityConflict(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching availability:', error);
+      
+      // Enhanced error handling
+      const isNetworkError = error.message?.includes('Failed to fetch') || 
+                            error.message?.includes('Network Error') ||
+                            error.code === 'ECONNREFUSED' ||
+                            error.message?.includes('ERR_CONNECTION_REFUSED') ||
+                            error.message?.includes('ERR_CONNECTION_RESET');
+      
+      const isCORS_ERROR = error.message?.includes('CORS') || 
+                          error.message?.includes('Access-Control');
+      
+      const isTimeoutError = error.code === 'ECONNABORTED' || 
+                            error.message?.includes('timeout');
+      
+      if (isNetworkError || isCORS_ERROR || isTimeoutError) {
+        // For network/CORS issues, don't block the user - allow them to proceed
+        console.warn('Network/CORS error in availability check, allowing user to proceed');
+        setAvailabilityConflict('Unable to verify availability due to connection issues. Please proceed with caution.');
+      } else if (error.response?.status === 401) {
+        // Auth errors should be handled by the global interceptors
+        console.warn('Authentication error in availability check');
+      } else {
+        // Other server errors
+        setAvailabilityConflict('Unable to check availability. Please try again later.');
+      }
     }
   };
 

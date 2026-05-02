@@ -2,7 +2,7 @@ import { useQuery } from 'react-query';
 import { fetchCurrentUser, validateToken } from '../lib/auth-api-client';
 
 const useAuth = () => {
-  const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('session_id') : false;
+  const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('token') : false;
 
   const { data: tokenValidation, isLoading: isTokenLoading } = useQuery(
     'validateToken',

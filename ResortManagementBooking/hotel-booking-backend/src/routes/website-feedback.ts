@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
-import WebsiteFeedback, { WebsiteFeedbackDocument } from "../models/website-feedback";
+import WebsiteFeedbackDocument from "../models/website-feedback";
+import WebsiteFeedback from "../models/website-feedback";
 import verifyToken from "../middleware/auth";
 
 const router = express.Router();

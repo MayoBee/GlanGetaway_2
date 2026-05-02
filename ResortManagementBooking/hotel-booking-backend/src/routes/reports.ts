@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
-import Report, { ReportDocument } from "../models/report";
+import ReportDocument from "../models/report";
+import Report from "../models/report";
 import { verifyToken } from "../middleware/role-based-auth";
 import mongoose from "mongoose";
 

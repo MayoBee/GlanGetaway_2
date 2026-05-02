@@ -121,14 +121,15 @@ const bookingSchema = new mongoose.Schema(
       maxOccupancy: { type: Number, required: true },
       description: { type: String }
     }],
-    selectedCottages: [{
-      id: { type: String, required: true },
-      name: { type: String, required: true },
-      type: { type: String, required: true },
-      pricePerNight: { type: Number, required: true },
-      maxOccupancy: { type: Number, required: true },
-      description: { type: String }
-    }],
+    // Note: selectedCottages temporarily disabled to fix parallel arrays issue
+    // selectedCottages: [{
+    //   id: { type: String, required: true },
+    //   name: { type: String, required: true },
+    //   type: { type: String, required: true },
+    //   pricePerNight: { type: Number, required: true },
+    //   maxOccupancy: { type: Number, required: true },
+    //   description: { type: String }
+    // }],
     selectedAmenities: [{
       id: { type: String, required: true },
       name: { type: String, required: true },
@@ -217,18 +218,6 @@ bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ paymentStatus: 1, createdAt: -1 });
 bookingSchema.index({ checkIn: 1, status: 1 });
 bookingSchema.index({ hotelId: 1, checkIn: 1, checkOut: 1, status: 1 });
-// Optimized index for availability checks
-bookingSchema.index({
-  hotelId: 1,
-  status: 1,
-  checkIn: 1,
-  checkOut: 1,
-  'selectedRooms.id': 1,
-  'selectedCottages.id': 1
-});
-
-// Additional required indexes
-bookingSchema.index({ hotelId: 1, status: 1, checkIn: 1, checkOut: 1 });
 bookingSchema.index({ userId: 1 });
 bookingSchema.index({ createdAt: -1 });
 

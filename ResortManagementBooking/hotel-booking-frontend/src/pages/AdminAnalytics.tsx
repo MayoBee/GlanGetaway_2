@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import {
   fetchBookingSummary,
@@ -26,7 +27,8 @@ import {
   Wrench,
   Coffee,
   ShieldOff,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -41,6 +43,7 @@ import {
 } from "../components/ui/select";
 
 const AdminAnalytics: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useAppContext();
   const { isAdmin } = useAdminBypass();
   
@@ -229,14 +232,24 @@ const AdminAnalytics: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <BarChart3 className="w-8 h-8 mr-3 text-primary-600" />
-              Admin Analytics Reports
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Comprehensive business reports - Strictly for ADMIN only
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Exit
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <BarChart3 className="w-8 h-8 mr-3 text-primary-600" />
+                Admin Analytics Reports
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Comprehensive business reports - Strictly for ADMIN only
+              </p>
+            </div>
           </div>
           <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200">
             <ShieldOff className="w-3 h-3 mr-1" />

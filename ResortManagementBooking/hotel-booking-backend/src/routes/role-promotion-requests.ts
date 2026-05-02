@@ -74,43 +74,83 @@ router.get("/", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// POST create request with multer upload - for users to submit
+// POST create request with multiple file uploads - for users to submit
 router.post(
   "/",
   verifyToken,
-  upload.single('businessPermit'),
+  upload.fields([
+    { name: 'dtiPermit', maxCount: 1 },
+    { name: 'municipalEngineeringCertification', maxCount: 1 },
+    { name: 'municipalHealthCertification', maxCount: 1 },
+    { name: 'menroCertification', maxCount: 1 },
+    { name: 'bfpPermit', maxCount: 1 },
+    { name: 'businessPermit', maxCount: 1 },
+    { name: 'nationalId', maxCount: 1 },
+  ]),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "Business permit file is required" });
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const { resortName, resortAddress, resortDescription, contactNumber } = req.body;
+
+      // Validate required files
+      const requiredFiles = ['dtiPermit', 'municipalEngineeringCertification', 'municipalHealthCertification', 
+                           'menroCertification', 'bfpPermit', 'businessPermit', 'nationalId'];
+      
+      const missingFiles = requiredFiles.filter(fieldName => !files[fieldName] || files[fieldName].length === 0);
+      if (missingFiles.length > 0) {
+        return res.status(400).json({ 
+          message: "Missing required files", 
+          missingFiles 
+        });
       }
 
-      let businessPermitImageUrl: string;
-
-      // Check if Cloudinary is configured
-      if (process.env.CLOUDINARY_CLOUD_NAME) {
-        // Upload to Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-          folder: "business-permits",
-          resource_type: "auto",
+      // Validate required application details
+      if (!resortName || !resortAddress || !resortDescription || !contactNumber) {
+        return res.status(400).json({ 
+          message: "Missing required application details",
+          required: ['resortName', 'resortAddress', 'resortDescription', 'contactNumber']
         });
-        businessPermitImageUrl = uploadResponse.secure_url;
-      } else {
-        // Save locally
-        businessPermitImageUrl = `/uploads/${req.file.filename}`;
+      }
+
+      // Upload files to Cloudinary or save locally
+      const documents: any = {};
+      
+      for (const fieldName of requiredFiles) {
+        const file = files[fieldName][0];
+        
+        if (process.env.CLOUDINARY_CLOUD_NAME) {
+          // Upload to Cloudinary
+          const uploadResponse = await cloudinary.uploader.upload(file.path, {
+            folder: `resort-applications/${fieldName}`,
+            resource_type: "auto",
+          });
+          documents[fieldName] = uploadResponse.secure_url;
+        } else {
+          // Save locally
+          documents[fieldName] = `/uploads/${file.filename}`;
+        }
       }
 
       const newRequest = new RolePromotionRequest({
         userId: req.userId,
-        businessPermitImageUrl,
+        documents,
+        applicationDetails: {
+          resortName,
+          resortAddress,
+          resortDescription,
+          contactNumber,
+        },
       });
 
       await newRequest.save();
 
-      res.status(201).json({ message: "Promotion request created successfully", request: newRequest });
+      res.status(201).json({ 
+        message: "Resort owner application submitted successfully", 
+        request: newRequest 
+      });
     } catch (error) {
       console.error("Error creating promotion request:", error);
-      res.status(500).json({ message: "Failed to create promotion request" });
+      res.status(500).json({ message: "Failed to submit application" });
     }
   }
 );
@@ -145,16 +185,73 @@ router.get("/stats", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// POST approve request - admin only
+// GET application details for review - admin only
+router.get("/:id", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const request = await RolePromotionRequest.findById(id)
+      .populate("userId", "firstName lastName email phone address")
+      .populate("reviewedBy", "firstName lastName email");
+    
+    if (!request) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.json({ request });
+  } catch (error) {
+    console.error("Error fetching application details:", error);
+    res.status(500).json({ message: "Failed to fetch application details" });
+  }
+});
+
+// PUT update document review status - admin only
+router.put("/:id/review-document", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { documentType, reviewed, notes } = req.body;
+    
+    const request = await RolePromotionRequest.findById(id);
+    if (!request) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    // Update review status for specific document
+    const updateField = `reviewStatus.${documentType}`;
+    await RolePromotionRequest.findByIdAndUpdate(id, {
+      [updateField]: reviewed,
+      status: 'under_review',
+      adminNotes: notes || request.adminNotes,
+    });
+
+    res.json({ message: "Document review status updated successfully" });
+  } catch (error) {
+    console.error("Error updating document review:", error);
+    res.status(500).json({ message: "Failed to update document review status" });
+  }
+});
+
+// POST approve request - admin only (only if all documents reviewed)
 router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const request = await RolePromotionRequest.findById(id);
     if (!request) {
-      return res.status(404).json({ message: "Request not found" });
+      return res.status(404).json({ message: "Application not found" });
     }
-    if (request.status !== 'pending') {
-      return res.status(400).json({ message: "Request is not pending" });
+    
+    if (request.status === 'approved') {
+      return res.status(400).json({ message: "Application already approved" });
+    }
+
+    // Check if all documents have been reviewed
+    const allReviewed = Object.values(request.reviewStatus).every(status => status === true);
+    if (!allReviewed) {
+      return res.status(400).json({ 
+        message: "All documents must be reviewed before approval",
+        pendingReviews: Object.entries(request.reviewStatus)
+          .filter(([_, reviewed]) => !reviewed)
+          .map(([docType]) => docType)
+      });
     }
 
     await RolePromotionRequest.findByIdAndUpdate(id, {
@@ -166,10 +263,10 @@ router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => 
     // Also update the user's role to resort_owner
     await User.findByIdAndUpdate(request.userId, { role: "resort_owner" });
 
-    res.json({ message: "Request approved successfully" });
+    res.json({ message: "Application approved and user promoted to resort owner successfully" });
   } catch (error) {
-    console.error("Error approving request:", error);
-    res.status(500).json({ message: "Failed to approve request" });
+    console.error("Error approving application:", error);
+    res.status(500).json({ message: "Failed to approve application" });
   }
 });
 

@@ -57,13 +57,14 @@ const StaffManagement = () => {
     try {
       setLoading(true);
       const data = await apiClient.fetchResortStaff();
-      setStaff(data);
+      setStaff(Array.isArray(data) ? data : []);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load staff members",
         variant: "destructive",
       });
+      setStaff([]); // Ensure staff is always an array on error
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ const StaffManagement = () => {
     }
   };
 
-  const filteredStaff = staff.filter((member) => {
+  const filteredStaff = (staff || []).filter((member) => {
     const matchesSearch =
       `${member.firstName} ${member.lastName} ${member.email}`
         .toLowerCase()

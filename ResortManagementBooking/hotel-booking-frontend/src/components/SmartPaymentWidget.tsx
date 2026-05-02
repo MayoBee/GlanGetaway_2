@@ -48,7 +48,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
 
   const fetchDepositSettings = async () => {
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const response = await axios.get(
         `${getApiBaseUrl()}/api/payments/hotel/${hotelId}/deposit-settings`,
         {
@@ -87,7 +87,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/payments/create-payment-intent`,
         {
@@ -120,7 +120,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
 
       // First create the payment intent
       const paymentData = await createPaymentIntent();
@@ -158,7 +158,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
+      const token = localStorage.getItem("token");
 
       // First create the payment intent
       const paymentData = await createPaymentIntent();

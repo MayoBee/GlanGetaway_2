@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { axiosInstance } from "../api-client";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { 
   MessageSquare, 
   Bug, 
@@ -12,7 +14,8 @@ import {
   User,
   Globe,
   Download,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from "lucide-react";
 
 interface WebsiteFeedback {
@@ -27,6 +30,7 @@ interface WebsiteFeedback {
 }
 
 const AdminFeedback: React.FC = () => {
+  const navigate = useNavigate();
   console.log("AdminFeedback component rendering");
   const [filter, setFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -125,8 +129,20 @@ const AdminFeedback: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Website Feedback</h1>
-        <p className="text-gray-600">View and manage user feedback about the website</p>
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Exit
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Website Feedback</h1>
+            <p className="text-gray-600">View and manage user feedback about the website</p>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}

@@ -70,7 +70,7 @@ export const cancelRequest = (method: string, url: string) => {
 
 // Request interceptor to add Authorization header with JWT token
 axiosInstance.interceptors.request.use((config: CustomAxiosRequestConfig) => {
-  const token = localStorage.getItem("session_id");
+  const token = localStorage.getItem("token");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -120,8 +120,8 @@ axiosInstance.interceptors.response.use(
 
     // Handle 401 errors by clearing session
     if (error.response?.status === 401) {
-      Cookies.remove("session_id");
-      localStorage.removeItem("session_id");
+      Cookies.remove("token");
+      localStorage.removeItem("token");
       localStorage.removeItem("user_id");
       localStorage.removeItem("user_email");
       localStorage.removeItem("user_name");
@@ -194,7 +194,7 @@ export const signIn = async (formData: SignInFormData): Promise<AuthResponse> =>
 
     const token = response.data?.token;
     if (token) {
-      localStorage.setItem("session_id", token);
+      localStorage.setItem("token", token);
     }
 
     if (response.data?.userId) {
@@ -232,8 +232,8 @@ export const signOut = async (): Promise<void> => {
   } catch (error) {
     // Ignore logout errors
   } finally {
-    Cookies.remove("session_id");
-    localStorage.removeItem("session_id");
+    Cookies.remove("token");
+    localStorage.removeItem("token");
     localStorage.removeItem("user_id");
     localStorage.removeItem("user_email");
     localStorage.removeItem("user_name");
