@@ -33,9 +33,14 @@ const MainNav = () => {
         Resorts
       </Link>
       {isLoggedIn && (
-        <Link to="/my-bookings" className={navLinkClass}>
-          My Bookings
-        </Link>
+        <>
+          <Link to="/my-bookings" className={navLinkClass}>
+            My Bookings
+          </Link>
+          <Link to="/my-application" className={navLinkClass}>
+            My Application
+          </Link>
+        </>
       )}
       
       {/* Management Dropdown - Only visible to resort owners */}

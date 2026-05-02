@@ -190,11 +190,7 @@ export const deleteMyHotelById = async (hotelId: string) => {
 };
 
 export const addMyHotel = async (hotelFormData: FormData) => {
-  const response = await axiosInstance.post("/api/my-hotels", hotelFormData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await axiosInstance.post("/api/my-hotels", hotelFormData);
   return response.data;
 };
 
@@ -885,6 +881,50 @@ export const deleteResortStaff = async (staffId: string) => {
 
 export const toggleResortStaffStatus = async (staffId: string) => {
   const response = await axiosInstance.patch(`/api/resort-staff/${staffId}/toggle-status`);
+  return response.data;
+};
+
+// Resort Owner Application
+export const submitResortOwnerApplication = async (formData: FormData) => {
+  const response = await axiosInstance.post("/api/resort-owner-application", formData);
+  return response.data;
+};
+
+// Fetch all resort owner applications (for admin)
+export const fetchAllResortOwnerApplications = async (status?: string) => {
+  const url = status ? `/api/resort-owner-application/all?status=${status}` : "/api/resort-owner-application/all";
+  const response = await axiosInstance.get(url);
+  return response.data.data;
+};
+
+// Fetch pending resort owner applications (alias for AdminManagement)
+export const fetchPendingRoleRequests = async () => {
+  return fetchAllResortOwnerApplications("pending");
+};
+
+// Approve resort owner application
+export const approveResortOwnerApplication = async (applicationId: string) => {
+  const response = await axiosInstance.post(`/api/resort-owner-application/${applicationId}/approve`);
+  return response.data;
+};
+
+// Decline resort owner application
+export const declineResortOwnerApplication = async (applicationId: string, reason: string) => {
+  const response = await axiosInstance.post(`/api/resort-owner-application/${applicationId}/decline`, {
+    rejectionReason: reason
+  });
+  return response.data;
+};
+
+// Fetch resort owner application details
+export const fetchResortOwnerApplicationDetails = async (applicationId: string) => {
+  const response = await axiosInstance.get(`/api/resort-owner-application/${applicationId}`);
+  return response.data.application;
+};
+
+// Fetch user's own resort owner application
+export const fetchMyResortOwnerApplication = async () => {
+  const response = await axiosInstance.get("/api/resort-owner-application/my-application");
   return response.data;
 };
 

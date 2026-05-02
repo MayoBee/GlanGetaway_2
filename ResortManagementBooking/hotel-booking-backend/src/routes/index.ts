@@ -43,6 +43,7 @@ import amenitySlotsRoutes from "./amenity-slots";
 import housekeepingTasksRoutes from "./housekeeping-tasks";
 import featureFlagRoutes from "./feature-flags";
 import resortStaffRoutes from "./resort-staff";
+import resortOwnerApplicationRoutes from "./resort-owner-application";
 
 export const mountRoutes = (app: Express) => {
   app.get("/", (req: Request, res: Response) => {
@@ -87,6 +88,19 @@ export const mountRoutes = (app: Express) => {
   app.use("/api/amenity-slots", amenitySlotsRoutes);
   app.use("/api/housekeeping-tasks", housekeepingTasksRoutes);
   app.use("/api/feature-flags", featureFlagRoutes);
+  
+  // Debug middleware for resort owner application
+  app.use("/api/resort-owner-application", (req, res, next) => {
+    console.log('🔍 Main Router - Resort Owner Application Request:', {
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      contentType: req.headers['content-type']
+    });
+    next();
+  });
+  
+  app.use("/api/resort-owner-application", resortOwnerApplicationRoutes);
 
   // Swagger API Documentation
   app.use(

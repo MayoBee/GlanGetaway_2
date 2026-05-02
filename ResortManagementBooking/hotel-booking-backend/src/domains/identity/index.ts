@@ -3,6 +3,7 @@ export * from './models/user';
 export * from './models/identity-verification';
 export * from './models/verification-document';
 export * from './models/role-promotion-request';
+export * from './models/resort-owner-application';
 
 // Public services will be exported here
 // export * from './services/auth.service';

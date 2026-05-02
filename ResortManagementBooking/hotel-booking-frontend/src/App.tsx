@@ -28,6 +28,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AuthCallback from "./pages/AuthCallback";
 import AutoLogin from "./pages/AutoLogin";
 import ApplyForResortOwner from "./pages/ApplyForResortOwner";
+import MyApplication from "./pages/MyApplication";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebsiteFeedback from "./components/WebsiteFeedback";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -194,6 +195,16 @@ const App = () => {
                 <ProtectedRoute>
                   <Layout>
                     <ApplyForResortOwner />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-application"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <MyApplication />
                   </Layout>
                 </ProtectedRoute>
               }

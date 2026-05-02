@@ -21,7 +21,8 @@ const parseAllowedOrigins = (): string[] => {
   if (process.env.NODE_ENV !== "production") {
     origins.push(
       "http://localhost:5174",
-      "http://127.0.0.1:5174"
+      "http://127.0.0.1:5174",
+      "http://localhost:5000"  // Add backend for static file access
     );
   }
   

@@ -13,6 +13,7 @@ import {
   Eye, 
   Download,
   Shield,
+  ShieldOff,
   AlertCircle,
   Loader2,
   FileCheck,
@@ -42,39 +43,19 @@ interface Application {
     firstName: string;
     lastName: string;
     email: string;
-    phone?: string;
-    address?: any;
   };
-  documents: {
-    dtiPermit: string;
-    municipalEngineeringCertification: string;
-    municipalHealthCertification: string;
-    menroCertification: string;
-    bfpPermit: string;
-    businessPermit: string;
-    nationalId: string;
-  };
-  applicationDetails: {
-    resortName: string;
-    resortAddress: string;
-    resortDescription: string;
-    contactNumber: string;
-  };
-  status: 'pending' | 'under_review' | 'approved' | 'declined';
-  reviewStatus: {
-    dtiPermit: boolean;
-    municipalEngineeringCertification: boolean;
-    municipalHealthCertification: boolean;
-    menroCertification: boolean;
-    bfpPermit: boolean;
-    businessPermit: boolean;
-    nationalId: boolean;
-  };
-  requestedAt: string;
+  dtiPermit: string;
+  municipalEngineeringCert: string;
+  municipalHealthCert: string;
+  menroCert: string;
+  bfpPermit: string;
+  businessPermit: string;
+  nationalId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
   reviewedAt?: string;
   reviewedBy?: any;
   rejectionReason?: string;
-  adminNotes?: string;
 }
 
 const AdminApplicationReview = () => {
@@ -84,12 +65,25 @@ const AdminApplicationReview = () => {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{name: string, url: string} | null>(null);
+
+  const handleViewDocument = (documentType: string, filename: string) => {
+    console.log('handleViewDocument called:', { documentType, filename });
+    const documentUrl = `http://localhost:5000/uploads/resort-owner-applications/${filename}`;
+    console.log('Setting selectedDocument to:', { name: documentType, url: documentUrl });
+    setSelectedDocument({name: documentType, url: documentUrl});
+    console.log('selectedDocument after setting:', { name: documentType, url: documentUrl });
+  };
   const [adminNotes, setAdminNotes] = useState("");
 
-  // Fetch pending applications
+  // Fetch pending resort owner applications
+  const fetchPendingApplications = async () => {
+    const response = await axiosInstance.get("/api/resort-owner-application/all?status=pending");
+    return response.data.data;
+  };
+
   const { data: applications = [], isLoading, refetch } = useQueryWithLoading(
     "pendingApplications",
-    () => axiosInstance.get("/api/role-promotion-requests/pending").then(res => res.data.requests),
+    fetchPendingApplications,
     {
       loadingMessage: "Loading applications...",
     }
@@ -128,22 +122,22 @@ const AdminApplicationReview = () => {
   // Approve application mutation
   const approveMutation = useMutationWithLoading(
     (applicationId: string) =>
-      axiosInstance.post(`/api/role-promotion-requests/${applicationId}/approve`),
+      axiosInstance.post(`/api/resort-owner-application/${applicationId}/approve`),
     {
       onSuccess: (data) => {
         showToast({
           title: "Application Approved",
-          description: "Application has been approved and user promoted to resort owner.",
+          description: "The resort owner application has been approved successfully.",
           type: "SUCCESS",
         });
+        refetch();
         setIsDetailDialogOpen(false);
         setSelectedApplication(null);
-        refetch();
       },
       onError: (error: any) => {
         showToast({
-          title: "Approval Failed",
-          description: error.message || "Failed to approve application.",
+          title: "Error",
+          description: error.response?.data?.message || "Failed to approve application",
           type: "ERROR",
         });
       },
@@ -153,24 +147,24 @@ const AdminApplicationReview = () => {
   // Decline application mutation
   const declineMutation = useMutationWithLoading(
     ({ applicationId, reason }: {applicationId: string, reason: string}) =>
-      axiosInstance.post(`/api/role-promotion-requests/${applicationId}/decline`, {
+      axiosInstance.post(`/api/resort-owner-application/${applicationId}/decline`, {
         rejectionReason: reason
       }),
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
         showToast({
           title: "Application Declined",
-          description: "Application has been declined.",
+          description: "The resort owner application has been declined.",
           type: "SUCCESS",
         });
+        refetch();
         setIsDetailDialogOpen(false);
         setSelectedApplication(null);
-        refetch();
       },
       onError: (error: any) => {
         showToast({
-          title: "Decline Failed",
-          description: error.message || "Failed to decline application.",
+          title: "Error",
+          description: error.response?.data?.message || "Failed to decline application",
           type: "ERROR",
         });
       },
@@ -179,8 +173,8 @@ const AdminApplicationReview = () => {
 
   const fetchApplicationDetails = async (applicationId: string) => {
     try {
-      const response = await axiosInstance.get(`/api/role-promotion-requests/${applicationId}`);
-      setSelectedApplication(response.data.request);
+      const response = await axiosInstance.get(`/api/resort-owner-application/${applicationId}`);
+      setSelectedApplication(response.data.application);
     } catch (error) {
       console.error("Error fetching application details:", error);
     }
@@ -248,9 +242,7 @@ const AdminApplicationReview = () => {
     return names[documentType] || documentType;
   };
 
-  const canApprove = (application: Application) => {
-    return Object.values(application.reviewStatus).every(status => status === true);
-  };
+  // All resort owner applications can be approved/declined by admins
 
   if (!isAdmin) {
     return (
@@ -320,12 +312,9 @@ const AdminApplicationReview = () => {
                         {application.userId.firstName} {application.userId.lastName}
                       </div>
                       <div className="text-sm text-gray-600">{application.userId.email}</div>
-                      <div className="text-sm text-gray-500">
-                        Resort: {application.applicationDetails.resortName}
-                      </div>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Calendar className="w-4 h-4 mr-1" />
-                        Applied {new Date(application.requestedAt).toLocaleDateString()}
+                        Applied {new Date(application.submittedAt).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -356,10 +345,10 @@ const AdminApplicationReview = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <FileText className="w-5 h-5 mr-2 text-blue-600" />
-              Application Review - {selectedApplication?.applicationDetails.resortName}
+              Application Review - {selectedApplication?.userId.firstName} {selectedApplication?.userId.lastName}
             </DialogTitle>
             <DialogDescription>
-              Review all submitted documents and application details.
+              {selectedDocument.url ? 'Review the submitted document' : 'No document selected'}
             </DialogDescription>
           </DialogHeader>
           
@@ -371,25 +360,17 @@ const AdminApplicationReview = () => {
                   <CardTitle className="text-lg">Applicant Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium">Name:</span> {selectedApplication.userId.firstName} {selectedApplication.userId.lastName}
-                    </div>
-                    <div>
-                      <span className="font-medium">Email:</span> {selectedApplication.userId.email}
-                    </div>
-                    <div>
-                      <span className="font-medium">Contact:</span> {selectedApplication.applicationDetails.contactNumber}
-                    </div>
-                    <div>
-                      <span className="font-medium">Applied:</span> {new Date(selectedApplication.requestedAt).toLocaleDateString()}
-                    </div>
+                  <div>
+                    <span className="font-medium">Name:</span> {selectedApplication.userId.firstName} {selectedApplication.userId.lastName}
                   </div>
                   <div>
-                    <span className="font-medium">Resort Address:</span> {selectedApplication.applicationDetails.resortAddress}
+                    <span className="font-medium">Email:</span> {selectedApplication.userId.email}
                   </div>
                   <div>
-                    <span className="font-medium">Resort Description:</span> {selectedApplication.applicationDetails.resortDescription}
+                    <span className="font-medium">Application ID:</span> {selectedApplication._id}
+                  </div>
+                  <div>
+                    <span className="font-medium">Submitted:</span> {new Date(selectedApplication.submittedAt).toLocaleDateString()}
                   </div>
                 </CardContent>
               </Card>
@@ -397,52 +378,166 @@ const AdminApplicationReview = () => {
               {/* Documents Review */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    <span>Document Review</span>
-                    <Badge className={canApprove(selectedApplication) ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
-                      {canApprove(selectedApplication) ? "All Documents Reviewed" : "Review Required"}
-                    </Badge>
-                  </CardTitle>
+                  <CardTitle className="text-lg">Submitted Documents</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(selectedApplication.documents).map(([docType, url]) => (
-                      <div key={docType} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          {getDocumentIcon(docType, selectedApplication.reviewStatus[docType as keyof typeof selectedApplication.reviewStatus])}
-                          <div>
-                            <div className="font-medium">{getDocumentDisplayName(docType)}</div>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0 h-auto text-blue-600"
-                              onClick={() => setSelectedDocument({name: getDocumentDisplayName(docType), url})}
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              View Document
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
+                    {/* DTI Permit */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">DTI Permit</div>
                           <Button
+                            variant="link"
                             size="sm"
-                            variant={selectedApplication.reviewStatus[docType as keyof typeof selectedApplication.reviewStatus] ? "default" : "outline"}
-                            className={selectedApplication.reviewStatus[docType as keyof typeof selectedApplication.reviewStatus] ? "bg-green-600 hover:bg-green-700" : "border-green-200 text-green-700 hover:bg-green-50"}
-                            onClick={() => handleReviewDocument(docType, true)}
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => handleViewDocument("DTI Permit", selectedApplication.dtiPermit)}
                           >
-                            <ThumbsUp className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={!selectedApplication.reviewStatus[docType as keyof typeof selectedApplication.reviewStatus] ? "default" : "outline"}
-                            className={!selectedApplication.reviewStatus[docType as keyof typeof selectedApplication.reviewStatus] ? "bg-red-600 hover:bg-red-700" : "border-red-200 text-red-700 hover:bg-red-50"}
-                            onClick={() => handleReviewDocument(docType, false)}
-                          >
-                            <ThumbsDown className="w-4 h-4" />
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Municipal Engineering Certification */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">Municipal Engineering Certification</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => {
+                      console.log('Selected Application:', selectedApplication);
+                      console.log('Municipal Engineering Cert:', selectedApplication?.municipalEngineeringCert);
+                      if (selectedApplication?.municipalEngineeringCert) {
+                        setSelectedDocument({name: "Municipal Engineering Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.municipalEngineeringCert}`});
+                      } else {
+                        console.error('Municipal Engineering Cert not found in application');
+                      }
+                    }}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Municipal Health Certification */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">Municipal Health Certification</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => {
+                      console.log('Selected Application:', selectedApplication);
+                      console.log('Municipal Health Cert:', selectedApplication?.municipalHealthCert);
+                      if (selectedApplication?.municipalHealthCert) {
+                        setSelectedDocument({name: "Municipal Health Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.municipalHealthCert}`});
+                      } else {
+                        console.error('Municipal Health Cert not found in application');
+                      }
+                    }}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MENRO Certification */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">MENRO Certification</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => {
+                      console.log('Selected Application:', selectedApplication);
+                      console.log('MENRO Cert:', selectedApplication?.menroCert);
+                      if (selectedApplication?.menroCert) {
+                        setSelectedDocument({name: "MENRO Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.menroCert}`});
+                      } else {
+                        console.error('MENRO Cert not found in application');
+                      }
+                    }}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BFP Permit */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">BFP Permit</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => handleViewDocument("BFP Permit", selectedApplication.bfpPermit)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Business Permit */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">Business Permit</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => handleViewDocument("Business Permit", selectedApplication.businessPermit)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* National ID */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <div className="font-medium">National ID</div>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-600"
+                            onClick={() => handleViewDocument("National ID", selectedApplication.nationalId)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -492,7 +587,7 @@ const AdminApplicationReview = () => {
                 </Button>
                 <Button
                   onClick={handleApproveApplication}
-                  disabled={!canApprove(selectedApplication) || approveMutation.isLoading}
+                  disabled={approveMutation.isLoading}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {approveMutation.isLoading ? (
@@ -519,20 +614,44 @@ const AdminApplicationReview = () => {
           <DialogHeader>
             <DialogTitle>{selectedDocument?.name}</DialogTitle>
             <DialogDescription>
-              Review the submitted document
+              {selectedDocument.url ? 'Review the submitted document' : 'No document selected'}
             </DialogDescription>
           </DialogHeader>
           {selectedDocument && (
             <div className="space-y-4">
               <div className="border rounded-lg overflow-hidden">
-                <img 
-                  src={selectedDocument.url} 
-                  alt={selectedDocument.name}
-                  className="w-full h-auto max-h-[60vh] object-contain"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-document.png';
-                  }}
-                />
+                {selectedDocument.url ? (
+                <>
+                  <div className="border rounded-lg overflow-hidden">
+                    <img 
+                      src={selectedDocument.url} 
+                      alt={selectedDocument.name}
+                      className="w-full h-auto max-h-[60vh] object-contain"
+                      onError={(e) => {
+                        console.error('Image failed to load:', selectedDocument.url);
+                        e.currentTarget.src = '/placeholder-document.png';
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully:', selectedDocument.url);
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(`http://localhost:5000${selectedDocument.url}`, '_blank')}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No document selected</p>
+                </div>
+              )}
               </div>
               <div className="flex justify-end">
                 <Button
