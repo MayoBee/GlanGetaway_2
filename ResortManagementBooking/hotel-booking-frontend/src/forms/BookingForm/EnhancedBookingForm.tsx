@@ -103,6 +103,7 @@ const EnhancedBookingForm = ({
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [discountGuestCounts, setDiscountGuestCounts] = useState({ seniorCitizens: 0, pwdGuests: 0 });
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // Track mount state
   useEffect(() => {
@@ -156,11 +157,51 @@ const EnhancedBookingForm = ({
           navigate("/my-bookings");
         }, 1500);
       },
-      onError: () => {
+      onError: (error: any) => {
+        console.error("[DEBUG] Booking creation error:", error);
+
+        let errorMessage = "There was an error processing your booking. Please try again.";
+        let errorTitle = "Booking Failed";
+
+        // Handle different types of backend errors
+        if (error.response?.status === 400) {
+          const errorData = error.response?.data;
+
+          // Check for specific validation errors
+          if (errorData?.message?.includes("firstName") || errorData?.message?.includes("first name")) {
+            errorMessage = "First name is required. Please provide your first name.";
+            errorTitle = "Missing Information";
+          } else if (errorData?.message?.includes("lastName") || errorData?.message?.includes("last name")) {
+            errorMessage = "Last name is required. Please provide your last name.";
+            errorTitle = "Missing Information";
+          } else if (errorData?.message?.includes("email")) {
+            errorMessage = "Valid email address is required. Please check your email.";
+            errorTitle = "Invalid Email";
+          } else if (errorData?.message?.includes("payment") || errorData?.message?.includes("Payment")) {
+            errorMessage = "Payment processing failed. Please try again or contact support.";
+            errorTitle = "Payment Error";
+          } else if (errorData?.message) {
+            // Use backend message if available
+            errorMessage = errorData.message;
+          }
+        } else if (error.response?.status === 401) {
+          errorMessage = "Your session has expired. Please log in again.";
+          errorTitle = "Authentication Required";
+          // Redirect to login after showing error
+          setTimeout(() => {
+            navigate("/sign-in");
+          }, 2000);
+        } else if (error.response?.status >= 500) {
+          errorMessage = "Server error occurred. Please try again later or contact support.";
+          errorTitle = "Server Error";
+        } else if (error.message?.includes("Network Error") || error.code === "ECONNREFUSED") {
+          errorMessage = "Connection failed. Please check your internet connection and try again.";
+          errorTitle = "Connection Error";
+        }
+
         showToast({
-          title: "Booking Failed",
-          description:
-            "There was an error processing your booking. Please try again.",
+          title: errorTitle,
+          description: errorMessage,
           type: "ERROR",
         });
       },
@@ -182,21 +223,62 @@ const EnhancedBookingForm = ({
           navigate("/my-bookings");
         }, 1500);
       },
-      onError: () => {
+      onError: (error: any) => {
+        console.error("[DEBUG] GCash booking creation error:", error);
+
+        let errorMessage = "There was an error submitting your payment. Please try again.";
+        let errorTitle = "Payment Submission Failed";
+
+        // Handle different types of backend errors
+        if (error.response?.status === 400) {
+          const errorData = error.response?.data;
+
+          // Check for specific validation errors
+          if (errorData?.message?.includes("firstName") || errorData?.message?.includes("first name")) {
+            errorMessage = "First name is required. Please provide your first name.";
+            errorTitle = "Missing Information";
+          } else if (errorData?.message?.includes("lastName") || errorData?.message?.includes("last name")) {
+            errorMessage = "Last name is required. Please provide your last name.";
+            errorTitle = "Missing Information";
+          } else if (errorData?.message?.includes("email")) {
+            errorMessage = "Valid email address is required. Please check your email.";
+            errorTitle = "Invalid Email";
+          } else if (errorData?.message?.includes("gcash") || errorData?.message?.includes("GCash")) {
+            errorMessage = "GCash payment information is invalid. Please check your details.";
+            errorTitle = "Payment Error";
+          } else if (errorData?.message) {
+            // Use backend message if available
+            errorMessage = errorData.message;
+          }
+        } else if (error.response?.status === 401) {
+          errorMessage = "Your session has expired. Please log in again.";
+          errorTitle = "Authentication Required";
+          // Redirect to login after showing error
+          setTimeout(() => {
+            navigate("/sign-in");
+          }, 2000);
+        } else if (error.response?.status >= 500) {
+          errorMessage = "Server error occurred. Please try again later or contact support.";
+          errorTitle = "Server Error";
+        } else if (error.message?.includes("Network Error") || error.code === "ECONNREFUSED") {
+          errorMessage = "Connection failed. Please check your internet connection and try again.";
+          errorTitle = "Connection Error";
+        }
+
         showToast({
-          title: "Payment Submission Failed",
-          description: "There was an error submitting your payment. Please try again.",
+          title: errorTitle,
+          description: errorMessage,
           type: "ERROR",
         });
       },
     }
   );
 
-  const { handleSubmit, register } = useForm<BookingFormData>({
+  const { handleSubmit, register, setValue, watch, formState: { errors } } = useForm<BookingFormData>({
     defaultValues: {
-      firstName: currentUser.firstName,
-      lastName: currentUser.lastName,
-      email: currentUser.email,
+      firstName: currentUser?.firstName || "",
+      lastName: currentUser?.lastName || "",
+      email: currentUser?.email || "",
       adultCount: search.adultCount,
       childCount: search.childCount,
       checkIn: search.checkIn.toISOString(),
@@ -212,9 +294,55 @@ const EnhancedBookingForm = ({
       selectedCottages,
       selectedAmenities,
     },
-    mode: paymentMethod === "card" ? "onChange" : "onSubmit", // Only validate in onChange mode for card
+    mode: "onChange", // Always validate on change for better UX
     shouldUnregister: false,
   });
+
+  // Watch form values
+  const firstNameValue = watch("firstName");
+  const lastNameValue = watch("lastName");
+  const emailValue = watch("email");
+
+  // Helper function to validate if required user information is available
+  const hasValidUserInfo = (formValues?: Partial<BookingFormData>) => {
+    // Check form values if provided (for card submission)
+    if (formValues) {
+      return (formValues.firstName && formValues.firstName.trim()) &&
+             (formValues.lastName && formValues.lastName.trim()) &&
+             (formValues.email && formValues.email.trim());
+    }
+
+    // Check current form values (for GCash submission)
+    const currentValues = watch();
+    const hasFormData = (currentValues.firstName && currentValues.firstName.trim()) &&
+                       (currentValues.lastName && currentValues.lastName.trim()) &&
+                       (currentValues.email && currentValues.email.trim());
+
+    // Check currentUser as fallback
+    const hasUserData = currentUser?.firstName && currentUser.lastName && currentUser.email;
+
+    return hasFormData || hasUserData;
+  };
+
+  // Ensure form values are set when currentUser is available, but don't overwrite manual input
+  useEffect(() => {
+    if (currentUser) {
+      // Only set values if they haven't been manually entered (i.e., if they're still empty)
+      const currentFirstName = watch("firstName");
+      const currentLastName = watch("lastName");
+      const currentEmail = watch("email");
+
+      if (!currentFirstName || currentFirstName.trim() === "") {
+        setValue("firstName", currentUser.firstName || "");
+      }
+      if (!currentLastName || currentLastName.trim() === "") {
+        setValue("lastName", currentUser.lastName || "");
+      }
+      if (!currentEmail || currentEmail.trim() === "") {
+        setValue("email", currentUser.email || "");
+      }
+    }
+  }, [currentUser, setValue, watch]);
 
   const handleCopyCredentials = async () => {
     const credentials = `Card: 4242 4242 4242 4242
@@ -266,7 +394,38 @@ MM/YY: 12/35 CVC: 123`;
     if (paymentMethod === "gcash") {
       return;
     }
-    
+
+    // Prevent multiple submissions
+    if (isProcessingPayment) {
+      console.log("[DEBUG] Payment already in progress, ignoring submission");
+      return;
+    }
+
+    // PHASE 1: User Authentication Validation
+    // Check if user is logged in
+    if (!currentUser) {
+      showToast({
+        title: "Authentication Required",
+        description: "Please log in to complete your booking.",
+        type: "ERROR",
+      });
+      // Redirect to login page
+      setTimeout(() => {
+        navigate("/sign-in");
+      }, 2000);
+      return;
+    }
+
+    // Check if required user information is available
+    if (!hasValidUserInfo(formData)) {
+      showToast({
+        title: "Profile Information Missing",
+        description: "Please complete the required information below to proceed with your booking.",
+        type: "ERROR",
+      });
+      return;
+    }
+
     // Check token validity before critical payment action
     const isTokenValid = await ensureValidToken();
     if (!isTokenValid) {
@@ -282,49 +441,174 @@ MM/YY: 12/35 CVC: 123`;
       return;
     }
 
-    const completeFormData = {
-      ...formData,
-      phone,
-      specialRequests,
-      paymentMethod: "card",
-      totalCost: finalDownPayment, // Use final down payment amount
-      basePrice: calculatedTotal, // Use calculated total as base
-      checkInTime: "12:00 PM",
-      checkOutTime: "11:00 AM",
-      selectedRooms,
-      selectedCottages,
-      selectedAmenities,
-    };
+    // Set processing state to true
+    setIsProcessingPayment(true);
+    
+    try {
+      const completeFormData = {
+        ...formData,
+        phone,
+        specialRequests,
+        paymentMethod: "card",
+        totalCost: finalDownPayment, // Use final down payment amount
+        basePrice: calculatedTotal, // Use calculated total as base
+        checkInTime: "12:00 PM",
+        checkOutTime: "11:00 AM",
+        selectedRooms,
+        selectedCottages,
+        selectedAmenities,
+        paymentIntentId: paymentIntent.paymentIntentId, // Ensure payment intent ID is included
+        // Ensure dates are in ISO format for backend
+        checkIn: search.checkIn.toISOString(),
+        checkOut: search.checkOut.toISOString(),
+      };
 
-    const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement) as StripeCardElement,
-      },
-    });
+      console.log("[DEBUG] Starting Stripe payment confirmation");
+      console.log("[DEBUG] Payment intent ID:", paymentIntent.paymentIntentId);
+      console.log("[DEBUG] Client secret available:", !!paymentIntent.clientSecret);
+      
+      // Validate payment intent state before confirmation
+      try {
+        const paymentIntentResult = await stripe.retrievePaymentIntent(paymentIntent.clientSecret);
+        console.log("[DEBUG] Retrieved payment intent state:", paymentIntentResult);
+        
+        if (paymentIntentResult.paymentIntent?.status !== 'requires_payment_method') {
+          console.error("[DEBUG] Payment intent is in invalid state:", paymentIntentResult.paymentIntent?.status);
+          
+          // Check if we can refresh the payment intent
+          if (paymentIntentResult.paymentIntent?.status === 'canceled' || 
+              paymentIntentResult.paymentIntent?.status === 'succeeded') {
+            showToast({
+              title: "Payment Session Expired",
+              description: "This payment session has expired or been used. Please refresh the page to start a new booking.",
+              type: "ERROR",
+            });
+            // Optionally redirect to refresh the page
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+            return;
+          }
+          
+          showToast({
+            title: "Payment Error",
+            description: "This payment session is in an invalid state. Please refresh and try again.",
+            type: "ERROR",
+          });
+          return;
+        }
+      } catch (retrieveError) {
+        console.error("[DEBUG] Error retrieving payment intent:", retrieveError);
+        showToast({
+          title: "Payment Error",
+          description: "Unable to validate payment session. Please refresh and try again.",
+          type: "ERROR",
+        });
+        return;
+      }
+      
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement || !cardElement._complete) {
+        showToast({
+          title: "Incomplete Card Information",
+          description: "Please complete all card details before proceeding.",
+          type: "ERROR",
+        });
+        return;
+      }
+      
+      const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement) as StripeCardElement,
+        },
+      });
 
-    if (result.error) {
+      console.log("[DEBUG] Stripe payment result:", result);
+
+      if (result.error) {
+        console.error("[DEBUG] Stripe payment error:", result.error);
+        
+        let errorMessage = result.error.message || "An error occurred while processing your payment.";
+        if (result.error.code === 'incomplete_number') {
+          errorMessage = "Please complete your card number before proceeding.";
+        } else if (result.error.code === 'incomplete_expiry') {
+          errorMessage = "Please enter a valid expiration date for your card.";
+        } else if (result.error.code === 'incomplete_cvc') {
+          errorMessage = "Please enter your card's security code (CVC).";
+        } else if (result.error.code === 'invalid_number') {
+          errorMessage = "The card number you entered is invalid.";
+        } else if (result.error.code === 'invalid_expiry_year_past') {
+          errorMessage = "The expiration date you entered is in the past.";
+        } else if (result.error.code === 'invalid_cvc') {
+          errorMessage = "The security code you entered is invalid.";
+        } else if (result.error.code === 'payment_intent_unexpected_state') {
+          errorMessage = "This payment session has expired or been used. Please refresh the page and try again.";
+        } else if (result.error.code === 'payment_intent_invalid') {
+          errorMessage = "Invalid payment session. Please refresh the page and try again.";
+        }
+        
+        showToast({
+          title: "Payment Failed",
+          description: errorMessage,
+          type: "ERROR",
+        });
+        return;
+      }
+
+      console.log("[DEBUG] Payment successful, proceeding with booking");
+      console.log("[DEBUG] Booking data being sent:", completeFormData);
+      bookRoom(completeFormData);
+    } catch (error) {
+      console.error("[DEBUG] Unexpected error during payment:", error);
       showToast({
         title: "Payment Failed",
-        description: result.error.message || "An error occurred while processing your payment.",
+        description: "An unexpected error occurred while processing your payment. Please try again.",
+        type: "ERROR",
+      });
+    } finally {
+      // Always reset processing state
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const onGCashSubmit = async (paymentData: GCashPaymentData) => {
+    // PHASE 1: User Authentication Validation
+    // Check if user is logged in
+    if (!currentUser) {
+      showToast({
+        title: "Authentication Required",
+        description: "Please log in to complete your booking.",
+        type: "ERROR",
+      });
+      // Redirect to login page
+      setTimeout(() => {
+        navigate("/sign-in");
+      }, 2000);
+      return;
+    }
+
+    // Check if required user information is available
+    if (!hasValidUserInfo()) {
+      showToast({
+        title: "Profile Information Missing",
+        description: "Please complete the required information below to proceed with your booking.",
         type: "ERROR",
       });
       return;
     }
 
-    bookRoom(completeFormData);
-  };
-
-  const onGCashSubmit = async (paymentData: GCashPaymentData) => {
     // Check token validity before critical payment action
     const isTokenValid = await ensureValidToken();
     if (!isTokenValid) {
       return; // User will be redirected to login
     }
     
+    // Get current form values, falling back to currentUser data
+    const currentFormValues = watch();
     const formData = {
-      firstName: currentUser.firstName,
-      lastName: currentUser.lastName,
-      email: currentUser.email,
+      firstName: currentFormValues.firstName || currentUser?.firstName || "",
+      lastName: currentFormValues.lastName || currentUser?.lastName || "",
+      email: currentFormValues.email || currentUser?.email || "",
       phone: paymentData.gcashNumber,
       adultCount: search.adultCount,
       childCount: search.childCount,
@@ -352,17 +636,18 @@ MM/YY: 12/35 CVC: 123`;
       },
     };
 
+    console.log("[DEBUG] GCash booking data being sent:", formData);
     bookWithGCash(formData);
   };
 
-  const isLoading = isCardLoading || isGCashLoading;
+  const isLoading = isCardLoading || isGCashLoading || isProcessingPayment;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8">
       {/* Booking Form */}
       <form 
         onSubmit={(e) => {
-          if (paymentMethod === "gcash") {
+          if (paymentMethod === "gcash" || isProcessingPayment) {
             e.preventDefault();
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -383,41 +668,88 @@ MM/YY: 12/35 CVC: 123`;
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  First Name
+                  First Name {!currentUser?.firstName && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   type="text"
-                  readOnly
-                  disabled
-                  className="bg-gray-50 text-gray-600"
-                  {...register("firstName")}
+                  readOnly={!!currentUser?.firstName}
+                  disabled={!!currentUser?.firstName}
+                  className={`${currentUser?.firstName ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.firstName ? "border-red-500" : ""}`}
+                  value={firstNameValue || ""}
+                  {...register("firstName", {
+                    required: !currentUser?.firstName ? "First name is required" : false,
+                    validate: (value) => {
+                      // If user data is loaded, use the loaded data
+                      if (currentUser?.firstName) return true;
+                      // If user data is not loaded, require manual input
+                      return value && value.trim().length > 0 ? true : "First name is required";
+                    }
+                  })}
                 />
+                {!currentUser?.firstName && (
+                  <p className="text-xs text-gray-500">Please provide your first name</p>
+                )}
+                {errors.firstName && (
+                  <p className="text-xs text-red-500">{errors.firstName.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  Last Name
+                  Last Name {!currentUser?.lastName && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   type="text"
-                  readOnly
-                  disabled
-                  className="bg-gray-50 text-gray-600"
-                  {...register("lastName")}
+                  readOnly={!!currentUser?.lastName}
+                  disabled={!!currentUser?.lastName}
+                  className={`${currentUser?.lastName ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.lastName ? "border-red-500" : ""}`}
+                  value={lastNameValue || ""}
+                  {...register("lastName", {
+                    required: !currentUser?.lastName ? "Last name is required" : false,
+                    validate: (value) => {
+                      // If user data is loaded, use the loaded data
+                      if (currentUser?.lastName) return true;
+                      // If user data is not loaded, require manual input
+                      return value && value.trim().length > 0 ? true : "Last name is required";
+                    }
+                  })}
                 />
+                {!currentUser?.lastName && (
+                  <p className="text-xs text-gray-500">Please provide your last name</p>
+                )}
+                {errors.lastName && (
+                  <p className="text-xs text-red-500">{errors.lastName.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  Email
+                  Email {!currentUser?.email && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   type="email"
-                  readOnly
-                  disabled
-                  className="bg-gray-50 text-gray-600"
-                  {...register("email")}
+                  readOnly={!!currentUser?.email}
+                  disabled={!!currentUser?.email}
+                  className={`${currentUser?.email ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.email ? "border-red-500" : ""}`}
+                  value={emailValue || ""}
+                  {...register("email", {
+                    required: !currentUser?.email ? "Email is required" : false,
+                    validate: (value) => {
+                      // If user data is loaded, use the loaded data
+                      if (currentUser?.email) return true;
+                      // If user data is not loaded, require manual input with validation
+                      if (!value || !value.trim()) return "Email is required";
+                      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+                      return emailRegex.test(value) ? true : "Invalid email address";
+                    }
+                  })}
                 />
+                {!currentUser?.email && (
+                  <p className="text-xs text-gray-500">Please provide your email address</p>
+                )}
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -651,14 +983,18 @@ MM/YY: 12/35 CVC: 123`;
           </Button>
         ) : paymentMethod === "card" && (
           <Button
-            disabled={isLoading}
+            disabled={isLoading || isProcessingPayment || Object.keys(errors).length > 0}
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {isLoading || isProcessingPayment ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Processing...
+                {isProcessingPayment ? "Processing Payment..." : "Processing..."}
+              </div>
+            ) : Object.keys(errors).length > 0 ? (
+              <div className="flex items-center gap-2">
+                <span>Please complete required fields</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">

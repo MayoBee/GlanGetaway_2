@@ -13,7 +13,7 @@ import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { useMutation, useQuery } from "react-query";
 import { axiosInstance } from "../../api-client";
 import { fetchHotelById, createRoomBooking, checkAvailability } from '../../api-client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Phone,
@@ -208,11 +208,11 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     }
   );
 
-  const { register, handleSubmit } = useForm<BookingFormData>({
+  const { register, handleSubmit, setValue, watch } = useForm<BookingFormData>({
     defaultValues: {
-      firstName: currentUser.firstName,
-      lastName: currentUser.lastName,
-      email: currentUser.email,
+      firstName: currentUser.firstName || "",
+      lastName: currentUser.lastName || "",
+      email: currentUser.email || "",
       adultCount: search.adultCount,
       childCount: search.childCount,
       checkIn: search.checkIn.toISOString(),
@@ -231,6 +231,20 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     mode: "onChange",
     shouldUnregister: false,
   });
+
+  // Watch form values
+  const firstNameValue = watch("firstName");
+  const lastNameValue = watch("lastName");
+  const emailValue = watch("email");
+
+  // Ensure form values are set when currentUser is available
+  useEffect(() => {
+    if (currentUser) {
+      setValue("firstName", currentUser.firstName || "");
+      setValue("lastName", currentUser.lastName || "");
+      setValue("email", currentUser.email || "");
+    }
+  }, [currentUser, setValue]);
 
   const handleCopyCredentials = async () => {
     const credentials = `Card: 4242 4242 4242 4242
@@ -358,6 +372,7 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
+                  value={firstNameValue || ""}
                   {...register("firstName")}
                 />
               </div>
@@ -371,6 +386,7 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
+                  value={lastNameValue || ""}
                   {...register("lastName")}
                 />
               </div>
@@ -384,6 +400,7 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
+                  value={emailValue || ""}
                   {...register("email")}
                 />
               </div>

@@ -293,9 +293,27 @@ MM/YY: 12/35 CVC: 123`;
     });
 
     if (result.error) {
+      let errorMessage = result.error.message || "An error occurred while processing your payment.";
+      if (result.error.code === 'incomplete_number') {
+        errorMessage = "Please complete your card number before proceeding.";
+      } else if (result.error.code === 'incomplete_expiry') {
+        errorMessage = "Please enter a valid expiration date for your card.";
+      } else if (result.error.code === 'incomplete_cvc') {
+        errorMessage = "Please enter your card's security code (CVC).";
+      } else if (result.error.code === 'invalid_number') {
+        errorMessage = "The card number you entered is invalid.";
+      } else if (result.error.code === 'invalid_expiry_year_past') {
+        errorMessage = "The expiration date you entered is in the past.";
+      } else if (result.error.code === 'invalid_cvc') {
+        errorMessage = "The security code you entered is invalid.";
+      } else if (result.error.code === 'payment_intent_unexpected_state') {
+        errorMessage = "This payment session has expired or been used. Please refresh the page and try again.";
+      } else if (result.error.code === 'payment_intent_invalid') {
+        errorMessage = "Invalid payment session. Please refresh the page and try again.";
+      }
       showToast({
         title: "Payment Failed",
-        description: result.error.message || "An error occurred while processing your payment.",
+        description: errorMessage,
         type: "ERROR",
       });
       return;
