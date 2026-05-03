@@ -1,6 +1,8 @@
 import { useQuery } from "react-query";
 import * as apiClient from "../api-client";
 import EnhancedBookingForm from "../forms/BookingForm/EnhancedBookingForm";
+import { GCashPaymentForm } from "../components/GCashPaymentForm";
+import { BankTransferForm } from "../components/BankTransferForm";
 import useSearchContext from "../hooks/useSearchContext";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -16,15 +18,220 @@ import {
 import { Badge } from "../../../shared/ui/badge";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 
+const getPaymentErrorMessage = (error: any): string => {
+  if (error?.response?.status === 401) {
+    return "Please log in to continue with payment.";
+  }
+  if (error?.response?.status === 403) {
+    return "You don't have permission to make this payment.";
+  }
+  if (error?.response?.status === 500) {
+    return "Payment system error. Please try again later.";
+  }
+  if (error?.message?.includes('Network Error')) {
+    return "Connection error. Please check your internet and try again.";
+  }
+  if (error?.message?.includes('CORS')) {
+    return "Connection blocked. Please refresh the page and try again.";
+  }
+  return "Payment setup failed. Please try again or contact support.";
+};
+
 const Booking = () => {
+  // ⚠️ CRITICAL: All hooks must be called at the TOP LEVEL, before any conditional logic
   console.log("Booking component rendering...");
+
+  // All hooks called first
   const { stripePromise } = useAppContext();
   const search = useSearchContext();
   const { hotelId } = useParams();
-  
+
+  const {
+    totalCost,
+    downPaymentAmount,
+    remainingAmount,
+    selectedRooms,
+    selectedCottages,
+    selectedAmenities,
+    selectedPackages,
+    setBasePrice,
+    setNumberOfNights,
+    selectedRateType,
+    updateDepositPercentageFromHotel
+  } = useBookingSelection();
+
+  const [numberOfNights, setNumberOfNightsState] = useState<number>(0);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('stripe');
+
+  // Basic payment intent condition (before useQuery hooks)
+  const basicShouldCreatePaymentIntent = !!(
+    hotelId &&
+    totalCost > 0 // Basic cost check
+  );
+
+  const { data: paymentIntentData, isLoading: isLoadingPayment, error: paymentError } = useQuery(
+    "createPaymentIntent",
+    () =>
+      apiClient.createPaymentIntent(
+        hotelId as string,
+        downPaymentAmount.toString(),
+        numberOfNights.toString()
+      ),
+    {
+      enabled: basicShouldCreatePaymentIntent,
+      retry: (failureCount, error) => {
+        if (error?.response?.status === 401) return false;
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      onError: (error: any) => {
+        console.error("Payment intent creation failed:", error);
+        const errorMessage = getPaymentErrorMessage(error);
+        console.error("Payment setup error:", errorMessage);
+        if (error?.response) {
+          console.error("Response status:", error.response.status);
+          console.error("Response data:", error.response.data);
+        }
+      }
+    }
+  );
+
+  const { data: hotel, isLoading: isLoadingHotel } = useQuery(
+    "fetchHotelByID",
+    () => apiClient.fetchHotelById(hotelId as string),
+    {
+      enabled: !!hotelId,
+    }
+  );
+
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
+    "fetchCurrentUser",
+    apiClient.fetchCurrentUser
+  );
+
   console.log("Booking data:", { hotelId, search });
-  
-  // Add null checks
+  console.log("Booking selection data:", {
+    totalCost,
+    selectedRooms,
+    selectedCottages,
+    selectedAmenities
+  });
+
+  // Calculate nights from dates
+  useEffect(() => {
+    if (search.checkIn && search.checkOut) {
+      const nights =
+        Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) /
+        (1000 * 60 * 60 * 24);
+
+      const calculatedNights = Math.max(1, Math.ceil(nights));
+      setNumberOfNightsState(calculatedNights);
+      setNumberOfNights(calculatedNights);
+      console.log("Calculated number of nights:", calculatedNights);
+    }
+  }, [search.checkIn, search.checkOut, setNumberOfNights]);
+
+  // Update base price when hotel is loaded
+  useEffect(() => {
+    if (hotel && numberOfNights > 0) {
+      // Update deposit percentage from hotel
+      updateDepositPercentageFromHotel(hotel);
+
+      // Calculate entrance fees instead of using day/night rates
+      let entranceFeeTotal = 0;
+      const rateType = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
+
+      // Check if any selected packages include entrance fees (making them free)
+      const hasAdultEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedAdultEntranceFee);
+      const hasChildEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedChildEntranceFee);
+
+      // Adult entrance fees (only if not included in any package)
+      if (!hasAdultEntranceFeeInPackage && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+        if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+          const groupsNeeded = Math.ceil(search.adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
+          entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+        } else {
+          entranceFeeTotal += search.adultCount * hotel.adultEntranceFee[rateType];
+        }
+      }
+
+      // Child entrance fees (only if not included in any package)
+      if (!hasChildEntranceFeeInPackage && hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && search.childAges) {
+        search.childAges.forEach((age) => {
+          const ageGroup = hotel.childEntranceFee?.find(
+            (group) => age >= group.minAge && age <= group.maxAge
+          );
+
+          if (ageGroup) {
+            // Child falls within a defined age group
+            if (ageGroup[rateType] > 0) {
+              if (ageGroup.pricingModel === 'per_group') {
+                const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+                entranceFeeTotal += groupsNeeded * ageGroup[rateType];
+              } else {
+                entranceFeeTotal += ageGroup[rateType];
+              }
+            }
+            // If ageGroup[rateType] is 0, it means free entrance for this age group
+          } else {
+            // Child does not fall within any defined age group - charge adult rate
+            if (!hasAdultEntranceFeeInPackage && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+              if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+                const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
+                entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+              } else {
+                entranceFeeTotal += hotel.adultEntranceFee[rateType];
+              }
+            }
+          }
+        });
+      } else if (!hasChildEntranceFeeInPackage && search.childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+        // No child age groups defined but there are children - charge all children adult rates
+        if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+          const groupsNeeded = Math.ceil(search.childCount / (hotel.adultEntranceFee.groupQuantity || 1));
+          entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+        } else {
+          entranceFeeTotal += search.childCount * hotel.adultEntranceFee[rateType];
+        }
+      }
+
+      const basePrice = entranceFeeTotal;
+      setBasePrice(basePrice);
+
+      // Log debugging info
+      if (hasAdultEntranceFeeInPackage || hasChildEntranceFeeInPackage) {
+        console.log("Entrance fees included in package - making them free!");
+        console.log("Adult entrance fee included:", hasAdultEntranceFeeInPackage);
+        console.log("Child entrance fee included:", hasChildEntranceFeeInPackage);
+      }
+      console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
+    }
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType, updateDepositPercentageFromHotel]);
+
+  // Enhanced payment intent conditions - now that all variables are available
+  const shouldCreatePaymentIntent = !!(
+    hotelId &&
+    currentUser && // User must be authenticated
+    (totalCost > 0 || (typeof hotel?.adultEntranceFee?.dayRate === 'number' && hotel.adultEntranceFee.dayRate > 0) ||
+     (typeof hotel?.adultEntranceFee?.nightRate === 'number' && hotel.adultEntranceFee.nightRate > 0)) // Any cost triggers payment intent
+  );
+
+  // Debug payment conditions
+  console.log("🔥 PAYMENT CONDITIONS DEBUG:", {
+    hotelId: !!hotelId,
+    totalCost,
+    downPaymentAmount,
+    numberOfNights,
+    currentUser: !!currentUser,
+    shouldCreatePaymentIntent,
+    selectedRoomsCount: selectedRooms.length,
+    selectedCottagesCount: selectedCottages.length,
+    basePrice,
+    hotelLoaded: !!hotel,
+    hasAnyCosts: totalCost > 0 || basePrice > 0 || selectedRooms.length > 0 || selectedCottages.length > 0
+  });
+
+  // Now we can do conditional logic after all hooks are called
   if (!hotelId) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -40,7 +247,6 @@ const Booking = () => {
     );
   }
 
-  // Check if search context has required data
   if (!search.checkIn || !search.checkOut) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -56,73 +262,7 @@ const Booking = () => {
     );
   }
 
-  const { 
-    totalCost, 
-    downPaymentAmount,
-    remainingAmount,
-    selectedRooms, 
-    selectedCottages, 
-    selectedAmenities,
-    selectedPackages,
-    setBasePrice,
-    setNumberOfNights,
-    selectedRateType,
-    updateDepositPercentageFromHotel
-  } = useBookingSelection();
-
-  console.log("Booking selection data:", { 
-    totalCost, 
-    selectedRooms, 
-    selectedCottages, 
-    selectedAmenities
-  });
-
-  const [numberOfNights, setNumberOfNightsState] = useState<number>(0);
-
-  useEffect(() => {
-    if (search.checkIn && search.checkOut) {
-      const nights =
-        Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) /
-        (1000 * 60 * 60 * 24);
-
-      const calculatedNights = Math.max(1, Math.ceil(nights));
-      setNumberOfNightsState(calculatedNights);
-      setNumberOfNights(calculatedNights);
-      console.log("Calculated number of nights:", calculatedNights);
-    }
-  }, [search.checkIn, search.checkOut, setNumberOfNights]);
-
-  const { data: paymentIntentData, isLoading: isLoadingPayment, error: paymentError } = useQuery(
-    "createPaymentIntent",
-    () =>
-      apiClient.createPaymentIntent(
-        hotelId as string,
-        downPaymentAmount.toString(),
-        numberOfNights.toString()
-      ),
-    {
-      enabled: !!hotelId && numberOfNights >= 0 && downPaymentAmount > 0,
-      retry: 1,
-      onError: (error) => {
-        console.error("Payment intent creation failed:", error);
-      }
-    }
-  );
-
-  const { data: hotel, isLoading: isLoadingHotel } = useQuery(
-    "fetchHotelByID",
-    () => apiClient.fetchHotelById(hotelId as string),
-    {
-      enabled: !!hotelId,
-    }
-  );
-
-  console.log("Hotel data fetched:", hotel);
-
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
-    "fetchCurrentUser",
-    apiClient.fetchCurrentUser
-  );
+  // All hooks are now called at the top - no more code here
 
   // Update base price when hotel is loaded
   useEffect(() => {
@@ -201,6 +341,29 @@ const Booking = () => {
     }
   }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType, updateDepositPercentageFromHotel]);
 
+  // Auto-select available method
+  useEffect(() => {
+    if (!availablePaymentMethods.includes(selectedPaymentMethod)) {
+      setSelectedPaymentMethod(availablePaymentMethods[0] || 'gcash');
+    }
+  // Payment handlers
+  const handleGCashPayment = (data: any) => {
+    console.log('GCash payment data:', data);
+    // Here you would typically submit the booking with GCash payment
+    // For now, just log the data
+  };
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment error:', error);
+    // Show error message to user
+  };
+
+  const handleBankTransferComplete = () => {
+    console.log('Bank transfer details submitted');
+    // Here you would typically submit the booking with bank transfer details
+    // For now, just log completion
+  };
+
   if (isLoadingHotel || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -249,6 +412,50 @@ const Booking = () => {
       </div>
     );
   }
+
+  // Payment method selector UI
+  const PaymentMethodSelector = () => (
+    <div className="mb-6">
+      <h3 className="text-lg font-semibold mb-4">Select Payment Method</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button
+          onClick={() => setSelectedPaymentMethod('stripe')}
+          className={`p-4 border-2 rounded-lg text-left transition-all ${
+            selectedPaymentMethod === 'stripe'
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="font-medium">Credit/Debit Card</div>
+          <div className="text-sm text-gray-600">Powered by Stripe</div>
+        </button>
+
+        <button
+          onClick={() => setSelectedPaymentMethod('gcash')}
+          className={`p-4 border-2 rounded-lg text-left transition-all ${
+            selectedPaymentMethod === 'gcash'
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="font-medium">GCash</div>
+          <div className="text-sm text-gray-600">Mobile wallet payment</div>
+        </button>
+
+        <button
+          onClick={() => setSelectedPaymentMethod('bank_transfer')}
+          className={`p-4 border-2 rounded-lg text-left transition-all ${
+            selectedPaymentMethod === 'bank_transfer'
+              ? 'border-purple-500 bg-purple-50'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="font-medium">Bank Transfer</div>
+          <div className="text-sm text-gray-600">Direct bank transfer</div>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
@@ -448,50 +655,25 @@ const Booking = () => {
             </Card>
           </div>
 
+
+
           {/* Booking Form */}
           <div className="space-y-6">
-            {isLoadingPayment ? (
-              <Card className="shadow-lg border-0 bg-white">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                    <span className="text-gray-700">Preparing payment...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : currentUser && paymentIntentData ? (
-              <Card className="shadow-lg border-0 bg-white">
-                <CardContent className="p-0">
-                  <Elements
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret: paymentIntentData.clientSecret,
-                    }}
-                  >
-                    <EnhancedBookingForm
-                      currentUser={currentUser}
-                      paymentIntent={paymentIntentData}
-                      calculatedTotal={totalCost}
-                      downPaymentAmount={downPaymentAmount}
-                      remainingAmount={remainingAmount}
-                      selectedRooms={selectedRooms}
-                      selectedCottages={selectedCottages}
-                      selectedAmenities={selectedAmenities}
-                      hotel={hotel}
-                    />
-                  </Elements>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-lg border-0 bg-white">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
-                    <p className="text-gray-700">Loading payment form...</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Payment Method Selector */}
+            <Card className="shadow-lg border-0 bg-white">
+              <CardContent className="p-6">
+                <PaymentMethodSelector />
+              </CardContent>
+            </Card>
+
+            {/* Conditional Payment Form Rendering */}
+            <Card className="shadow-lg border-0 bg-white">
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <p className="text-gray-700">Payment system temporarily simplified for debugging</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

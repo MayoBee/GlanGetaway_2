@@ -211,75 +211,76 @@ const Detail = () => {
           </div>
         </div>
 
-        {/* Entrance Fees */}
-      {((hotel.adultEntranceFee && (hotel.adultEntranceFee.dayRate > 0 || hotel.adultEntranceFee.nightRate > 0)) ||
-        (hotel.childEntranceFee && hotel.childEntranceFee.length > 0)) && (
-        <div className="border border-slate-300 rounded-lg p-4">
-          <h3 className="text-xl font-semibold mb-3">Entrance Fees</h3>
-          
-          {/* Rate Type Descriptions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h4 className="font-semibold text-blue-900 mb-2">Rate Type Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {hotel.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 && (
-                <div 
-                  className={`p-3 rounded border-2 cursor-pointer transition-all ${
-                    selectedRateType === 'day' 
-                      ? 'bg-blue-100 border-blue-400 text-blue-900' 
-                      : 'bg-white border-blue-100 text-blue-700 hover:border-blue-300 hover:bg-blue-50'
-                  }`}
-                  onClick={() => {
-                    setSelectedRateType('day');
-                    setRateType('day');
-                  }}
-                >
-                  <h5 className="font-medium mb-1">Day Rate</h5>
-                  <p className="text-sm mb-2">
-                    Perfect for day trips! Check-in time is flexible, and check-out is automatically set at 5:00 PM on the same day.
-                  </p>
-                  <div className="text-xs font-medium">
-                    Adults: ₱{hotel.adultEntranceFee.dayRate.toLocaleString()}/person
-                    {hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && (
-                      <span className="ml-2">• Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.dayRate)).toLocaleString()}/person</span>
-                    )}
+        {/* Rate Type Selection */}
+        {(hotel.hasDayRate && hotel.hasNightRate) && (
+          <div className="border border-slate-300 rounded-lg p-4 mb-6">
+            <h3 className="text-xl font-semibold mb-3">Select Rate Type</h3>
+
+            {/* Rate Type Descriptions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h4 className="font-semibold text-blue-900 mb-2">Rate Type Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {hotel.hasDayRate && (
+                  <div
+                    className={`p-3 rounded border-2 cursor-pointer transition-all ${
+                      selectedRateType === 'day'
+                        ? 'bg-blue-100 border-blue-400 text-blue-900'
+                        : 'bg-white border-blue-100 text-blue-700 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                    onClick={() => {
+                      setSelectedRateType('day');
+                      setRateType('day');
+                    }}
+                  >
+                    <h5 className="font-medium mb-1">Day Rate</h5>
+                    <p className="text-sm mb-2">
+                      Perfect for day trips! Check-in time is flexible, and check-out is automatically set at 5:00 PM on the same day.
+                    </p>
+                    <div className="text-xs font-medium">
+                      Accommodation Rate: ₱{hotel.dayRate?.toLocaleString() || 0}/night
+                    </div>
                   </div>
-                </div>
-              )}
-              {hotel.adultEntranceFee?.nightRate && hotel.adultEntranceFee.nightRate > 0 && (
-                <div 
-                  className={`p-3 rounded border-2 cursor-pointer transition-all ${
-                    selectedRateType === 'night' 
-                      ? 'bg-green-100 border-green-400 text-green-900' 
-                      : 'bg-green-50 border-green-100 text-green-700 hover:border-green-300 hover:bg-green-100'
-                  }`}
-                  onClick={() => {
-                    setSelectedRateType('night');
-                    setRateType('night');
-                  }}
-                >
-                  <h5 className="font-medium mb-1">Night Rate</h5>
-                  <p className="text-sm mb-2">
-                    Ideal for overnight stays! Enjoy 24-hour accommodation from check-in to check-out time the next day.
-                  </p>
-                  <div className="text-xs font-medium">
-                    Adults: ₱{hotel.adultEntranceFee.nightRate.toLocaleString()}/person
-                    {hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && (
-                      <span className="ml-2">• Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.nightRate)).toLocaleString()}/person</span>
-                    )}
+                )}
+                {hotel.hasNightRate && (
+                  <div
+                    className={`p-3 rounded border-2 cursor-pointer transition-all ${
+                      selectedRateType === 'night'
+                        ? 'bg-green-100 border-green-400 text-green-900'
+                        : 'bg-green-50 border-green-100 text-green-700 hover:border-green-300 hover:bg-green-100'
+                    }`}
+                    onClick={() => {
+                      setSelectedRateType('night');
+                      setRateType('night');
+                    }}
+                  >
+                    <h5 className="font-medium mb-1">Night Rate</h5>
+                    <p className="text-sm mb-2">
+                      Ideal for overnight stays! Enjoy 24-hour accommodation from check-in to check-out time the next day.
+                    </p>
+                    <div className="text-xs font-medium">
+                      Accommodation Rate: ₱{hotel.nightRate?.toLocaleString() || 0}/night
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {selectedRateType && (
+                <div className="mt-3 p-2 bg-white rounded border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    <strong>Selected:</strong> {selectedRateType === 'day' ? 'Day Rate' : 'Night Rate'} -
+                    <span className="ml-1">Scroll down to complete your booking with this rate type</span>
+                  </p>
                 </div>
               )}
             </div>
-            
-            {selectedRateType && (
-              <div className="mt-3 p-2 bg-white rounded border border-blue-200">
-                <p className="text-sm text-blue-700">
-                  <strong>Selected:</strong> {selectedRateType === 'day' ? 'Day Rate' : 'Night Rate'} - 
-                  <span className="ml-1">Scroll down to complete your booking with this rate type</span>
-                </p>
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Entrance Fees */}
+        {((hotel.adultEntranceFee && (hotel.adultEntranceFee.dayRate > 0 || hotel.adultEntranceFee.nightRate > 0)) ||
+          (hotel.childEntranceFee && hotel.childEntranceFee.length > 0)) && (
+          <div className="border border-slate-300 rounded-lg p-4">
+            <h3 className="text-xl font-semibold mb-3">Entrance Fees</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Adult Entrance Fee */}

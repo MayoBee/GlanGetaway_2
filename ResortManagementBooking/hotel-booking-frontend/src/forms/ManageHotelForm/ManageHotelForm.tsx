@@ -440,6 +440,25 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       validationErrors.push('Night rate price is required when Night Rate is enabled');
     }
     
+    // Contact information validation
+    if (formDataJson.contact) {
+      if (!formDataJson.contact.phone || formDataJson.contact.phone.trim() === '') {
+        validationErrors.push('Contact phone number is required');
+      } else if (!/^[\d\s\-\+\(\)]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
+        validationErrors.push('Please enter a valid phone number (at least 7 digits)');
+      }
+      if (!formDataJson.contact.email || formDataJson.contact.email.trim() === '') {
+        validationErrors.push('Contact email is required');
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formDataJson.contact.email)) {
+        validationErrors.push('Please enter a valid email address');
+      }
+    }
+    
+    // Facilities validation
+    if (!formDataJson.facilities || formDataJson.facilities.length === 0) {
+      validationErrors.push('Please select at least one facility');
+    }
+    
     // Check if at least one accommodation type is configured
     const hasRooms = formDataJson.rooms && formDataJson.rooms.length > 0;
     const hasCottages = formDataJson.cottages && formDataJson.cottages.length > 0;
@@ -447,6 +466,9 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     if (!hasRooms && !hasCottages) {
       validationErrors.push('Please add at least one room or cottage');
     }
+    
+    // Note: Image validation is now handled with fallback placeholder images
+    // No validation error needed since we provide default images
     
     // Validate rooms
     if (hasRooms) {
@@ -518,9 +540,48 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     const hotelId = (formDataJson as any)._id || 'new_hotel';
     extractUnitsFromFormData(formDataJson, hotelId);
     
+    // Fix policy times - populate empty required fields with proper defaults
+    const fixedPolicies = {
+      ...formDataJson.policies,
+      // Use day rate times as defaults for general check-in/out if empty
+      checkInTime: formDataJson.policies?.checkInTime || formDataJson.dayRateCheckInTime || "08:00 AM",
+      checkOutTime: formDataJson.policies?.checkOutTime || formDataJson.dayRateCheckOutTime || "05:00 PM",
+      // Ensure day check-in/out times are populated
+      dayCheckInTime: formDataJson.policies?.dayCheckInTime || formDataJson.dayRateCheckInTime || "08:00 AM",
+      dayCheckOutTime: formDataJson.policies?.dayCheckOutTime || formDataJson.dayRateCheckOutTime || "05:00 PM",
+      // For night times, use provided values or default to flexible times
+      nightCheckInTime: formDataJson.policies?.nightCheckInTime || (formDataJson.hasNightRate ? formDataJson.nightRateCheckInTime : "02:00 PM"),
+      nightCheckOutTime: formDataJson.policies?.nightCheckOutTime || (formDataJson.hasNightRate ? formDataJson.nightRateCheckOutTime : "02:00 PM"),
+    };
+
+    // Ensure at least one image URL is provided (fallback to placeholder if needed)
+    console.log('=== IMAGE FALLBACK DEBUG ===');
+    console.log('Original imageUrls:', formDataJson.imageUrls);
+    console.log('ImageFiles:', formDataJson.imageFiles);
+    
+    let finalImageUrls = formDataJson.imageUrls || [];
+    console.log('Initial finalImageUrls:', finalImageUrls);
+    console.log('finalImageUrls.length:', finalImageUrls.length);
+    
+    // Properly check for imageFiles (FileList object)
+    const hasImageFiles = formDataJson.imageFiles && 
+                         (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) && 
+                         formDataJson.imageFiles.length > 0;
+    console.log('hasImageFiles check:', hasImageFiles);
+    
+    if (finalImageUrls.length === 0 && !hasImageFiles) {
+      // Provide a default placeholder image URL for new resorts without images
+      console.log('Applying fallback image URL');
+      finalImageUrls = ["https://picsum.photos/seed/resort/800/600.jpg"];
+    }
+    
+    console.log('Final imageUrls to be sent:', finalImageUrls);
+
     // Convert units from strings to numbers for cottages and amenities
     const processedData = {
       ...formDataJson,
+      policies: fixedPolicies,
+      imageUrls: finalImageUrls,
       amenities: formDataJson.amenities?.map(amenity => ({
         ...amenity,
         units: parseInt(String(amenity.units)) || 1

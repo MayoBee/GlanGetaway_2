@@ -3,6 +3,8 @@ import { useMutationWithLoading, useQueryWithLoading } from "../hooks/useLoading
 import { axiosInstance } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useAdminBypass } from "../hooks/useAdminBypass";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { 
   FileText, 
   User, 
@@ -61,13 +63,20 @@ interface Application {
 const AdminApplicationReview = () => {
   const { showToast } = useAppContext();
   const { isAdmin } = useAdminBypass();
+  const navigate = useNavigate();
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{name: string, url: string} | null>(null);
 
+  console.log('AdminApplicationReview rendering, selectedDocument:', selectedDocument, 'selectedApplication:', selectedApplication);
+
   const handleViewDocument = (documentType: string, filename: string) => {
     console.log('handleViewDocument called:', { documentType, filename });
+    if (!filename) {
+      console.error('Filename is null or undefined:', filename);
+      return;
+    }
     const documentUrl = `http://localhost:5000/uploads/resort-owner-applications/${filename}`;
     console.log('Setting selectedDocument to:', { name: documentType, url: documentUrl });
     setSelectedDocument({name: documentType, url: documentUrl});
@@ -264,10 +273,20 @@ const AdminApplicationReview = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <FileText className="w-8 h-8 mr-3 text-primary-600" />
-            Resort Owner Applications
-          </h1>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Exit
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <FileText className="w-8 h-8 mr-3 text-primary-600" />
+              Resort Owner Applications
+            </h1>
+          </div>
           <Badge className="bg-blue-100 text-blue-800 border-blue-200">
             {applications.length} pending
           </Badge>
@@ -348,7 +367,7 @@ const AdminApplicationReview = () => {
               Application Review - {selectedApplication?.userId.firstName} {selectedApplication?.userId.lastName}
             </DialogTitle>
             <DialogDescription>
-              {selectedDocument.url ? 'Review the submitted document' : 'No document selected'}
+              Review the submitted application and documents. {selectedDocument?.url ? 'Document selected for review.' : ''}
             </DialogDescription>
           </DialogHeader>
           
@@ -609,59 +628,59 @@ const AdminApplicationReview = () => {
       </Dialog>
 
       {/* Document Viewer Dialog */}
-      <Dialog open={!!selectedDocument} onOpenChange={() => setSelectedDocument(null)}>
+      <Dialog open={!!selectedDocument} onOpenChange={() => { console.log('Closing document dialog'); setSelectedDocument(null); }}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{selectedDocument?.name}</DialogTitle>
             <DialogDescription>
-              {selectedDocument.url ? 'Review the submitted document' : 'No document selected'}
+              {selectedDocument?.url ? 'Review the submitted document' : 'No document selected'}
             </DialogDescription>
           </DialogHeader>
           {selectedDocument && (
             <div className="space-y-4">
-              <div className="border rounded-lg overflow-hidden">
-                {selectedDocument.url ? (
-                <>
-                  <div className="border rounded-lg overflow-hidden">
-                    <img 
-                      src={selectedDocument.url} 
-                      alt={selectedDocument.name}
-                      className="w-full h-auto max-h-[60vh] object-contain"
-                      onError={(e) => {
-                        console.error('Image failed to load:', selectedDocument.url);
-                        e.currentTarget.src = '/placeholder-document.png';
-                      }}
-                      onLoad={() => {
-                        console.log('Image loaded successfully:', selectedDocument.url);
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(`http://localhost:5000${selectedDocument.url}`, '_blank')}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No document selected</p>
-                </div>
-              )}
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(selectedDocument.url, '_blank')}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+               <div className="border rounded-lg overflow-hidden">
+                 {selectedDocument?.url ? (
+                 <>
+                   <div className="border rounded-lg overflow-hidden">
+                     <img
+                       src={selectedDocument.url}
+                       alt={selectedDocument.name}
+                       className="w-full h-auto max-h-[60vh] object-contain"
+                       onError={(e) => {
+                         console.error('Image failed to load:', selectedDocument.url);
+                         e.currentTarget.src = '/placeholder-document.png';
+                       }}
+                       onLoad={() => {
+                         console.log('Image loaded successfully:', selectedDocument.url);
+                       }}
+                     />
+                   </div>
+                   <div className="flex justify-end">
+                     <Button
+                       variant="outline"
+                       onClick={() => window.open(selectedDocument.url, '_blank')}
+                     >
+                       <Download className="w-4 h-4 mr-2" />
+                       Download
+                     </Button>
+                   </div>
+                 </>
+               ) : (
+                 <div className="text-center py-8">
+                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                   <p className="text-gray-600">No document selected</p>
+                 </div>
+               )}
+               </div>
+               <div className="flex justify-end">
+                 <Button
+                   variant="outline"
+                   onClick={() => selectedDocument?.url && window.open(selectedDocument.url, '_blank')}
+                 >
+                   <Download className="w-4 h-4 mr-2" />
+                   Download
+                 </Button>
+               </div>
             </div>
           )}
         </DialogContent>

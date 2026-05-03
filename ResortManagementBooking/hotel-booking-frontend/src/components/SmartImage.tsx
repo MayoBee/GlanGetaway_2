@@ -91,20 +91,23 @@ const SmartImage: React.FC<SmartImageProps> = ({
       try {
         const url = new URL(source);
         
-        // Fix port issues by using current API base URL
+        // For localhost URLs, ensure they use the correct API base URL port
         if (url.hostname === 'localhost') {
-          // Construct new URL with correct port from API base URL
+          // If the URL is already pointing to the correct port, don't modify it
           const apiUrl = new URL(apiBaseUrl);
-          url.port = apiUrl.port;
-          url.hostname = apiUrl.hostname;
-          url.protocol = apiUrl.protocol;
-          const fixedUrl = url.toString();
-          logImageEvent('URL_FIXED', { 
-            original: source, 
-            fixed: fixedUrl,
-            apiBaseUrl 
-          });
-          return fixedUrl;
+          if (url.port !== apiUrl.port) {
+            // Construct new URL with correct port from API base URL
+            url.port = apiUrl.port;
+            url.hostname = apiUrl.hostname;
+            url.protocol = apiUrl.protocol;
+            const fixedUrl = url.toString();
+            logImageEvent('URL_FIXED', { 
+              original: source, 
+              fixed: fixedUrl,
+              apiBaseUrl 
+            });
+            return fixedUrl;
+          }
         }
         
         return source;

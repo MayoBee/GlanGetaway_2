@@ -30,6 +30,7 @@ type Props = {
   selectedCottages: SelectedCottage[];
   selectedAmenities: SelectedAmenity[];
   hotel: HotelType;
+  skipPayment?: boolean;
 };
 
 export type BookingFormData = {
@@ -54,16 +55,17 @@ export type BookingFormData = {
   selectedAmenities?: SelectedAmenity[];
 };
 
-const EnhancedBookingForm = ({ 
-  currentUser, 
-  paymentIntent, 
+const EnhancedBookingForm = ({
+  currentUser,
+  paymentIntent,
   calculatedTotal,
   downPaymentAmount,
   remainingAmount,
   selectedRooms,
   selectedCottages,
   selectedAmenities,
-  hotel
+  hotel,
+  skipPayment = false
 }: Props) => {
   console.log("EnhancedBookingForm received:", {
     calculatedTotal,
@@ -541,126 +543,113 @@ MM/YY: 12/35 CVC: 123`;
           </CardContent>
         </Card>
 
-        {/* Payment Method Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              Payment Method
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handlePaymentMethodChange("card");
-                  }}
-                  className={`p-4 rounded-lg border-2 font-medium transition-all ${
-                    paymentMethod === "card"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <CreditCard className="w-6 h-6 mx-auto mb-2" />
-                  <div>Credit/Debit Card</div>
-                </button>
+        {/* Payment Method Selection - Only show if payment is required */}
+        {!skipPayment && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-600" />
+                Payment Method
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePaymentMethodChange("card");
+                    }}
+                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                      paymentMethod === "card"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    <CreditCard className="w-6 h-6 mx-auto mb-2" />
+                    <div>Credit/Debit Card</div>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    handlePaymentMethodChange("gcash");
-                  }}
-                  className={`p-4 rounded-lg border-2 font-medium transition-all ${
-                    paymentMethod === "gcash"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <Smartphone className="w-6 h-6 mx-auto mb-2" />
-                  <div>GCash</div>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePaymentMethodChange("gcash");
+                    }}
+                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                      paymentMethod === "gcash"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    <Smartphone className="w-6 h-6 mx-auto mb-2" />
+                    <div>GCash</div>
+                  </button>
+                </div>
 
-              {/* Card Payment Form */}
-              {paymentMethod === "card" && (
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <CardElement
-                      id="payment-element"
-                      className="text-sm"
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: "16px",
-                            color: "#424770",
-                            "::placeholder": {
-                              color: "#aab7c4",
+                {/* Card Payment Form */}
+                {paymentMethod === "card" && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                      <CardElement
+                        id="payment-element"
+                        className="text-sm"
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: "16px",
+                              color: "#424770",
+                              "::placeholder": {
+                                color: "#aab7c4",
+                              },
+                            },
+                            invalid: {
+                              color: "#9e2146",
                             },
                           },
-                        },
-                      }}
-                    />
-                  </div>
-
-                  {/* Test Credentials */}
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm">
-                        <div className="font-medium text-yellow-800 mb-1">Test Credentials:</div>
-                        <div className="text-yellow-700">Card: 4242 4242 4242 4242</div>
-                        <div className="text-yellow-700">MM/YY: 12/35</div>
-                        <div className="text-yellow-700">CVC: 123</div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyCredentials}
-                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
-                      >
-                        {isCopied ? (
-                          <>
-                            <CheckCircle className="h-3 w-3 inline mr-1" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3 inline mr-1" />
-                            Copy
-                          </>
-                        )}
-                      </button>
+                        }}
+                      />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* GCash Payment Form */}
-              {paymentMethod === "gcash" && (
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onMouseUp={(e) => e.stopPropagation()}
-                  onSubmit={(e) => e.stopPropagation()}
-                  onReset={(e) => e.stopPropagation()}
-                  style={{ isolation: 'isolate' }}
-                >
-                  <GCashPaymentForm
-                    totalCost={calculatedTotal}
-                    downPaymentAmount={finalDownPayment}
-                    remainingAmount={finalRemaining}
-                    onPaymentSubmit={debugGCashSubmit}
-                    isLoading={isGCashLoading}
-                    hotel={hotel}
-                  />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {/* GCash Payment Form */}
+                {paymentMethod === "gcash" && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <GCashPaymentForm
+                      totalCost={calculatedTotal}
+                      downPaymentAmount={finalDownPayment}
+                      remainingAmount={finalRemaining}
+                      onPaymentSubmit={debugGCashSubmit}
+                      isLoading={isGCashLoading}
+                      hotel={hotel}
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Submit Button */}
-        {paymentMethod === "card" && (
+        {skipPayment ? (
+          <Button
+            disabled={isLoading}
+            type="submit"
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Processing...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Confirm Booking (No Payment Required)
+              </div>
+            )}
+          </Button>
+        ) : paymentMethod === "card" && (
           <Button
             disabled={isLoading}
             type="submit"

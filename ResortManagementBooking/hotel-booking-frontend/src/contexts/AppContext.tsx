@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useQuery } from "react-query";
 import axios from "axios";
@@ -140,7 +140,9 @@ type ToastMessage = {
 export type AppContext = {
   showToast: (toastMessage: ToastMessage) => void;
   isLoggedIn: boolean;
-  stripePromise: Promise<Stripe | null>;
+  stripePromise: Promise<Stripe | null> | null;
+  stripeError: string | null;
+  availablePaymentMethods: string[];
   showGlobalLoading: (message?: string) => void;
   hideGlobalLoading: () => void;
   isGlobalLoading: boolean;
@@ -157,7 +159,7 @@ export const AppContext = React.createContext<AppContext | undefined>(
   undefined
 );
 
-const stripePromise = loadStripe(STRIPE_PUB_KEY);
+
 
 export const AppContextProvider = ({
   children,
@@ -169,6 +171,48 @@ export const AppContextProvider = ({
     "Loading..."
   );
   const { toast } = useToast();
+
+  // Enhanced Stripe loading with error handling and retry logic
+  const [stripeError, setStripeError] = useState<string | null>(null);
+  const [stripeRetryCount, setStripeRetryCount] = useState(0);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState(['gcash']); // GCash always available
+
+  // Enhanced Stripe loading with retry mechanism
+  const loadStripeWithRetry = useCallback(async (retries = 0): Promise<Stripe | null> => {
+    try {
+      const stripe = await loadStripe(STRIPE_PUB_KEY);
+      if (!stripe && retries < 3) {
+        console.warn(`Stripe loading failed (attempt ${retries + 1}), retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retries + 1)));
+        return loadStripeWithRetry(retries + 1);
+      }
+      return stripe;
+    } catch (error) {
+      console.error('Stripe loading error:', error);
+      if (retries < 2) {
+        return loadStripeWithRetry(retries + 1);
+      }
+      setStripeError('Payment system temporarily unavailable. Please refresh or try alternative payment methods.');
+      return null;
+    }
+  }, []);
+
+  // Initialize Stripe on mount
+  React.useEffect(() => {
+    setStripePromise(loadStripeWithRetry());
+  }, [loadStripeWithRetry]);
+
+  // Detect payment method availability
+  React.useEffect(() => {
+    if (stripePromise) {
+      stripePromise.then(stripe => {
+        if (stripe) {
+          setAvailablePaymentMethods(prev => [...prev, 'stripe']);
+        }
+      });
+    }
+  }, [stripePromise]);
 
   // Standardize on 'token' for authentication detection
   const hasToken = !!localStorage.getItem("token");
@@ -294,35 +338,53 @@ export const AppContextProvider = ({
     });
   };
 
-  const showGlobalLoading = (message?: string) => {
+  const showGlobalLoading = useCallback((message?: string) => {
     if (message) {
       setGlobalLoadingMessage(message);
     }
     setIsGlobalLoading(true);
-  };
+  }, []);
 
-  const hideGlobalLoading = () => {
+  const hideGlobalLoading = useCallback(() => {
     setIsGlobalLoading(false);
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    showToast,
+    isLoggedIn,
+    stripePromise,
+    stripeError,
+    availablePaymentMethods,
+    showGlobalLoading,
+    hideGlobalLoading,
+    isGlobalLoading,
+    globalLoadingMessage,
+    user,
+    userRole,
+    isLoading,
+    isAuthLoading,
+    ensureValidToken,
+    checkTokenExpiration,
+  }), [
+    showToast,
+    isLoggedIn,
+    stripePromise,
+    stripeError,
+    availablePaymentMethods,
+    showGlobalLoading,
+    hideGlobalLoading,
+    isGlobalLoading,
+    globalLoadingMessage,
+    user,
+    userRole,
+    isLoading,
+    isAuthLoading,
+    ensureValidToken,
+    checkTokenExpiration,
+  ]);
 
   return (
-    <AppContext.Provider
-      value={{
-        showToast,
-        isLoggedIn,
-        stripePromise,
-        showGlobalLoading,
-        hideGlobalLoading,
-        isGlobalLoading,
-        globalLoadingMessage,
-        user,
-        userRole,
-        isLoading,
-        isAuthLoading,
-        ensureValidToken,
-        checkTokenExpiration,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {isGlobalLoading && <LoadingSpinner message={globalLoadingMessage} />}
       {children}
     </AppContext.Provider>

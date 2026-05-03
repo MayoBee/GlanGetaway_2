@@ -125,6 +125,8 @@ export const createAndConfigureApp = () => {
   app.get("/health", metrics.getHealthCheckHandler.bind(metrics));
   app.get("/metrics", metrics.getMetricsHandler.bind(metrics));
   
+
+  
   app.use(corsMiddleware);
   
   app.use(cookieParserMiddleware);
@@ -134,9 +136,6 @@ export const createAndConfigureApp = () => {
   app.use(csrfMiddleware);
   app.use(featureFlagMiddleware);
   app.get("/api/csrf-token", getCsrfToken);
-  
-  // Serve static files from uploads directory
-  app.use('/uploads', express.static('uploads'));
   
   app.use((req, res, next) => {
     // Ensure Vary header for CORS

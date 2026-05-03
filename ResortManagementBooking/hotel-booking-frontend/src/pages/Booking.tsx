@@ -3,7 +3,7 @@ import { createPaymentIntent, fetchHotelById, fetchCurrentUser } from "../api-cl
 import EnhancedBookingForm from "../forms/BookingForm/EnhancedBookingForm";
 import useSearchContext from "../hooks/useSearchContext";
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { Elements } from "@stripe/react-stripe-js";
 import useAppContext from "../hooks/useAppContext";
@@ -56,26 +56,8 @@ const Booking = () => {
       const calculatedNights = Math.max(1, Math.ceil(nights));
       setNumberOfNightsState(calculatedNights);
       setNumberOfNights(calculatedNights);
-      console.log("Calculated number of nights:", calculatedNights);
     }
   }, [search.checkIn, search.checkOut, setNumberOfNights]);
-
-  const { data: paymentIntentData, isLoading: isLoadingPayment, error: paymentError } = useQuery(
-    "createPaymentIntent",
-    () =>
-      createPaymentIntent(
-        hotelId as string,
-        downPaymentAmount.toString(),
-        numberOfNights.toString()
-      ),
-    {
-      enabled: !!hotelId && numberOfNights >= 0 && downPaymentAmount > 0,
-      retry: 1,
-      onError: (error) => {
-        console.error("Payment intent creation failed:", error);
-      }
-    }
-  );
 
   const { data: hotel, isLoading: isLoadingHotel } = useQuery(
     "fetchHotelByID",
@@ -92,6 +74,33 @@ const Booking = () => {
     fetchCurrentUser
   );
 
+  const { data: paymentIntentData, isLoading: isLoadingPayment, error: paymentError } = useQuery(
+    "createPaymentIntent",
+    () =>
+      createPaymentIntent(
+        hotelId as string,
+        downPaymentAmount.toString(),
+        numberOfNights.toString()
+      ),
+    {
+      enabled: !!hotelId && numberOfNights >= 0 && !!currentUser, // Allow payment intent creation even with zero costs
+      retry: 2,
+      onError: (error) => {
+        console.error("Payment intent creation failed:", error);
+      }
+    }
+  );
+
+  // Debug payment intent data
+  useEffect(() => {
+    if (paymentIntentData) {
+      console.log("PaymentIntentData:", paymentIntentData);
+      console.log("Message:", paymentIntentData.message);
+      console.log("TotalCost:", paymentIntentData.totalCost);
+      console.log("Is zero amount:", paymentIntentData.message === "No payment required - zero amount booking" || paymentIntentData.totalCost === 0);
+    }
+  }, [paymentIntentData]);
+
   // Update base price when hotel is loaded
   useEffect(() => {
     if (hotel && numberOfNights > 0) {
@@ -105,7 +114,7 @@ const Booking = () => {
       // Check if any selected packages include entrance fees (making them free)
       const hasAdultEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedAdultEntranceFee);
       const hasChildEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedChildEntranceFee);
-      
+
       // Adult entrance fees (only if not included in any package)
       if (!hasAdultEntranceFeeInPackage && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
         if (hotel.adultEntranceFee.pricingModel === 'per_group') {
@@ -167,7 +176,7 @@ const Booking = () => {
       }
       console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
     }
-  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType, updateDepositPercentageFromHotel]);
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType]);
 
   if (isLoadingHotel || isLoadingUser) {
     return (
@@ -213,6 +222,65 @@ const Booking = () => {
           <p className="text-gray-600">
             The hotel you're looking for doesn't exist.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if there's anything to pay for (accommodations or entrance fees)
+  const hasSelectedAccommodations = selectedRooms.length > 0 || selectedCottages.length > 0;
+  
+  // Check if entrance fees are applicable - more comprehensive check
+  const hasEntranceFees = useMemo(() => {
+    // Check if totalCost includes entrance fees
+    if (totalCost > 0) return true;
+    
+    // Check if hotel has entrance fees configured for the selected rate type
+    const rateType = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
+    const hasAdultFees = hotel?.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0;
+    const hasChildFees = hotel?.childEntranceFee && hotel.childEntranceFee.length > 0;
+    const hasGuests = search.adultCount > 0 || search.childCount > 0;
+    
+    return (hasAdultFees || hasChildFees) && hasGuests;
+  }, [totalCost, hotel, selectedRateType, search.adultCount, search.childCount]);
+
+  // Debug logging for entrance fee check (moved outside useMemo)
+  useEffect(() => {
+    const rateType = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
+    const hasAdultFees = hotel?.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0;
+    const hasChildFees = hotel?.childEntranceFee && hotel.childEntranceFee.length > 0;
+    const hasGuests = search.adultCount > 0 || search.childCount > 0;
+    
+    console.log("Entrance fee check:", {
+      rateType,
+      hasAdultFees,
+      hasChildFees,
+      hasGuests,
+      adultCount: search.adultCount,
+      childCount: search.childCount,
+      totalCost,
+      hotelAdultEntranceFee: hotel?.adultEntranceFee,
+      hasEntranceFees
+    });
+  }, [totalCost, hotel, selectedRateType, search.adultCount, search.childCount, hasEntranceFees]);
+
+  // Check if there's nothing to book and return early message
+  if (!hasSelectedAccommodations && !hasEntranceFees) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            Nothing to Book
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Please select accommodations or ensure entrance fees are applicable before proceeding to payment.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Go Back to Hotel Details
+          </button>
         </div>
       </div>
     );
@@ -428,28 +496,67 @@ const Booking = () => {
                 </CardContent>
               </Card>
             ) : currentUser && paymentIntentData ? (
-              <Card className="shadow-lg border-0 bg-white">
-                <CardContent className="p-0">
-                  <Elements
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret: paymentIntentData.clientSecret,
-                    }}
-                  >
-                    <EnhancedBookingForm
-                      currentUser={currentUser}
-                      paymentIntent={paymentIntentData}
-                      calculatedTotal={totalCost}
-                      downPaymentAmount={downPaymentAmount}
-                      remainingAmount={remainingAmount}
-                      selectedRooms={selectedRooms}
-                      selectedCottages={selectedCottages}
-                      selectedAmenities={selectedAmenities}
-                      hotel={hotel}
-                    />
-                  </Elements>
-                </CardContent>
-              </Card>
+              // Check if this is a zero-amount booking - more comprehensive check
+              (() => {
+                const isZeroAmount = paymentIntentData.message === "No payment required - zero amount booking" || 
+                                   paymentIntentData.totalCost === 0 || 
+                                   paymentIntentData.paymentIntentId?.startsWith('pi_mock_');
+                console.log("Is zero amount booking:", isZeroAmount);
+                return isZeroAmount;
+              })() ? (
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="mb-6">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No Payment Required</h3>
+                        <p className="text-gray-600 mb-4">
+                          This booking requires no payment. You can proceed directly to confirmation.
+                        </p>
+                      </div>
+                      <EnhancedBookingForm
+                        currentUser={currentUser}
+                        paymentIntent={paymentIntentData}
+                        calculatedTotal={totalCost}
+                        downPaymentAmount={downPaymentAmount}
+                        remainingAmount={remainingAmount}
+                        selectedRooms={selectedRooms}
+                        selectedCottages={selectedCottages}
+                        selectedAmenities={selectedAmenities}
+                        hotel={hotel}
+                        skipPayment={true}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="shadow-lg border-0 bg-white">
+                  <CardContent className="p-0">
+                    <Elements
+                      stripe={stripePromise}
+                      options={{
+                        clientSecret: paymentIntentData.clientSecret,
+                      }}
+                    >
+                      <EnhancedBookingForm
+                        currentUser={currentUser}
+                        paymentIntent={paymentIntentData}
+                        calculatedTotal={totalCost}
+                        downPaymentAmount={downPaymentAmount}
+                        remainingAmount={remainingAmount}
+                        selectedRooms={selectedRooms}
+                        selectedCottages={selectedCottages}
+                        selectedAmenities={selectedAmenities}
+                        hotel={hotel}
+                      />
+                    </Elements>
+                  </CardContent>
+                </Card>
+              )
             ) : (
               <Card className="shadow-lg border-0 bg-white">
                 <CardContent className="flex items-center justify-center py-12">

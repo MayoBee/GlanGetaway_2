@@ -211,15 +211,16 @@ export const paymentComplianceMiddleware = (req: Request, res: Response, next: N
       'PAYMENT_PROCESSING',
       req.path,
       {
-        paymentMethod: req.body.paymentMethod,
-        amount: req.body.amount ? '[REDACTED]' : undefined,
+        paymentMethod: req.body?.paymentMethod || 'payment_intent_creation',
+        amount: req.body?.amount ? '[REDACTED]' : undefined,
         pciCompliant: true
       },
       'PAYMENT',
       'HIGH'
     );
 
-    ComplianceManager.logAuditEntry(auditLog);
+    // Log asynchronously (fire and forget for middleware)
+    ComplianceManager.logAuditEntry(auditLog).catch(console.error);
   }
 
   next();
@@ -238,7 +239,7 @@ export const bookingComplianceMiddleware = (req: Request, res: Response, next: N
       'BOOKING_PROCESSING',
       req.path,
       {
-        bookingType: req.body.paymentMethod || 'unknown',
+        bookingType: (req.body && req.body.paymentMethod) || 'unknown',
         consumerProtection: true
       },
       'BOOKING',

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from "react";
 import { HotelType } from "../../../shared/types";
 import { PricingEngine, type HotelDiscounts, type PricingInputs } from "../utils/pricingEngine";
 
@@ -292,112 +292,112 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const downPaymentAmount = calculatedTotals.downPayment;
   const remainingAmount = calculatedTotals.remaining;
 
-  const addRoom = (room: SelectedRoom) => {
+  const addRoom = useCallback((room: SelectedRoom) => {
     setSelectedRooms(prev => {
       const exists = prev.some(r => r.id === room.id);
       if (exists) return prev;
       return [...prev, room];
     });
-  };
+  }, []);
 
-  const removeRoom = (roomId: string) => {
-    setSelectedRooms(prev => prev.filter(room => room.id !== roomId));
-  };
+  const removeRoom = useCallback((roomId: string) => {
+    setSelectedRooms(prev => prev.filter(r => r.id !== roomId));
+  }, []);
 
-  const addCottage = (cottage: SelectedCottage) => {
+  const addCottage = useCallback((cottage: SelectedCottage) => {
     setSelectedCottages(prev => {
       const exists = prev.some(c => c.id === cottage.id);
       if (exists) return prev;
       return [...prev, cottage];
     });
-  };
+  }, []);
 
-  const removeCottage = (cottageId: string) => {
+  const removeCottage = useCallback((cottageId: string) => {
     setSelectedCottages(prev => prev.filter(cottage => cottage.id !== cottageId));
-  };
+  }, []);
 
-  const addAmenity = (amenity: SelectedAmenity) => {
+  const addAmenity = useCallback((amenity: SelectedAmenity) => {
     setSelectedAmenities(prev => {
       const exists = prev.some(a => a.id === amenity.id);
       if (exists) return prev;
       return [...prev, amenity];
     });
-  };
+  }, []);
 
-  const removeAmenity = (amenityId: string) => {
+  const removeAmenity = useCallback((amenityId: string) => {
     setSelectedAmenities(prev => prev.filter(amenity => amenity.id !== amenityId));
-  };
+  }, []);
 
-  const addPackage = (pkg: SelectedPackage) => {
+  const addPackage = useCallback((pkg: SelectedPackage) => {
     setSelectedPackages(prev => {
       const exists = prev.some(p => p.id === pkg.id);
       if (exists) return prev;
       return [...prev, pkg];
     });
-  };
+  }, []);
 
-  const removePackage = (packageId: string) => {
+  const removePackage = useCallback((packageId: string) => {
     setSelectedPackages(prev => prev.filter(pkg => pkg.id !== packageId));
-  };
+  }, []);
 
-  const updateRoomUnits = (roomId: string, units: number) => {
-    setSelectedRooms(prev => 
-      prev.map(room => 
+  const updateRoomUnits = useCallback((roomId: string, units: number) => {
+    setSelectedRooms(prev =>
+      prev.map(room =>
         room.id === roomId ? { ...room, units } : room
       )
     );
-  };
+  }, []);
 
-  const updateCottageUnits = (cottageId: string, units: number) => {
-    setSelectedCottages(prev => 
-      prev.map(cottage => 
+  const updateCottageUnits = useCallback((cottageId: string, units: number) => {
+    setSelectedCottages(prev =>
+      prev.map(cottage =>
         cottage.id === cottageId ? { ...cottage, units } : cottage
       )
     );
-  };
+  }, []);
 
-  const updateAmenityUnits = (amenityId: string, units: number) => {
-    setSelectedAmenities(prev => 
-      prev.map(amenity => 
+  const updateAmenityUnits = useCallback((amenityId: string, units: number) => {
+    setSelectedAmenities(prev =>
+      prev.map(amenity =>
         amenity.id === amenityId ? { ...amenity, units } : amenity
       )
     );
-  };
+  }, []);
 
-  const clearSelections = () => {
+  const clearSelections = useCallback(() => {
     setSelectedRooms([]);
     setSelectedCottages([]);
     setSelectedAmenities([]);
     setSelectedPackages([]);
     // Also clear localStorage
     clearBookingSelectionStorage();
-  };
+  }, []);
 
-  const isRoomSelected = (roomId: string) => {
+  const isRoomSelected = useCallback((roomId: string) => {
     return selectedRooms.some(room => room.id === roomId);
-  };
+  }, [selectedRooms]);
 
-  const isCottageSelected = (cottageId: string) => {
+  const isCottageSelected = useCallback((cottageId: string) => {
     return selectedCottages.some(cottage => cottage.id === cottageId);
-  };
+  }, [selectedCottages]);
 
-  const isAmenitySelected = (amenityId: string) => {
+  const isAmenitySelected = useCallback((amenityId: string) => {
     return selectedAmenities.some(amenity => amenity.id === amenityId);
-  };
+  }, [selectedAmenities]);
 
-  const isPackageSelected = (packageId: string) => {
+  const isPackageSelected = useCallback((packageId: string) => {
     return selectedPackages.some(pkg => pkg.id === packageId);
-  };
+  }, [selectedPackages]);
 
-  const setRateType = (rateType: 'day' | 'night') => {
+  const setRateType = useCallback((rateType: 'day' | 'night') => {
     setSelectedRateType(rateType);
-  };
+  }, []);
 
-  const updateDepositPercentageFromHotel = (hotel: HotelType) => {
+  const updateDepositPercentageFromHotel = useCallback((hotel: HotelType) => {
     if (hotel.downPaymentPercentage) {
       setDepositPercentage(hotel.downPaymentPercentage);
     }
-    
+
     // Update hotel discounts if available
     if (hotel.discounts) {
       const validDiscounts = PricingEngine.validateDiscountConfig(hotel.discounts);
@@ -408,9 +408,9 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
       // Set default discounts if hotel doesn't have any
       setHotelDiscounts(PricingEngine.getDefaultDiscounts());
     }
-  };
+  }, []);
 
-  const value: BookingSelectionContextType = {
+  const value: BookingSelectionContextType = useMemo(() => ({
     selectedRooms,
     selectedCottages,
     selectedAmenities,
@@ -451,7 +451,48 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     updateDepositPercentageFromHotel,
     setDiscountInfo,
     setHotelDiscounts,
-  };
+  }), [
+    selectedRooms,
+    selectedCottages,
+    selectedAmenities,
+    selectedPackages,
+    basePrice,
+    accommodationTotal,
+    amenitiesTotal,
+    packagesTotal,
+    totalCost,
+    downPaymentAmount,
+    remainingAmount,
+    numberOfNights,
+    depositPercentage,
+    selectedRateType,
+    discountInfo,
+    hotelDiscounts,
+    addRoom,
+    removeRoom,
+    addCottage,
+    removeCottage,
+    addAmenity,
+    removeAmenity,
+    addPackage,
+    removePackage,
+    updateRoomUnits,
+    updateCottageUnits,
+    updateAmenityUnits,
+    clearSelections,
+    setBasePrice,
+    setNumberOfNights,
+    setDepositPercentage,
+    setRateType,
+    calculateTotal,
+    isRoomSelected,
+    isCottageSelected,
+    isAmenitySelected,
+    isPackageSelected,
+    updateDepositPercentageFromHotel,
+    setDiscountInfo,
+    setHotelDiscounts,
+  ]);
 
   return (
     <BookingSelectionContext.Provider value={value}>

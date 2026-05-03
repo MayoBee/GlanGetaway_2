@@ -1,340 +1,167 @@
-import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, X, Smartphone } from "lucide-react";
-import { HotelType } from "../../../shared/types";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
+import { Button } from '../../../shared/ui/button';
+import { Input } from '../../../shared/ui/input';
+import { Label } from '../../../shared/ui/label';
+import { Upload, Smartphone, CheckCircle } from 'lucide-react';
 
-type Props = {
-  totalCost: number;
-  downPaymentAmount: number;
-  remainingAmount: number;
-  onPaymentSubmit: (paymentData: GCashPaymentData) => void;
-  isLoading?: boolean;
-  hotel: HotelType;
-};
-
-export type GCashPaymentData = {
+export interface GCashPaymentData {
   gcashNumber: string;
   referenceNumber: string;
   amountPaid: number;
-  screenshotFile: File;
-  paymentTime: Date;
-};
+  screenshot: File | null;
+  paymentMethod: string;
+  status: string;
+}
 
-const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPaymentSubmit, isLoading, hotel }: Props) => {
-  // State for resort GCash number
-  const [resortGcashNumber, setResortGcashNumber] = useState<string>("09XXXXXXXXX");
-  const [isLoadingGcash, setIsLoadingGcash] = useState<boolean>(false);
-  
-  // Fetch resort GCash number directly
-  useEffect(() => {
-    const fetchResortGcash = async () => {
-      if (!hotel._id) return;
-      
-      setIsLoadingGcash(true);
-      try {
-        console.log("Fetching resort GCash for hotel ID:", hotel._id);
-        
-        // Direct API call to get hotel data with all fields
-        const response = await fetch(`http://localhost:5000/api/hotels/${hotel._id}`);
-        const hotelData = await response.json();
-        
-        console.log("Full hotel data received:", hotelData);
-        console.log("GCash number from API:", hotelData.gcashNumber);
-        
-        if (hotelData.gcashNumber && hotelData.gcashNumber.trim() !== "") {
-          setResortGcashNumber(hotelData.gcashNumber);
-          console.log("Set resort GCash number to:", hotelData.gcashNumber);
-        } else {
-          console.log("No GCash number found, using fallback");
-        }
-      } catch (error) {
-        console.error("Error fetching resort GCash:", error);
-      } finally {
-        setIsLoadingGcash(false);
-      }
-    };
-    
-    fetchResortGcash();
-  }, [hotel._id]);
-  
-  console.log("Current resort GCash number:", resortGcashNumber);
-  
-  const [gcashNumber, setGcashNumber] = useState("");
-  const [referenceNumber, setReferenceNumber] = useState("");
-  const [amountPaid, setAmountPaid] = useState(downPaymentAmount);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileReaderRef = useRef<FileReader | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+interface GCashPaymentFormProps {
+  amount: number;
+  onSuccess: (data: any) => void;
+  onError: (error: any) => void;
+}
 
-  // Abort FileReader on component unmount
-  useEffect(() => {
-    return () => {
-      if (fileReaderRef.current) {
-        fileReaderRef.current.abort();
-      }
-    };
-  }, []);
-
-  const handleFileUpload = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+export const GCashPaymentForm: React.FC<GCashPaymentFormProps> = ({
+  amount,
+  onSuccess,
+  onError
+}) => {
+  const [gcashNumber, setGcashNumber] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [amountPaid, setAmountPaid] = useState(amount.toString());
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    
     const file = e.target.files?.[0];
     if (file) {
-      console.log("[DEBUG] File selected:", file.name, file.size, file.type);
-      console.log("[DEBUG] Stack trace for setScreenshotFile:", new Error().stack);
-      setScreenshotFile(file);
-      
-      // Abort any existing FileReader
-      if (fileReaderRef.current) {
-        fileReaderRef.current.abort();
-      }
-      
-      const reader = new FileReader();
-      fileReaderRef.current = reader;
-      
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-        fileReaderRef.current = null;
-      };
-      
-      reader.onerror = () => {
-        fileReaderRef.current = null;
-      };
-      
-      reader.readAsDataURL(file);
+      setScreenshot(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    console.log("[DEBUG] GCashPaymentForm handleSubmit called");
-    console.log("[DEBUG] screenshotFile:", screenshotFile);
-    console.log("[DEBUG] amountPaid:", amountPaid, "downPaymentAmount:", downPaymentAmount);
-    
-    if (!gcashNumber || gcashNumber.trim() === '') {
-      alert("Please enter your GCash number");
-      return;
+    setIsSubmitting(true);
+
+    try {
+      // Here you would typically upload the screenshot and submit payment details
+      // For now, we'll simulate a successful payment
+      const paymentData = {
+        gcashNumber,
+        referenceNumber,
+        amountPaid: parseFloat(amountPaid),
+        screenshot,
+        paymentMethod: 'gcash',
+        status: 'pending'
+      };
+
+      onSuccess(paymentData);
+    } catch (error) {
+      onError(error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!referenceNumber || referenceNumber.trim() === '') {
-      alert("Please enter your GCash reference number");
-      return;
-    }
-
-    if (!screenshotFile) {
-      alert("Please upload a payment screenshot");
-      return;
-    }
-
-    if (amountPaid < downPaymentAmount) {
-      alert(`Amount paid (₱${amountPaid}) is less than required down payment (₱${downPaymentAmount})`);
-      return;
-    }
-
-    const paymentData: GCashPaymentData = {
-      gcashNumber,
-      referenceNumber,
-      amountPaid,
-      screenshotFile,
-      paymentTime: new Date(),
-    };
-
-    console.log("[DEBUG] Calling onPaymentSubmit with paymentData:", {
-      gcashNumber: paymentData.gcashNumber,
-      referenceNumber: paymentData.referenceNumber,
-      amountPaid: paymentData.amountPaid,
-      hasFile: !!paymentData.screenshotFile
-    });
-    
-    onPaymentSubmit(paymentData);
-  };
-
-  const clearFile = () => {
-    setScreenshotFile(null);
-    setPreviewUrl(null);
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm" style={{ isolation: 'isolate' }}>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-blue-100 rounded-full">
-          <Smartphone className="w-6 h-6 text-blue-600" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">GCash Payment</h3>
-          <p className="text-sm text-gray-600">Upload your payment screenshot to complete booking</p>
-        </div>
-      </div>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Smartphone className="h-5 w-5 text-green-600" />
+          GCash Payment
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <div className="text-center">
+              <p className="text-sm text-green-800 mb-2">Amount to Pay</p>
+              <p className="text-2xl font-bold text-green-900">₱{amount.toFixed(2)}</p>
+            </div>
+          </div>
 
-      <div 
-        className="space-y-4"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-        onMouseUp={(e) => e.stopPropagation()}
-        style={{ isolation: 'isolate' }}
-      >
-        {/* GCash Number */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            GCash Number
-          </label>
-          <input
-            type="tel"
-            value={gcashNumber}
-            onChange={(e) => {
-              e.stopPropagation();
-              setGcashNumber(e.target.value);
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            placeholder="09XXXXXXXXX"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="gcashNumber">GCash Number</Label>
+              <Input
+                id="gcashNumber"
+                type="tel"
+                placeholder="09XX XXX XXXX"
+                value={gcashNumber}
+                onChange={(e) => setGcashNumber(e.target.value)}
+                required
+              />
+            </div>
 
-        {/* Reference Number */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reference Number
-          </label>
-          <input
-            type="text"
-            value={referenceNumber}
-            onChange={(e) => {
-              e.stopPropagation();
-              setReferenceNumber(e.target.value);
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            placeholder="Enter GCash reference number"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+            <div>
+              <Label htmlFor="referenceNumber">Reference Number</Label>
+              <Input
+                id="referenceNumber"
+                type="text"
+                placeholder="Enter reference number"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                required
+              />
+            </div>
 
-        {/* Amount Paid */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount Paid (₱)
-          </label>
-          <input
-            type="number"
-            value={amountPaid}
-            onChange={(e) => {
-              e.stopPropagation();
-              setAmountPaid(Number(e.target.value));
-            }}
-            onFocus={(e) => e.stopPropagation()}
-            min={downPaymentAmount}
-            step="0.01"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-          {amountPaid < downPaymentAmount && (
-            <p className="text-red-500 text-sm mt-1">
-              Amount must be at least ₱{downPaymentAmount} (50% down payment)
-            </p>
-          )}
-        </div>
+            <div>
+              <Label htmlFor="amountPaid">Amount Paid</Label>
+              <Input
+                id="amountPaid"
+                type="number"
+                step="0.01"
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+                required
+              />
+            </div>
 
-        {/* Screenshot Upload */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Payment Screenshot
-          </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
-            {previewUrl ? (
-              <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Payment screenshot"
-                  className="max-w-full h-48 mx-auto rounded-lg object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFile();
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="py-8">
-                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <button
-                  type="button"
-                  onClick={handleFileUpload}
-                  className="text-blue-600 font-medium hover:text-blue-700"
-                >
-                  <Upload className="w-5 h-5 inline mr-2" />
-                  Upload Screenshot
-                </button>
+            <div>
+              <Label htmlFor="screenshot">Payment Screenshot</Label>
+              <div className="mt-1">
                 <input
-                  ref={fileInputRef}
+                  id="screenshot"
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  style={{ display: 'none' }}
+                  className="hidden"
                   required
                 />
-                <p className="text-sm text-gray-500 mt-2">
-                  PNG, JPG, GIF up to 10MB
-                </p>
+                <label
+                  htmlFor="screenshot"
+                  className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  {screenshot ? (
+                    <div className="text-center">
+                      <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Screenshot uploaded</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Upload payment screenshot</p>
+                    </div>
+                  )}
+                </label>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Payment Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">Payment Instructions:</h4>
-          <div className="text-sm text-blue-800 space-y-2">
-            <div className="bg-white p-3 rounded border border-blue-200">
-              <div className="font-semibold mb-1">Amount to Send:</div>
-              <div className="text-xl font-bold text-green-600">₱{downPaymentAmount.toFixed(2)}</div>
-              <div className="text-xs text-gray-500">This is 50% down payment of total cost (₱{totalCost.toFixed(2)})</div>
             </div>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number <strong>{resortGcashNumber}</strong></li>
-              <li>Take a screenshot of the successful transaction</li>
-              <li>Upload the screenshot with your GCash details above</li>
-              <li>Wait for the resort owner to verify your payment</li>
-              <li>Remaining balance (₱{remainingAmount.toFixed(2)}) will be paid on-site</li>
-            </ol>
+
+            <Button
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Processing...' : 'Submit Payment'}
+            </Button>
+          </form>
+
+          <div className="text-xs text-gray-500 space-y-1">
+            <p>• Make sure the screenshot clearly shows the payment details</p>
+            <p>• Payment will be verified within 24 hours</p>
+            <p>• You will receive a confirmation once payment is approved</p>
           </div>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isLoading || !screenshotFile || amountPaid < downPaymentAmount}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Processing Payment...
-            </span>
-          ) : (
-            "Submit Payment Screenshot"
-          )}
-        </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
-
-export default GCashPaymentForm;

@@ -44,7 +44,7 @@ const corsOriginValidator = (origin: string | undefined, callback: (err: Error |
 
   // Normalize origin by removing trailing slash
   const normalizedOrigin = origin.replace(/\/$/, "");
-  
+
   // Exact match validation only
   if (allowedOrigins.includes(normalizedOrigin)) {
     return callback(null, true);

@@ -3,8 +3,10 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { Request, Response, NextFunction } from "express";
 
-// Security middleware export
-export const securityMiddleware = helmet();
+// Security middleware export with cross-origin resource policy override for images
+export const securityMiddleware = helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+});
 
 // Trust proxy for production (fixes rate limiting issues)
 export const setupTrustProxy = (app: any) => {

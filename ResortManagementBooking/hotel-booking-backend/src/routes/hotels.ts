@@ -266,6 +266,20 @@ router.post(
       // Use downPaymentAmount from frontend instead of calculating totalCost
       const paymentAmount = downPaymentAmount || (hotel.hasNightRate ? hotel.nightRate : hotel.dayRate);
 
+      // Handle zero payment amount case
+      if (paymentAmount <= 0) {
+        // Return a mock payment intent with proper Stripe format
+        const timestamp = Date.now();
+        const mockId = `pi_mock_${timestamp}`;
+        const response = {
+          paymentIntentId: mockId,
+          clientSecret: `${mockId}_secret_${timestamp}`,
+          totalCost: 0,
+          message: "No payment required - zero amount booking"
+        };
+        return res.send(response);
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(paymentAmount * 100), // Convert to cents
         currency: "php", // Use PHP instead of USD

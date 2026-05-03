@@ -144,37 +144,51 @@ const GuestInfoForm = ({
   const fetchAvailability = async () => {
     if (!checkIn || !checkOut) return;
 
+    // Extract IDs from selected rooms and cottages
+    const roomIds = selectedRooms?.map(room => room.id) || [];
+    const cottageIds = selectedCottages?.map(cottage => cottage.id) || [];
+
     try {
-      const response = await axiosInstance.get(`/api/hotels/${hotelId}/bookings`, {
+      const response = await axiosInstance.get(`/api/hotels/${hotelId}/availability`, {
+        params: {
+          checkIn: checkIn.toISOString(),
+          checkOut: checkOut.toISOString(),
+          roomIds: roomIds.length > 0 ? roomIds.join(',') : undefined,
+          cottageIds: cottageIds.length > 0 ? cottageIds.join(',') : undefined
+        },
         timeout: 15000, // 15 second timeout
         retry: 2, // Retry twice for network errors
         retryDelay: 1000 // 1 second delay between retries
       });
-      const bookings = response.data;
+      const availabilityData = response.data;
       const unavailable: Date[] = [];
       const selectedStart = new Date(checkIn);
       const selectedEnd = new Date(checkOut);
 
-      // Check for overlapping bookings
-      bookings.forEach((booking: any) => {
-        if (booking.status === 'cancelled') return; // Skip cancelled bookings
-
-        const bookingStart = new Date(booking.checkIn);
-        const bookingEnd = new Date(booking.checkOut);
-
-        // Check if dates overlap
-        if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
-          // Add all dates in the range to unavailable
-          const currentDate = new Date(bookingStart);
-          while (currentDate < bookingEnd) {
-            unavailable.push(new Date(currentDate));
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
+      // Check if availability is available
+      if (availabilityData.available) {
+        setUnavailableDates(unavailable);
+        setAvailabilityConflict(null);
+      } else {
+        // Handle conflicts - mark dates as unavailable based on conflicts
+        if (availabilityData.conflicts && Array.isArray(availabilityData.conflicts)) {
+          availabilityData.conflicts.forEach((conflict: any) => {
+            if (conflict.checkIn && conflict.checkOut) {
+              const conflictStart = new Date(conflict.checkIn);
+              const conflictEnd = new Date(conflict.checkOut);
+              
+              // Add all dates in the conflict range to unavailable
+              const currentDate = new Date(conflictStart);
+              while (currentDate < conflictEnd) {
+                unavailable.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+              }
+            }
+          });
         }
-      });
-
-      setUnavailableDates(unavailable);
-      setAvailabilityConflict(null);
+        setUnavailableDates(unavailable);
+        setAvailabilityConflict('Some dates are not available. Please select different dates.');
+      }
     } catch (error: any) {
       console.error('Error fetching availability:', error);
       
@@ -291,12 +305,12 @@ const GuestInfoForm = ({
     }
   }, [selectedRateType]);
 
-  // Fetch availability when dates change
+  // Fetch availability when dates or selections change
   useEffect(() => {
     if (checkIn && checkOut) {
       fetchAvailability();
     }
-  }, [checkIn, checkOut, hotelId]);
+  }, [checkIn, checkOut, hotelId, selectedRooms, selectedCottages]);
 
   const minDate = new Date();
   const maxDate = new Date();

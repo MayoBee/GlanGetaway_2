@@ -13,11 +13,16 @@ declare global {
 }
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+  // Allow OPTIONS requests (CORS preflight) to pass through without authentication
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   // Extract token using enhanced session manager
   const token = SessionManager.extractToken(req);
 
   if (!token) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: "unauthorized",
       code: "NO_TOKEN"
     });

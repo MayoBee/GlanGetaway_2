@@ -19,18 +19,24 @@ class ImageService {
   private baseUrl: string;
 
   constructor() {
-    // Set upload directory - handle both development and production environments
+    // Set upload directory - works for both development and compiled environments
+    // From dist/src/services or src/services, go up to project root and then to uploads/
+    // In development: src/services -> src -> project root -> uploads
+    // In production: dist/src/services -> dist/src -> dist -> project root -> uploads
+
     const isProduction = __dirname.includes('dist');
     if (isProduction) {
-      // In production, we need to go up more levels from dist/hotel-booking-backend/src
-      this.uploadDir = path.join(__dirname, '..', '..', '..', '..', 'uploads');
+      // From dist/src/services: go up to dist, then up to project root, then to uploads
+      this.uploadDir = path.join(__dirname, '..', '..', '..', 'uploads');
     } else {
-      // In development (running from src), go up from src to project root
+      // From src/services: go up to src, then up to project root, then to uploads
       this.uploadDir = path.join(__dirname, '..', '..', 'uploads');
     }
-    
-    this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 7002}`;
-    
+
+
+
+    this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+
     // Ensure upload directory exists
     this.ensureUploadDir();
   }
@@ -92,6 +98,8 @@ class ImageService {
   serveImage(req: Request, res: Response): void {
     const filename = req.params.filename;
     const filePath = path.join(this.uploadDir, filename);
+
+
     
     // Security check - prevent directory traversal
     if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {

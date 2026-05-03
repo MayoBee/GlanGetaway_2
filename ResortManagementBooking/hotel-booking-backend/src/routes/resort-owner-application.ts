@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import mongoose from "mongoose";
 import ResortOwnerApplication from "../models/resort-owner-application";
+import User from "../models/user";
 import { verifyToken, AuthRequest } from "../middleware/role-based-auth";
 import { body, validationResult } from "express-validator";
 
@@ -312,11 +313,35 @@ router.post(
         });
       }
 
+      // Update application status
       application.status = 'approved';
       application.reviewedAt = new Date();
       application.reviewedBy = new mongoose.Types.ObjectId(req.userId);
-
       await application.save();
+
+      // Update user role to resort_owner
+      console.log('🔍 Updating user role:', {
+        applicationId: application._id,
+        userId: application.userId,
+        newRole: 'resort_owner'
+      });
+      
+      try {
+        const updatedUser = await User.findByIdAndUpdate(
+          application.userId,
+          { role: 'resort_owner', updatedAt: new Date() },
+          { new: true }
+        );
+        
+        console.log('✅ User role updated successfully:', {
+          userId: application.userId,
+          updatedRole: updatedUser.role,
+          success: true
+        });
+      } catch (error) {
+        console.error('❌ Error updating user role:', error);
+        throw error;
+      }
 
       res.json({
         message: "Application approved successfully",

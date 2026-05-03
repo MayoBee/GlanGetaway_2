@@ -8,8 +8,13 @@ export interface AuthRequest extends Request {
 }
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+  // Allow OPTIONS requests (CORS preflight) to pass through without authentication
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const token = req.header("Authorization")?.replace("Bearer ", "");
-  
+
   if (!token) {
     return res.status(401).json({ message: "Access denied. No token provided." });
   }

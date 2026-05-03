@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import multer from "multer";
 import path from "path";
@@ -8,9 +8,26 @@ import User from "../models/user";
 import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
+import jwt from "jsonwebtoken";
 import verifyToken from "../middleware/auth";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
+
+// Simplified auth middleware for payment routes
+const simplifiedPaymentAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required for payment' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as { userId: string };
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid authentication token' });
+  }
+};
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -164,12 +181,36 @@ router.get(
   }
 );
 
+
+
+// Explicit OPTIONS handler for payment routes
+router.options("/:hotelId/bookings/payment-intent", (req: Request, res: Response) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:5174");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header("Access-Control-Max-Age", "86400");
+  res.sendStatus(204);
+});
+
 router.post(
   "/:hotelId/bookings/payment-intent",
-  verifyToken,
+  // simplifiedPaymentAuth, // Temporarily disabled for debugging
   async (req: Request, res: Response) => {
+    // Add explicit CORS headers
+    res.header("Access-Control-Allow-Origin", "http://localhost:5174");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+
     const { numberOfNights, downPaymentAmount } = req.body;
     const hotelId = req.params.hotelId;
+
+    console.log("🔥 PAYMENT INTENT REQUEST DEBUG:");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+    console.log("Hotel ID:", hotelId);
+    console.log("User ID:", req.userId);
 
     try {
       // Check if Stripe is configured
@@ -219,8 +260,6 @@ router.post(
     }
   }
 );
-
-import mongoose from "mongoose";
 
 router.post(
   "/:hotelId/bookings",

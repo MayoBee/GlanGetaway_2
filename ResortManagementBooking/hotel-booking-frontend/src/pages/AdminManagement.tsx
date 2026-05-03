@@ -109,7 +109,7 @@ const AdminManagement = () => {
   // Fetch existing resort owners
   const { data: resortOwners = [], isLoading: isLoadingOwners } = useQueryWithLoading(
     "existingResortOwners",
-    apiClient.fetchExistingResortOwners,
+    () => apiClient.fetchAllUsers().then(users => users.filter(user => user.role === 'resort_owner')),
     {
       loadingMessage: "Loading resort owners...",
       enabled: activeTab === "role-promotions",
@@ -205,7 +205,7 @@ const AdminManagement = () => {
   });
 
   // Approve role request mutation
-  const approveRequestMutation = useMutationWithLoading(apiClient.approveRoleRequest, {
+  const approveRequestMutation = useMutationWithLoading(apiClient.approveResortOwnerApplication, {
     onSuccess: (data) => {
       showToast({
         title: "Role Request Approved",
@@ -226,43 +226,51 @@ const AdminManagement = () => {
   });
 
   // Decline role request mutation
-  const declineRequestMutation = useMutationWithLoading(apiClient.declineRoleRequest, {
-    onSuccess: (data) => {
-      showToast({
-        title: "Role Request Declined",
-        description: `Request has been declined.`,
-        type: "SUCCESS",
-      });
-      queryClient.invalidateQueries("pendingRoleRequests");
-    },
-    onError: (error: Error) => {
-      showToast({
-        title: "Decline Failed",
-        description: error.message,
-        type: "ERROR",
-      });
-    },
-    loadingMessage: "Declining role request...",
-  });
+  const declineRequestMutation = useMutationWithLoading(
+    ({ requestId, reason }: { requestId: string; reason: string }) => 
+      apiClient.declineResortOwnerApplication(requestId, reason),
+    {
+      onSuccess: (data) => {
+        showToast({
+          title: "Role Request Declined",
+          description: `Request has been declined.`,
+          type: "SUCCESS",
+        });
+        queryClient.invalidateQueries("pendingRoleRequests");
+      },
+      onError: (error: Error) => {
+        showToast({
+          title: "Decline Failed",
+          description: error.message,
+          type: "ERROR",
+        });
+      },
+      loadingMessage: "Declining role request...",
+    }
+  );
 
   // Demote resort owner mutation
-  const demoteOwnerMutation = useMutationWithLoading(apiClient.demoteResortOwner, {
-    onSuccess: (data) => {
-      showToast({
-        title: "Resort Owner Demoted",
-        description: `User has been demoted to regular user.`,
-        type: "SUCCESS",
-      });
-    },
-    onError: (error: Error) => {
-      showToast({
-        title: "Demotion Failed",
-        description: error.message,
-        type: "ERROR",
-      });
-    },
-    loadingMessage: "Demoting resort owner...",
-  });
+  const demoteOwnerMutation = useMutationWithLoading(
+    (userId: string) => apiClient.demoteUserToUser(userId),
+    {
+      onSuccess: (data) => {
+        showToast({
+          title: "Resort Owner Demoted",
+          description: `User has been demoted to regular user.`,
+          type: "SUCCESS",
+        });
+        queryClient.invalidateQueries("existingResortOwners");
+      },
+      onError: (error: Error) => {
+        showToast({
+          title: "Demotion Failed",
+          description: error.message,
+          type: "ERROR",
+        });
+      },
+      loadingMessage: "Demoting resort owner...",
+    }
+  );
 
   const handlePromoteUser = (user: any) => {
     setSelectedUser(user);
@@ -340,8 +348,8 @@ const AdminManagement = () => {
     approveRequestMutation.mutate(requestId);
   };
 
-  const handleDeclineRequest = (requestId: string) => {
-    declineRequestMutation.mutate(requestId);
+  const handleDeclineRequest = (requestId: string, reason: string) => {
+    declineRequestMutation.mutate({ requestId, reason });
   };
 
   const handleDemoteOwner = (userId: string) => {
@@ -566,7 +574,7 @@ const AdminManagement = () => {
                           <div className="flex space-x-2">
                             {user.role === "user" ? (
                               <Dialog open={isDialogOpen && selectedUser?._id === user._id} onOpenChange={setIsDialogOpen}>
-                                <DialogTrigger asChild>
+                                <DialogTrigger>
                                   <Button
                                     onClick={() => handlePromoteUser(user)}
                                     variant="outline"
@@ -618,7 +626,7 @@ const AdminManagement = () => {
                               </Dialog>
                             ) : (
                               <Dialog open={isDialogOpen && selectedUser?._id === user._id} onOpenChange={setIsDialogOpen}>
-                                <DialogTrigger asChild>
+                                <DialogTrigger>
                                   <Button
                                     onClick={() => handlePromoteUser(user)}
                                     variant="outline"
@@ -837,7 +845,12 @@ const AdminManagement = () => {
                                 )}
                               </Button>
                               <Button
-                                onClick={() => handleDeclineRequest(request._id)}
+                                onClick={() => {
+                                  const reason = prompt("Please enter a reason for declining this application:");
+                                  if (reason) {
+                                    handleDeclineRequest(request._id, reason);
+                                  }
+                                }}
                                 variant="outline"
                                 size="sm"
                                 className="border-red-200 text-red-700 hover:bg-red-50"
@@ -957,6 +970,14 @@ const AdminManagement = () => {
               ))}
             </div>
           )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDocumentsDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -14,7 +14,7 @@ import { Label } from "@shared/ui/label";
 import { CardContent, CardHeader, CardTitle } from "@shared/ui/card";
 import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
-import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
+import { GCashPaymentForm, GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
 import GuestDiscountInputComponent from "../../components/GuestDiscountInput";
 import type { DiscountCalculationResult } from "../../components/GuestDiscountInput";
