@@ -74,8 +74,8 @@ const EnhancedBookingForm = ({
     hotel,
     hotelGcashNumber: hotel?.gcashNumber
   });
-  const stripe = useStripe();
-  const elements = useElements();
+  const stripe = !skipPayment ? useStripe() : null;
+  const elements = !skipPayment ? useElements() : null;
   const search = useSearchContext();
   const { hotelId } = useParams();
   const navigate = useNavigate();
