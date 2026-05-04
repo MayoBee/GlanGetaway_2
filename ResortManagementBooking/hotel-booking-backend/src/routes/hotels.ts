@@ -405,36 +405,67 @@ router.post(
         canModify: true
       };
 
-      // Start transaction for complete booking flow
-      const session = await mongoose.startSession();
-      session.startTransaction();
+      // Check if this is an entrance fee-only booking
+      const isEntranceFeeOnly = (!selectedRooms || selectedRooms.length === 0) && 
+                               (!selectedCottages || selectedCottages.length === 0);
+      
+      console.log("Booking type detected:", isEntranceFeeOnly ? "Entrance fee-only" : "With accommodations");
       
       try {
-        // Use ATOMIC booking to prevent race conditions (with transaction session)
-        const result = await createAtomicBooking(bookingData, { session });
+        let booking;
         
-        if (!result.success) {
-          await session.abortTransaction();
-          session.endSession();
-          return res.status(409).json({ 
-            message: result.error || "Booking failed due to availability conflict" 
+        if (isEntranceFeeOnly) {
+          // For entrance fee-only bookings, create directly without conflict detection or transactions
+          console.log("Creating entrance fee-only booking...");
+          booking = new Booking(bookingData);
+          await booking.save();
+          
+          // Update hotel and user booking counts without transaction
+          await Hotel.findByIdAndUpdate(hotelId, {
+            $inc: { totalBookings: 1 }
           });
+          
+          await User.findByIdAndUpdate(userId, {
+            $inc: { totalBookings: 1 }
+          });
+        } else {
+          // For accommodation bookings, use ATOMIC booking to prevent race conditions
+          console.log("Creating accommodation booking with conflict detection...");
+          // Start transaction only for accommodation bookings
+          const session = await mongoose.startSession();
+          session.startTransaction();
+          
+          try {
+            const result = await createAtomicBooking(bookingData, { session });
+            
+            if (!result.success) {
+              await session.abortTransaction();
+              session.endSession();
+              return res.status(409).json({ 
+                message: result.error || "Booking failed due to availability conflict" 
+              });
+            }
+            
+            booking = result.booking;
+            
+            // Update hotel booking count
+            await Hotel.findByIdAndUpdate(hotelId, {
+              $inc: { totalBookings: 1 }
+            }, { session });
+            
+            // Update user booking count
+            await User.findByIdAndUpdate(userId, {
+              $inc: { totalBookings: 1 }
+            }, { session });
+            
+            await session.commitTransaction();
+            session.endSession();
+          } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+            throw error;
+          }
         }
-        
-        const booking = result.booking;
-        
-        // Update hotel booking count
-        await Hotel.findByIdAndUpdate(hotelId, {
-          $inc: { totalBookings: 1 }
-        }, { session });
-        
-        // Update user booking count
-        await User.findByIdAndUpdate(userId, {
-          $inc: { totalBookings: 1 }
-        }, { session });
-        
-        await session.commitTransaction();
-        session.endSession();
         
         console.log("Booking created successfully:", booking._id);
         
@@ -443,10 +474,12 @@ router.post(
           bookingId: booking._id,
           booking
         });
-      } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
+      } catch (error: any) {
+        console.error("Booking error:", error);
+        res.status(500).json({ 
+          message: "Booking failed",
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
       }
     } catch (error) {
       console.error("Booking error:", error);
