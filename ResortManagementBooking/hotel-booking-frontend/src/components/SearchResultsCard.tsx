@@ -15,9 +15,8 @@ import {
   Plane,
   Building,
 } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Badge } from "../../../shared/ui/badge";
 import ReportButton from "./ReportButton";
-import ImageWithFallback from "./ui/ImageWithFallback";
 
 type Props = {
   hotel: HotelType;
@@ -44,12 +43,9 @@ const SearchResultsCard = ({ hotel }: Props) => {
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-0 w-full h-full">
         {/* Image Section */}
         <div className="relative overflow-hidden h-64 xl:h-[500px]">
-          <ImageWithFallback
+          <img
             src={hotel.imageUrls[0]}
-            alt={hotel.name || 'Hotel image'}
             className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-            fallbackSrc={hotel.imageUrls?.[1]}
-            retryCount={2}
           />
 
           {/* Overlay Badges */}
@@ -209,4 +205,3 @@ const SearchResultsCard = ({ hotel }: Props) => {
 };
 
 export default SearchResultsCard;
-

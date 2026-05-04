@@ -3,13 +3,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "../../../shared/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { Separator } from "./ui/separator";
-import { Button } from "./ui/button";
-import { useState, useEffect } from "react";
-import { axiosInstance, signOut } from "../api-client";
-import { Plus, LogOut, BarChart3, Building, Building2, Users } from "lucide-react";
+import { Separator } from "../../../shared/ui/separator";
+import { Button } from "../../../shared/ui/button";
+import { useState } from "react";
+import * as apiClient from "../api-client";
+import { Plus, LogOut, Building, UserCheck, BarChart3, Users } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
@@ -23,29 +23,9 @@ const getAvatarUrl = () => {
 };
 
 const UsernameMenu = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [pendingRequest, setPendingRequest] = useState<any>(null);
   const { isLoggedIn } = useAppContext();
-  const { permissions, isAdmin } = useRoleBasedAccess();
-  const [loadingRequest, setLoadingRequest] = useState(true);
-
-  useEffect(() => {
-    const checkPendingRequest = async () => {
-      if (!isLoggedIn) return;
-      try {
-        const response = await axiosInstance.get('/api/role-promotion-requests');
-        const requests = response.data?.data || response.data || [];
-        const pending = requests.find((req: any) => req.status === 'pending');
-        setPendingRequest(pending);
-      } catch (err) {
-        // Ignore errors, user just has no requests
-      } finally {
-        setLoadingRequest(false);
-      }
-    };
-    checkPendingRequest();
-  }, [isLoggedIn]);
+  const { permissions } = useRoleBasedAccess();
 
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
@@ -54,16 +34,13 @@ const UsernameMenu = () => {
     ? `https://robohash.org/${email || "user"}.png?set=set1&size=80x80`
     : getAvatarUrl();
 
-  const handleMenuClick = () => setIsOpen(false);
-
   const handleLogout = async () => {
-    await signOut();
-    setIsOpen(false);
+    await apiClient.signOut();
     window.location.href = "/";
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-full border-2 border-teal-400/80 p-0.5 focus:outline-none focus:ring-2 focus:ring-teal-300">
           <img
@@ -81,37 +58,24 @@ const UsernameMenu = () => {
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <Separator className="my-2 bg-gray-200" />
-        {/* Apply for Resort Owner - Regular users only */}
-        {!permissions.canManageOwnResorts && !isAdmin && !loadingRequest && (
-           pendingRequest ? (
-             <DropdownMenuItem disabled className="py-1.5 rounded-md opacity-60">
-               <div className="flex items-center gap-2 w-full">
-                 <Building2 className="h-4 w-4 text-amber-500" />
-                 <span className="text-amber-600 font-medium">Request Pending...</span>
-               </div>
-             </DropdownMenuItem>
-           ) : (
-             <DropdownMenuItem
-               onClick={handleMenuClick}
-               asChild
-               className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-             >
-               <Link
-                 to="/apply-resort-owner"
-                 className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
-               >
-                 <Building2 className="h-4 w-4" />
-                 Apply for Resort Owner
-               </Link>
-             </DropdownMenuItem>
-           )
-         )}
-         <Separator className="my-2 bg-gray-200" />
-
-         {/* Add Resort - Only visible to Resort Owners */}
-         {permissions.canManageOwnResorts && (
+        {/* Apply for Resort Owner - Only visible to regular users */}
+        {!permissions.canManageOwnResorts && (
           <DropdownMenuItem
-            onClick={handleMenuClick}
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/apply-resort-owner"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <UserCheck className="h-4 w-4" />
+              Apply for Resort Owner
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {/* Add Resort - Only visible to Resort Owners */}
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
             asChild
             className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
           >
@@ -124,64 +88,52 @@ const UsernameMenu = () => {
             </Link>
           </DropdownMenuItem>
         )}
-        <Separator className="my-2 bg-gray-200" />
-        
-        {/* Resort Owner Links */}
         {permissions.canManageOwnResorts && (
-          <>
-            {/* Resort Reports */}
-            <DropdownMenuItem
-              onClick={handleMenuClick}
-              asChild
-              className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-            >
-              <Link
-                to="/resort/reports"
-                className="flex items-center gap-2 w-full font-bold hover:text-green-600"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Resort Reports
-              </Link>
-            </DropdownMenuItem>
-            {/* Staff Management */}
-            <DropdownMenuItem
-              onClick={handleMenuClick}
-              asChild
-              className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-            >
-              <Link
-                to="/staff-management"
-                className="flex items-center gap-2 w-full font-bold hover:text-blue-600"
-              >
-                <Users className="h-4 w-4" />
-                Staff Management
-              </Link>
-            </DropdownMenuItem>
-            {/* My Resorts */}
-            <DropdownMenuItem
-              onClick={handleMenuClick}
-              asChild
-              className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
-            >
-              <Link
-                to="/my-hotels"
-                className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
-              >
-                <Building className="h-4 w-4" />
-                My Resorts
-              </Link>
-            </DropdownMenuItem>
-            <Separator className="my-2 bg-gray-200" />
-          </>
-        )}
-        <DropdownMenuItem className="py-1.5 rounded-md cursor-pointer">
-          <Button
-            onClick={handleLogout}
-            className="w-full font-bold bg-primary-600 hover:bg-primary-700 text-white"
+          <DropdownMenuItem
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            Log Out
-          </Button>
+            <Link
+              to="/my-hotels"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <Building className="h-4 w-4" />
+              My Resorts
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/resort/reports"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Resort Analytics
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/manage-front-desk"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <Users className="h-4 w-4" />
+              Manage Front Desk
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <Separator className="my-2 bg-gray-200" />
+        <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:bg-red-50">
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -189,4 +141,3 @@ const UsernameMenu = () => {
 };
 
 export default UsernameMenu;
-

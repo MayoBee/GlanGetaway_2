@@ -5,12 +5,12 @@ import {
   CardHeader, 
   CardTitle,
   CardDescription 
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Checkbox } from "../components/ui/checkbox";
-import { Badge } from "../components/ui/badge";
+} from "../../../shared/ui/card";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
+import { Label } from "../../../shared/ui/label";
+import { Checkbox } from "../../../shared/ui/checkbox";
+import { Badge } from "../../../shared/ui/badge";
 import { 
   Users,
   AlertCircle,
@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../components/ui/dialog";
+} from "../../../shared/ui/dialog";
 import {
   mockOCRFunction,
   ScannedIDResult,
@@ -42,7 +42,7 @@ import {
   validateGuestAgainstID,
   calculateVerificationDiscount,
   IDType
-} from "../lib/mockOCR";
+} from "../../../shared/lib/mockOCR";
 
 interface GuestInfo {
   id: string;
@@ -97,6 +97,14 @@ const GuestVerificationLayer = ({
     if (idNumber.length <= 4) return "XXXX";
     // Show only last 4 characters
     return "XXXX-" + idNumber.slice(-4);
+  };
+
+  // Function to clear file from memory
+  const clearFileFromMemory = () => {
+    if (selectedFile) {
+      URL.revokeObjectURL(selectedFile.name);
+    }
+    setSelectedFile(null);
   };
 
   // Calculate total discounted guests
@@ -820,4 +828,3 @@ const GuestVerificationLayer = ({
 };
 
 export default GuestVerificationLayer;
-

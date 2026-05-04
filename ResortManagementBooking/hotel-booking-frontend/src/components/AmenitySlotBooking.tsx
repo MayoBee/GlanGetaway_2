@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from "../api-client";
+import { getApiBaseUrl } from "../../../shared/auth/api-client";
 
 interface AmenitySlotBookingProps {
   amenityId: string;
+  hotelId: string;
   amenityName: string;
   bookingId?: string;
-  onSlotBooked?: (slot: TimeSlot) => void;
-  currentPrice?: number;
-  basePrice?: number;
-  priceMultiplier?: number;
-  isWeatherLocked?: boolean;
-  weatherLockReason?: string;
-  status?: string;
+  onSlotBooked?: (slot: any) => void;
 }
 
 interface TimeSlot {
@@ -32,6 +27,7 @@ interface TimeSlot {
 
 export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
   amenityId,
+  hotelId,
   amenityName,
   bookingId,
   onSlotBooked,
@@ -77,7 +73,7 @@ export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/amenity-slots/${selectedSlot._id}/book`,
         { bookingId },
@@ -270,4 +266,3 @@ export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
 };
 
 export default AmenitySlotBooking;
-

@@ -3,9 +3,9 @@ import useSearchContext from "../hooks/useSearchContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Card, CardContent } from "./ui/card";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
+import { Card, CardContent } from "../../../shared/ui/card";
 import { SlidersHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
 
 const SearchBar = () => {
@@ -315,4 +315,3 @@ const SearchBar = () => {
 };
 
 export default SearchBar;
-

@@ -4,6 +4,7 @@
   "description": "booking mern app backend",
   "main": "./dist/src/index.js",
   "scripts": {
+    "build": "tsc --skipLibCheck --noEmitOnError",
     "build-local": "tsc --skipLibCheck",
     "lint": "tsc --noEmit",
     "start": "node dist/src/index.js",

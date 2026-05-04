@@ -216,24 +216,6 @@
       }
     },
     "customDiscounts": [
-      {
-        "id": "disc_001",
-        "name": "Sports Club Member",
-        "percentage": 15,
-        "promoCode": "PROMO-SPORT25",
-        "isEnabled": true,
-        "maxUses": 100,
-        "usedCount": 23,
-        "validFrom": "2026-01-01T00:00:00Z",
-        "validUntil": "2026-12-31T23:59:59Z",
-        "minBookingValue": 5000,
-        "applicableRoomTypes": ["Deluxe Room", "Suite"]
-      },
-      {
-        "id": "disc_002",
-        "name": "Government Employee",
-        "percentage": 10,
-        "promoCode": "PROMO-GOV10",
         "isEnabled": true,
         "maxUses": null,
         "usedCount": 5,

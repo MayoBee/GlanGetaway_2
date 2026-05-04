@@ -24,4 +24,3 @@ const Pagination = ({ page, pages, onPageChange }: Props) => {
 };
 
 export default Pagination;
-

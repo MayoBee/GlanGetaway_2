@@ -1,93 +1,48 @@
-import { useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-});
-
-// Add request interceptor to include JWT token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredPermission?: keyof ReturnType<typeof useRoleBasedAccess>["permissions"];
   requireAdmin?: boolean;
-  bypassRoleCheck?: boolean;
+  fallbackPath?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
+  requiredPermission,
   requireAdmin = false,
-  bypassRoleCheck = false,
+  fallbackPath = "/",
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isValidating, setIsValidating] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const location = useLocation();
+  const { isLoggedIn, isLoading, isAdmin, permissions } = useRoleBasedAccess();
 
-  useEffect(() => {
-    // Check localStorage values set by AppContext
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('user_role');
-
-    if (token) {
-      setIsAuthenticated(true);
-      setUserRole(role);
-    } else {
-      setIsAuthenticated(false);
-      setUserRole(null);
-    }
-
-    setIsValidating(false);
-  }, []);
-
-  // Show loading state while validating
-  if (isValidating) {
+  // Show loading while checking authentication
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  // Check if user is authenticated
-  if (!isAuthenticated) {
-    // Redirect to admin-login if admin access is required, otherwise to sign-in
-    const redirectPath = requireAdmin ? "/admin-login" : "/sign-in";
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  // Redirect to login if not logged in
+  if (!isLoggedIn) {
+    return <Navigate to="/sign-in" state={{ from: window.location.pathname }} replace />;
   }
 
-  // Skip role checks if bypassRoleCheck is enabled (for admin portal access)
-  if (bypassRoleCheck) {
-    return <>{children}</>;
+  // Check for specific permission
+  if (requiredPermission && !permissions[requiredPermission]) {
+    return <Navigate to={fallbackPath} replace />;
   }
 
-  // Validate admin access if required
-  if (requireAdmin) {
-    const adminRoles = ["admin"];
-    if (!adminRoles.includes(userRole ?? "")) {
-      return <Navigate to="/admin-login" state={{ from: location }} replace />;
-    }
+  // Check for admin requirement
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to={fallbackPath} replace />;
   }
-
-
 
   return <>{children}</>;
 };
 
 export default ProtectedRoute;
-

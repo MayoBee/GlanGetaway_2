@@ -110,7 +110,19 @@ export const createAtomicBooking = async (bookingData: BookingData, options?: Tr
   const roomIds = selectedRooms?.map((room: RoomSelection) => room.id) || [];
   const cottageIds = selectedCottages?.map((cottage: CottageSelection) => cottage.id) || [];
   
-  // Build the conflict detection query
+  // Skip conflict detection for entrance fee-only bookings (no accommodations selected)
+  if (roomIds.length === 0 && cottageIds.length === 0) {
+    // This is an entrance fee-only booking, no accommodation conflicts possible
+    const booking = new Booking(bookingData);
+    if (session) {
+      await booking.save({ session });
+    } else {
+      await booking.save();
+    }
+    return { success: true, booking };
+  }
+  
+  // Build the conflict detection query for accommodation bookings
   const conflictQuery: MongoQuery = {
     hotelId,
     status: { $in: ['confirmed', 'pending'] },

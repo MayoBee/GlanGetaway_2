@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { cancelAllRequests, isRequestCanceled } from "../../lib/auth-api-client";
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { axiosInstance } from "../../lib/auth-api-client";
 import {
   fetchPendingResorts,
   fetchAllResortsForApproval,
@@ -441,3 +440,4 @@ const ResortApproval: React.FC = () => {
 };
 
 export default ResortApproval;
+

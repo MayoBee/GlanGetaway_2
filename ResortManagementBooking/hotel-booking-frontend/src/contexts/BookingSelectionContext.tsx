@@ -1,61 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { HotelType } from "../../../shared/types";
-import { PricingEngine, type HotelDiscounts, type PricingInputs } from "../utils/pricingEngine";
-
-// LocalStorage keys for persistence
-const BOOKING_SELECTION_KEY = 'glan_booking_selection';
-const BOOKING_SELECTION_VERSION = '1.0';
-
-// Helper functions for localStorage persistence
-const saveToLocalStorage = (data: any) => {
-  try {
-    const payload = {
-      version: BOOKING_SELECTION_VERSION,
-      timestamp: Date.now(),
-      data
-    };
-    localStorage.setItem(BOOKING_SELECTION_KEY, JSON.stringify(payload));
-  } catch (error) {
-    console.warn('Failed to save booking selection to localStorage:', error);
-  }
-};
-
-const loadFromLocalStorage = () => {
-  try {
-    const stored = localStorage.getItem(BOOKING_SELECTION_KEY);
-    if (!stored) return null;
-    
-    const payload = JSON.parse(stored);
-    
-    // Check version and timestamp (expire after 24 hours)
-    if (payload.version !== BOOKING_SELECTION_VERSION) {
-      localStorage.removeItem(BOOKING_SELECTION_KEY);
-      return null;
-    }
-    
-    const age = Date.now() - payload.timestamp;
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    
-    if (age > maxAge) {
-      localStorage.removeItem(BOOKING_SELECTION_KEY);
-      return null;
-    }
-    
-    return payload.data;
-  } catch (error) {
-    console.warn('Failed to load booking selection from localStorage:', error);
-    localStorage.removeItem(BOOKING_SELECTION_KEY);
-    return null;
-  }
-};
-
-const clearBookingSelectionStorage = () => {
-  try {
-    localStorage.removeItem(BOOKING_SELECTION_KEY);
-  } catch (error) {
-    console.warn('Failed to clear booking selection from localStorage:', error);
-  }
-};
 
 export interface SelectedRoom {
   id: string;
@@ -198,37 +142,34 @@ interface BookingSelectionProviderProps {
 }
 
 export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> = ({ children }) => {
-  // Initialize state from localStorage or defaults
-  const persistedData = loadFromLocalStorage();
-  
-  const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>(persistedData?.selectedRooms || []);
-  const [selectedCottages, setSelectedCottages] = useState<SelectedCottage[]>(persistedData?.selectedCottages || []);
-  const [selectedAmenities, setSelectedAmenities] = useState<SelectedAmenity[]>(persistedData?.selectedAmenities || []);
-  const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>(persistedData?.selectedPackages || []);
-  const [basePrice, setBasePrice] = useState<number>(persistedData?.basePrice || 0);
-  const [numberOfNights, setNumberOfNights] = useState<number>(persistedData?.numberOfNights || 1);
-  const [depositPercentage, setDepositPercentage] = useState<number>(persistedData?.depositPercentage || 50); // Default 50% down payment
-  const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>(persistedData?.selectedRateType || 'night');
-  const [discountInfo, setDiscountInfo] = useState<DiscountInfo | null>(persistedData?.discountInfo || null);
+  const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>([]);
+  const [selectedCottages, setSelectedCottages] = useState<SelectedCottage[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<SelectedAmenity[]>([]);
+  const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([]);
+  const [basePrice, setBasePrice] = useState<number>(0);
+  const [numberOfNights, setNumberOfNights] = useState<number>(1);
+  const [depositPercentage, setDepositPercentage] = useState<number>(50); // Default 50% down payment
+  const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
+  const [discountInfo, setDiscountInfo] = useState<DiscountInfo | null>(null);
   const [hotelDiscounts, setHotelDiscounts] = useState<{
     seniorCitizenEnabled: boolean;
     seniorCitizenPercentage: number;
     pwdEnabled: boolean;
     pwdPercentage: number;
-  } | null>(persistedData?.hotelDiscounts || null);
+  } | null>(null);
   const [calculatedTotals, setCalculatedTotals] = useState<{
     total: number;
     downPayment: number;
     remaining: number;
     discountAmount: number;
-  }>(persistedData?.calculatedTotals || {
+  }>({
     total: 0,
     downPayment: 0,
     remaining: 0,
     discountAmount: 0
   });
 
-  // Trigger recalculation when dependencies change using centralized pricing engine
+  // Trigger recalculation when dependencies change
   const calculateTotal = useCallback(() => {
     const accommodationTotal = 
       selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
@@ -240,43 +181,37 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * (amenity.units ?? 1)), 0);
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
-    const pricingInputs: PricingInputs = {
-      basePrice,
-      accommodationTotal,
-      amenitiesTotal,
-      packagesTotal,
-      numberOfNights,
-      depositPercentage,
-      discountInfo,
-      hotelDiscounts
-    };
+    let total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
+    let discountAmount = 0;
     
-    return PricingEngine.calculateTotal(pricingInputs);
+    // Apply discount if applicable
+    if (discountInfo && hotelDiscounts) {
+      const { type } = discountInfo;
+      
+      if (type === "pwd" && hotelDiscounts.pwdEnabled) {
+        discountAmount = Math.round(total * (hotelDiscounts.pwdPercentage / 100));
+      } else if (type === "senior_citizen" && hotelDiscounts.seniorCitizenEnabled) {
+        discountAmount = Math.round(total * (hotelDiscounts.seniorCitizenPercentage / 100));
+      }
+      
+      total = total - discountAmount;
+    }
+    
+    const downPayment = Math.round(total * (depositPercentage / 100));
+    const remaining = total - downPayment;
+    
+    return {
+      total,
+      downPayment,
+      remaining,
+      discountAmount
+    };
   }, [selectedRooms, selectedCottages, selectedAmenities, selectedPackages, basePrice, numberOfNights, depositPercentage, selectedRateType, discountInfo, hotelDiscounts]);
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     const result = calculateTotal();
     setCalculatedTotals(result);
   }, [calculateTotal]);
-
-  // Persist state to localStorage
-  useEffect(() => {
-    const stateToSave = {
-      selectedRooms,
-      selectedCottages,
-      selectedAmenities,
-      selectedPackages,
-      basePrice,
-      numberOfNights,
-      depositPercentage,
-      selectedRateType,
-      discountInfo,
-      hotelDiscounts,
-      calculatedTotals
-    };
-    saveToLocalStorage(stateToSave);
-  }, [selectedRooms, selectedCottages, selectedAmenities, selectedPackages, basePrice, numberOfNights, depositPercentage, selectedRateType, discountInfo, hotelDiscounts, calculatedTotals]);
 
   const accommodationTotal = 
     selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
@@ -292,125 +227,112 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const downPaymentAmount = calculatedTotals.downPayment;
   const remainingAmount = calculatedTotals.remaining;
 
-  const addRoom = useCallback((room: SelectedRoom) => {
+  const addRoom = (room: SelectedRoom) => {
     setSelectedRooms(prev => {
       const exists = prev.some(r => r.id === room.id);
       if (exists) return prev;
       return [...prev, room];
     });
-  }, []);
+  };
 
-  const removeRoom = useCallback((roomId: string) => {
-    setSelectedRooms(prev => prev.filter(r => r.id !== roomId));
-  }, []);
+  const removeRoom = (roomId: string) => {
+    setSelectedRooms(prev => prev.filter(room => room.id !== roomId));
+  };
 
-  const addCottage = useCallback((cottage: SelectedCottage) => {
+  const addCottage = (cottage: SelectedCottage) => {
     setSelectedCottages(prev => {
       const exists = prev.some(c => c.id === cottage.id);
       if (exists) return prev;
       return [...prev, cottage];
     });
-  }, []);
+  };
 
-  const removeCottage = useCallback((cottageId: string) => {
+  const removeCottage = (cottageId: string) => {
     setSelectedCottages(prev => prev.filter(cottage => cottage.id !== cottageId));
-  }, []);
+  };
 
-  const addAmenity = useCallback((amenity: SelectedAmenity) => {
+  const addAmenity = (amenity: SelectedAmenity) => {
     setSelectedAmenities(prev => {
       const exists = prev.some(a => a.id === amenity.id);
       if (exists) return prev;
       return [...prev, amenity];
     });
-  }, []);
+  };
 
-  const removeAmenity = useCallback((amenityId: string) => {
+  const removeAmenity = (amenityId: string) => {
     setSelectedAmenities(prev => prev.filter(amenity => amenity.id !== amenityId));
-  }, []);
+  };
 
-  const addPackage = useCallback((pkg: SelectedPackage) => {
+  const addPackage = (pkg: SelectedPackage) => {
     setSelectedPackages(prev => {
       const exists = prev.some(p => p.id === pkg.id);
       if (exists) return prev;
       return [...prev, pkg];
     });
-  }, []);
+  };
 
-  const removePackage = useCallback((packageId: string) => {
+  const removePackage = (packageId: string) => {
     setSelectedPackages(prev => prev.filter(pkg => pkg.id !== packageId));
-  }, []);
+  };
 
-  const updateRoomUnits = useCallback((roomId: string, units: number) => {
-    setSelectedRooms(prev =>
-      prev.map(room =>
+  const updateRoomUnits = (roomId: string, units: number) => {
+    setSelectedRooms(prev => 
+      prev.map(room => 
         room.id === roomId ? { ...room, units } : room
       )
     );
-  }, []);
+  };
 
-  const updateCottageUnits = useCallback((cottageId: string, units: number) => {
-    setSelectedCottages(prev =>
-      prev.map(cottage =>
+  const updateCottageUnits = (cottageId: string, units: number) => {
+    setSelectedCottages(prev => 
+      prev.map(cottage => 
         cottage.id === cottageId ? { ...cottage, units } : cottage
       )
     );
-  }, []);
+  };
 
-  const updateAmenityUnits = useCallback((amenityId: string, units: number) => {
-    setSelectedAmenities(prev =>
-      prev.map(amenity =>
+  const updateAmenityUnits = (amenityId: string, units: number) => {
+    setSelectedAmenities(prev => 
+      prev.map(amenity => 
         amenity.id === amenityId ? { ...amenity, units } : amenity
       )
     );
-  }, []);
+  };
 
-  const clearSelections = useCallback(() => {
+  const clearSelections = () => {
     setSelectedRooms([]);
     setSelectedCottages([]);
     setSelectedAmenities([]);
     setSelectedPackages([]);
-    // Also clear localStorage
-    clearBookingSelectionStorage();
-  }, []);
+  };
 
-  const isRoomSelected = useCallback((roomId: string) => {
+  const isRoomSelected = (roomId: string) => {
     return selectedRooms.some(room => room.id === roomId);
-  }, [selectedRooms]);
+  };
 
-  const isCottageSelected = useCallback((cottageId: string) => {
+  const isCottageSelected = (cottageId: string) => {
     return selectedCottages.some(cottage => cottage.id === cottageId);
-  }, [selectedCottages]);
+  };
 
-  const isAmenitySelected = useCallback((amenityId: string) => {
+  const isAmenitySelected = (amenityId: string) => {
     return selectedAmenities.some(amenity => amenity.id === amenityId);
-  }, [selectedAmenities]);
+  };
 
-  const isPackageSelected = useCallback((packageId: string) => {
+  const isPackageSelected = (packageId: string) => {
     return selectedPackages.some(pkg => pkg.id === packageId);
-  }, [selectedPackages]);
+  };
 
-  const setRateType = useCallback((rateType: 'day' | 'night') => {
+  const setRateType = (rateType: 'day' | 'night') => {
     setSelectedRateType(rateType);
-  }, []);
+  };
 
-  const updateDepositPercentageFromHotel = useCallback((hotel: HotelType) => {
+  const updateDepositPercentageFromHotel = (hotel: HotelType) => {
     if (hotel.downPaymentPercentage) {
       setDepositPercentage(hotel.downPaymentPercentage);
     }
+  };
 
-    // Update hotel discounts if available
-    if (hotel.discounts) {
-      const validDiscounts = PricingEngine.validateDiscountConfig(hotel.discounts);
-      if (validDiscounts) {
-        setHotelDiscounts(hotel.discounts);
-      }
-    } else {
-      // Set default discounts if hotel doesn't have any
-      setHotelDiscounts(PricingEngine.getDefaultDiscounts());
-    }
-  }, []);
-
-  const value: BookingSelectionContextType = useMemo(() => ({
+  const value: BookingSelectionContextType = {
     selectedRooms,
     selectedCottages,
     selectedAmenities,
@@ -451,48 +373,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     updateDepositPercentageFromHotel,
     setDiscountInfo,
     setHotelDiscounts,
-  }), [
-    selectedRooms,
-    selectedCottages,
-    selectedAmenities,
-    selectedPackages,
-    basePrice,
-    accommodationTotal,
-    amenitiesTotal,
-    packagesTotal,
-    totalCost,
-    downPaymentAmount,
-    remainingAmount,
-    numberOfNights,
-    depositPercentage,
-    selectedRateType,
-    discountInfo,
-    hotelDiscounts,
-    addRoom,
-    removeRoom,
-    addCottage,
-    removeCottage,
-    addAmenity,
-    removeAmenity,
-    addPackage,
-    removePackage,
-    updateRoomUnits,
-    updateCottageUnits,
-    updateAmenityUnits,
-    clearSelections,
-    setBasePrice,
-    setNumberOfNights,
-    setDepositPercentage,
-    setRateType,
-    calculateTotal,
-    isRoomSelected,
-    isCottageSelected,
-    isAmenitySelected,
-    isPackageSelected,
-    updateDepositPercentageFromHotel,
-    setDiscountInfo,
-    setHotelDiscounts,
-  ]);
+  };
 
   return (
     <BookingSelectionContext.Provider value={value}>
@@ -502,4 +383,3 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
 };
 
 export default BookingSelectionProvider;
-

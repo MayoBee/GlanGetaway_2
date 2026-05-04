@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from "../api-client";
+import axiosInstance, { getApiBaseUrl } from "../../../shared/auth/api-client";
 import StripePaymentForm from "./StripePaymentForm";
 
 interface SmartPaymentWidgetProps {
@@ -8,6 +7,9 @@ interface SmartPaymentWidgetProps {
   hotelId: string;
   totalAmount: number;
   depositPercentage?: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
   onPaymentSuccess?: (payment: any) => void;
   onPaymentFailed?: (error: any) => void;
 }
@@ -19,6 +21,9 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
   hotelId,
   totalAmount,
   depositPercentage = 50,
+  guestName,
+  guestEmail,
+  guestPhone,
   onPaymentSuccess,
   onPaymentFailed,
 }) => {
@@ -48,13 +53,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
 
   const fetchDepositSettings = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${getApiBaseUrl()}/api/payments/hotel/${hotelId}/deposit-settings`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axiosInstance.get(`/api/payments/hotel/${hotelId}/deposit-settings`);
       setDepositSettings(response.data);
     } catch (err) {
       console.error("Error fetching deposit settings:", err);
@@ -87,7 +86,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/payments/create-payment-intent`,
         {
@@ -120,7 +119,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
 
       // First create the payment intent
       const paymentData = await createPaymentIntent();
@@ -158,7 +157,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
 
       // First create the payment intent
       const paymentData = await createPaymentIntent();
@@ -382,4 +381,3 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
 };
 
 export default SmartPaymentWidget;
-

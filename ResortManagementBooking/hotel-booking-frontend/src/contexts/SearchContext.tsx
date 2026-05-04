@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 
 export type SearchContext = {
   destination: string;
@@ -44,8 +44,23 @@ export const SearchContextProvider = ({
 }: SearchContextProviderProps) => {
   // Initialize with default values to avoid SSR/hydration mismatch
   const [destination, setDestination] = useState<string>("");
-  const [checkIn, setCheckIn] = useState<Date>(new Date());
-  const [checkOut, setCheckOut] = useState<Date>(new Date());
+  
+  // Force fresh date objects to ensure checkOut is different from checkIn
+  const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0); // Set to noon
+    return tomorrow;
+  };
+  
+  const getToday = () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0); // Set to noon
+    return today;
+  };
+  
+  const [checkIn, setCheckIn] = useState<Date>(getToday());
+  const [checkOut, setCheckOut] = useState<Date>(getTomorrow());
   const [adultCount, setAdultCount] = useState<number>(1);
   const [childCount, setChildCount] = useState<number>(0);
   const [childAges, setChildAges] = useState<number[]>([]);
@@ -77,7 +92,7 @@ export const SearchContextProvider = ({
     setCheckOutPeriod(sessionStorage.getItem("checkOutPeriod") || "AM");
   }, []);
 
-  const saveSearchValues = useCallback((
+  const saveSearchValues = (
     destination: string,
     checkIn: Date,
     checkOut: Date,
@@ -104,45 +119,49 @@ export const SearchContextProvider = ({
     setCheckOutPeriod(checkOutPeriod);
     setSeniorCount(seniorCount);
     setPwdCount(pwdCount);
-    if (hotelId) setHotelId(hotelId);
+    if (hotelId) {
+      setHotelId(hotelId);
+    }
 
-    // Save to sessionStorage
     sessionStorage.setItem("destination", destination);
     sessionStorage.setItem("checkIn", checkIn.toISOString());
     sessionStorage.setItem("checkOut", checkOut.toISOString());
     sessionStorage.setItem("adultCount", adultCount.toString());
     sessionStorage.setItem("childCount", childCount.toString());
     sessionStorage.setItem("childAges", JSON.stringify(childAges));
-    sessionStorage.setItem("hotelID", hotelId || "");
     sessionStorage.setItem("checkInTime", checkInTime);
     sessionStorage.setItem("checkOutTime", checkOutTime);
     sessionStorage.setItem("checkInPeriod", checkInPeriod);
     sessionStorage.setItem("checkOutPeriod", checkOutPeriod);
-  }, []);
+    sessionStorage.setItem("seniorCount", seniorCount.toString());
+    sessionStorage.setItem("pwdCount", pwdCount.toString());
 
-  const clearSearchValues = useCallback(() => {
+    if (hotelId) {
+      sessionStorage.setItem("hotelId", hotelId);
+    }
+  };
+
+  const clearSearchValues = () => {
     setDestination("");
     setCheckIn(new Date());
     setCheckOut(new Date());
     setAdultCount(1);
     setChildCount(0);
-    setChildAges([]);
+    setSeniorCount(0);
+    setPwdCount(0);
     setHotelId("");
     setCheckInTime("12:00");
     setCheckOutTime("11:00");
     setCheckInPeriod("PM");
     setCheckOutPeriod("AM");
-    setSeniorCount(0);
-    setPwdCount(0);
 
-    // Clear sessionStorage
     sessionStorage.removeItem("destination");
     sessionStorage.removeItem("checkIn");
     sessionStorage.removeItem("checkOut");
     sessionStorage.removeItem("adultCount");
     sessionStorage.removeItem("childCount");
-    sessionStorage.removeItem("childAges");
-    sessionStorage.removeItem("hotelID");
+    sessionStorage.removeItem("seniorCount");
+    sessionStorage.removeItem("pwdCount");
     sessionStorage.removeItem("hotelId");
     sessionStorage.removeItem("checkInTime");
     sessionStorage.removeItem("checkOutTime");
@@ -158,48 +177,31 @@ export const SearchContextProvider = ({
         localStorage.removeItem("hotelPlacesTime");
       }
     }
-  }, []);
-
-  const contextValue = useMemo(() => ({
-    destination,
-    checkIn,
-    checkOut,
-    checkInTime,
-    checkOutTime,
-    checkInPeriod,
-    checkOutPeriod,
-    adultCount,
-    childCount,
-    childAges,
-    seniorCount,
-    pwdCount,
-    hotelId,
-    saveSearchValues,
-    clearSearchValues,
-  }), [
-    destination,
-    checkIn,
-    checkOut,
-    checkInTime,
-    checkOutTime,
-    checkInPeriod,
-    checkOutPeriod,
-    adultCount,
-    childCount,
-    childAges,
-    seniorCount,
-    pwdCount,
-    hotelId,
-    saveSearchValues,
-    clearSearchValues,
-  ]);
+  };
 
   return (
-    <SearchContext.Provider value={contextValue}>
+    <SearchContext.Provider
+      value={{
+        destination,
+        checkIn,
+        checkOut,
+        checkInTime,
+        checkOutTime,
+        checkInPeriod,
+        checkOutPeriod,
+        adultCount,
+        childCount,
+        childAges,
+        seniorCount,
+        pwdCount,
+        hotelId,
+        saveSearchValues,
+        clearSearchValues,
+      }}
+    >
       {children}
     </SearchContext.Provider>
   );
 };
 
 // ...existing code...
-

@@ -1,9 +1,12 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from "../api-client";
+import { getApiBaseUrl } from "../../../shared/auth/api-client";
 
 interface IDVerificationWidgetProps {
   bookingId: string;
+  hotelId: string;
+  guestName: string;
+  guestEmail: string;
   onVerified?: (verification: any) => void;
 }
 
@@ -11,6 +14,9 @@ type IDType = "passport" | "drivers_license" | "national_id" | "postal_id" | "ot
 
 export const IDVerificationWidget: React.FC<IDVerificationWidgetProps> = ({
   bookingId,
+  hotelId,
+  guestName,
+  guestEmail,
   onVerified,
 }) => {
   const [idType, setIdType] = useState<IDType>("national_id");
@@ -46,7 +52,7 @@ export const IDVerificationWidget: React.FC<IDVerificationWidgetProps> = ({
     setStep("uploading");
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
 
       // Submit verification
       const response = await axios.post(
@@ -265,4 +271,3 @@ export const IDVerificationWidget: React.FC<IDVerificationWidgetProps> = ({
 };
 
 export default IDVerificationWidget;
-

@@ -51,6 +51,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [places, setPlaces] = useState<string[]>(glanBarangays);
   const [filteredPlaces, setFilteredPlaces] = useState<string[]>([]);
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Populate suggestions with Glan barangays only; no network request
   useEffect(() => {
@@ -100,7 +102,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setSearchData((prev) => {
-      const updated: any = { ...prev, [field]: value };
+      let updated: any = { ...prev, [field]: value };
       if (field === "childCount") {
         const count: number = value;
         let ages = prev.childAges || [];
@@ -646,4 +648,3 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 };
 
 export default AdvancedSearch;
-

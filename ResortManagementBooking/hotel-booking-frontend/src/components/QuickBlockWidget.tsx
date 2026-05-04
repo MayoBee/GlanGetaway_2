@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from "../api-client";
+import { getApiBaseUrl } from "../../../shared/auth/api-client";
 
 interface QuickBlockWidgetProps {
   hotelId: string;
@@ -90,7 +90,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/quick-block`,
         {
@@ -131,7 +131,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/${activeBlock.id}/release`,
         {},
@@ -157,7 +157,7 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       const response = await axios.post(
         `${getApiBaseUrl()}/api/room-blocks/${activeBlock.id}/extend`,
         { additionalMinutes: 15 },
@@ -308,4 +308,3 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 };
 
 export default QuickBlockWidget;
-

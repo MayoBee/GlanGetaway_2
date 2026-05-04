@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
   CardTitle,
-  CardDescription
-} from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Checkbox } from "../components/ui/checkbox";
+  CardDescription 
+} from "../../../shared/ui/card";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
+import { Label } from "../../../shared/ui/label";
+import { Checkbox } from "../../../shared/ui/checkbox";
 import { 
   Badge 
-} from "../components/ui/badge";
+} from "../../../shared/ui/badge";
 import { 
   Users,
   Percent,
@@ -21,12 +22,13 @@ import {
   Upload,
   FileText
 } from "lucide-react";
-import {
-  calculateDiscountSimple,
+import { 
+  calculateDiscountSimple, 
   DiscountConfig,
-  DiscountCalculationResult
-} from "../lib/discountCalculation";
-import { axiosInstance } from "../api-client";
+  DiscountCalculationResult,
+  validateDiscountInput
+} from "../../../shared/lib/discountCalculation";
+import axiosInstance from "../../../shared/auth/api-client";
 
 export type { DiscountCalculationResult };
 
@@ -414,4 +416,3 @@ const GuestDiscountInputComponent = ({
 };
 
 export default GuestDiscountInputComponent;
-

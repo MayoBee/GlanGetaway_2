@@ -4,7 +4,7 @@
   "description": "booking mern app backend",
   "main": "./src/index.ts",
   "scripts": {
-    "build": "tsc --skipLibCheck",
+    "build": "node build-script.js",
     "start": "node dist/src/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "e2e": "cross-env DOTENV_CONFIG_PATH=.env.e2e nodemon",

@@ -74,4 +74,3 @@ const BookingDetailsSummary = ({
 };
 
 export default BookingDetailsSummary;
-

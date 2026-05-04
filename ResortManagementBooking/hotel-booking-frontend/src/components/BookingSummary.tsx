@@ -1,6 +1,5 @@
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
 import { Bed, Home, Star, DollarSign, X } from "lucide-react";
 
 const BookingSummary = () => {
@@ -59,75 +58,75 @@ const BookingSummary = () => {
 
         {/* Selected Rooms */}
         {selectedRooms.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Bed className="w-4 h-4 text-blue-600" />
-              Selected Rooms ({selectedRooms.length})
-            </h4>
-            {selectedRooms.map((room) => (
-              <div key={room.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-gray-900">{room.name}</span>
-                    <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                      {room.type}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    ₱{room.pricePerNight} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}
-                  </div>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Bed className="w-4 h-4 text-blue-600" />
+                    Selected Rooms ({selectedRooms.length})
+                  </h4>
+                  {selectedRooms.map((room) => (
+                    <div key={room.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-gray-900">{room.name}</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 border-blue-200 px-2 py-1 rounded">
+                            {room.type}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          ₱{room.pricePerNight} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-blue-600">
+                          ₱{(room.pricePerNight * numberOfNights).toLocaleString()}
+                        </span>
+                        <button
+                          onClick={() => removeRoom(room.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-blue-600">
-                    ₱{(room.pricePerNight * numberOfNights).toLocaleString()}
-                  </span>
-                  <button
-                    onClick={() => removeRoom(room.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
 
-        {/* Selected Cottages */}
-        {selectedCottages.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Home className="w-4 h-4 text-green-600" />
-              Selected Cottages ({selectedCottages.length})
-            </h4>
-            {selectedCottages.map((cottage) => (
-              <div key={cottage.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-gray-900">{cottage.name}</span>
-                    <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200">
-                      {cottage.type}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    ₱{cottage.pricePerNight} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}
-                  </div>
+              {/* Selected Cottages */}
+              {selectedCottages.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Home className="w-4 h-4 text-green-600" />
+                    Selected Cottages ({selectedCottages.length})
+                  </h4>
+                  {selectedCottages.map((cottage) => (
+                    <div key={cottage.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-gray-900">{cottage.name}</span>
+                          <span className="text-xs bg-green-100 text-green-700 border-green-200 px-2 py-1 rounded">
+                            {cottage.type}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          ₱{cottage.pricePerNight} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-green-600">
+                          ₱{(cottage.pricePerNight * numberOfNights).toLocaleString()}
+                        </span>
+                        <button
+                          onClick={() => removeCottage(cottage.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-green-600">
-                    ₱{(cottage.pricePerNight * numberOfNights).toLocaleString()}
-                  </span>
-                  <button
-                    onClick={() => removeCottage(cottage.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
 
         {/* Selected Amenities */}
         {selectedAmenities.length > 0 && (
@@ -204,4 +203,3 @@ const BookingSummary = () => {
 };
 
 export default BookingSummary;
-

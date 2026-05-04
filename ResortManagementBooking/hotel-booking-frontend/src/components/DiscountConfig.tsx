@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { axiosInstance } from "../api-client";
+import axiosInstance from "../../../shared/auth/api-client";
 import { 
   Card, 
   CardContent, 
   CardHeader, 
   CardTitle,
   CardDescription 
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Checkbox } from "../components/ui/checkbox";
+} from "../../../shared/ui/card";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
+import { Label } from "../../../shared/ui/label";
+import { Checkbox } from "../../../shared/ui/checkbox";
 import { 
   Dialog, 
   DialogContent, 
@@ -19,14 +19,14 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogDescription
-} from "../components/ui/dialog";
+} from "../../../shared/ui/dialog";
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "../components/ui/select";
+} from "../../../shared/ui/select";
 import { 
   Trash2, 
   Plus, 
@@ -38,7 +38,7 @@ import {
   Save,
   AlertCircle
 } from "lucide-react";
-import { generatePromoCode, CustomDiscount } from "../lib/discountCalculation";
+import { generatePromoCode, CustomDiscount } from "../../../shared/lib/discountCalculation";
 
 interface DiscountConfig {
   seniorCitizenEnabled: boolean;
@@ -469,4 +469,3 @@ const DiscountConfig = ({ hotelId, onSave }: DiscountConfigProps) => {
 };
 
 export default DiscountConfig;
-

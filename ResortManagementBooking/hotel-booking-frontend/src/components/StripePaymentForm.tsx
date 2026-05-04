@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { loadStripe, Stripe, StripeElements, StripeCardElement } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
 
 interface StripePaymentFormProps {
   clientKey: string | null;
@@ -29,7 +30,7 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
       try {
         const stripeInstance = await stripePromise;
         if (!stripeInstance) {
-          onError("Failed to load Stripe");
+          onError("Stripe is not configured. Please contact support.");
           return;
         }
 
@@ -128,4 +129,3 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
 };
 
 export default StripePaymentForm;
-

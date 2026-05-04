@@ -209,7 +209,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                   
                   <div className="space-y-2 mb-3">
                     {/* Day Rate - Only show if selectedRateType is 'day' and cottage has day rate */}
-                    {selectedRateType === 'day' && cottage.hasDayRate && (
+                    {selectedRateType === 'day' && cottage.hasDayRate && cottage.dayRate && (
                       <div className="flex items-center justify-between p-2 border border-green-200 rounded bg-green-50">
                         <div className="flex items-center gap-2">
                           <input
@@ -230,7 +230,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                     )}
                     
                     {/* Night Rate - Only show if selectedRateType is 'night' and cottage has night rate */}
-                    {selectedRateType === 'night' && cottage.hasNightRate && (
+                    {selectedRateType === 'night' && cottage.hasNightRate && cottage.nightRate && (
                       <div className="flex items-center justify-between p-2 border border-blue-200 rounded bg-blue-50">
                         <div className="flex items-center gap-2">
                           <input
@@ -259,9 +259,9 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                     </div>
 
                     {/* Total calculation based on selected rate */}
-                    {numberOfNights > 1 && (
+                    {numberOfNights > 1 && ((selectedRateType === 'day' && cottage.dayRate) || (selectedRateType === 'night' && cottage.nightRate)) && (
                       <div className="text-sm text-green-600 font-medium">
-                        Total: ₱{(selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate) * numberOfNights} ({numberOfNights} nights)
+                        Total: ₱{(selectedRateType === 'day' ? cottage.dayRate! : cottage.nightRate!) * numberOfNights} ({numberOfNights} nights)
                       </div>
                     )}
                   </div>
@@ -290,7 +290,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                             id: cottage.id,
                             name: cottage.name,
                             type: cottage.type,
-                            pricePerNight: selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate,
+                            pricePerNight: selectedRateType === 'day' ? cottage.dayRate || 0 : cottage.nightRate || 0,
                             dayRate: cottage.dayRate,
                             nightRate: cottage.nightRate,
                             hasDayRate: cottage.hasDayRate,
@@ -325,4 +325,3 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
 };
 
 export default AccommodationDisplay;
-

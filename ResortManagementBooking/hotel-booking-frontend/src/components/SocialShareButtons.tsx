@@ -2,10 +2,11 @@ import { Facebook, Instagram, Music, Share2 } from "lucide-react";
 
 type Props = {
   resortName: string;
+  resortDescription?: string;
   resortUrl: string;
 };
 
-const SocialShareButtons = ({ resortName, resortUrl }: Props) => {
+const SocialShareButtons = ({ resortName, resortDescription, resortUrl }: Props) => {
   const shareText = `Check out ${resortName} - an amazing beach resort!`;
   const shareUrl = resortUrl || window.location.href;
 
@@ -81,4 +82,3 @@ const SocialShareButtons = ({ resortName, resortUrl }: Props) => {
 };
 
 export default SocialShareButtons;
-

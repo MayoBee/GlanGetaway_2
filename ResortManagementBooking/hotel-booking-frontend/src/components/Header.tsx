@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import useSearchContext from "../hooks/useSearchContext";
 import MobileNav from "./MobileNav";
 import MainNav from "./MainNav";
+import { Building2 } from "lucide-react";
 
 const Header = () => {
   const search = useSearchContext();
@@ -40,4 +41,3 @@ const Header = () => {
 };
 
 export default Header;
-

@@ -16,7 +16,7 @@ export { default as Review } from '../domains/booking-reservation/models/review'
 export { default as Hotel } from '../domains/hotel-inventory/models/hotel';
 export { default as Room } from '../domains/hotel-inventory/models/room';
 export { default as Amenity } from '../domains/hotel-inventory/models/amenity';
-export { default as AmenitySlot } from '../domains/hotel-inventory/models/amenity-slot';
+export { AmenitySlot } from '../domains/hotel-inventory/models/amenity-slot';
 export { default as Activity } from '../domains/hotel-inventory/models/activity';
 export { default as Pricing } from '../domains/hotel-inventory/models/pricing';
 export { default as Discount } from '../domains/hotel-inventory/models/discount';
@@ -30,5 +30,5 @@ export { default as Payment } from '../domains/billing-payments/models/payment';
 export { default as Report } from '../domains/admin-operations/models/report';
 export { default as Analytics } from '../domains/admin-operations/models/analytics';
 export { default as Notification } from '../domains/admin-operations/models/notification';
-export { default as WeatherTrigger } from '../domains/admin-operations/models/weather-trigger';
+export { WeatherTrigger } from '../domains/admin-operations/models/weather-trigger';
 export { default as WebsiteFeedback } from '../domains/admin-operations/models/website-feedback';

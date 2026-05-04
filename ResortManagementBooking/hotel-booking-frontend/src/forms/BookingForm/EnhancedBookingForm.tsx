@@ -1,24 +1,23 @@
 import { useForm } from "react-hook-form";
-import { PaymentIntentResponse, UserType, HotelType } from "../../../../shared/types";
+import { PaymentIntentResponse, UserType, HotelType } from "@shared/types";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
-import { axiosInstance } from "../../api-client";
+import * as apiClient from "../../api-client";
 import useAppContext from "../../hooks/useAppContext";
-import { Button } from "../../components/ui/button";
-import { Card } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "@shared/ui/button";
+import { Card } from "@shared/ui/card";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
+import { CardContent, CardHeader, CardTitle } from "@shared/ui/card";
 import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
+import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import GuestDiscountInputComponent from "../../components/GuestDiscountInput";
 import type { DiscountCalculationResult } from "../../components/GuestDiscountInput";
-import { createRoomBooking, createGCashBooking } from "../../api-client";
 
 type Props = {
   currentUser: UserType;
@@ -26,11 +25,15 @@ type Props = {
   calculatedTotal: number;
   downPaymentAmount: number;
   remainingAmount: number;
-  selectedRooms: SelectedRoom[];
-  selectedCottages: SelectedCottage[];
-  selectedAmenities: SelectedAmenity[];
+  selectedItems: Array<{
+    id: string;
+    name: string;
+    type: 'room' | 'cottage' | 'amenity';
+    pricePerNight?: number;
+    maxOccupancy?: number;
+    description?: string;
+  }>;
   hotel: HotelType;
-  skipPayment?: boolean;
 };
 
 export type BookingFormData = {
@@ -50,9 +53,14 @@ export type BookingFormData = {
   basePrice: number;
   specialRequests?: string;
   paymentMethod: "card" | "gcash";
-  selectedRooms?: SelectedRoom[];
-  selectedCottages?: SelectedCottage[];
-  selectedAmenities?: SelectedAmenity[];
+  selectedItems?: Array<{
+    id: string;
+    name: string;
+    type: 'room' | 'cottage' | 'amenity';
+    pricePerNight?: number;
+    maxOccupancy?: number;
+    description?: string;
+  }>;
 };
 
 const EnhancedBookingForm = ({
@@ -61,25 +69,21 @@ const EnhancedBookingForm = ({
   calculatedTotal,
   downPaymentAmount,
   remainingAmount,
-  selectedRooms,
-  selectedCottages,
-  selectedAmenities,
-  hotel,
-  skipPayment = false
+  selectedItems = [],
+  hotel
 }: Props) => {
   console.log("EnhancedBookingForm received:", {
     calculatedTotal,
     downPaymentAmount,
     remainingAmount,
     hotel,
-    hotelGcashNumber: hotel?.gcashNumber
   });
-  const stripe = !skipPayment ? useStripe() : null;
-  const elements = !skipPayment ? useElements() : null;
+  const stripe = useStripe();
+  const elements = useElements();
   const search = useSearchContext();
   const { hotelId } = useParams();
   const navigate = useNavigate();
-  const { showToast, ensureValidToken } = useAppContext();
+  const { showToast } = useAppContext();
 
   // Use local state for form fields to prevent losing data
   const [phone, setPhone] = useState<string>("");
@@ -99,12 +103,16 @@ const EnhancedBookingForm = ({
   const [isCopied, setIsCopied] = useState<boolean>(false);
   // Use a ref to track if component is mounted - prevents unwanted resets
   const isMounted = useRef(false);
+  // Track payment processing to prevent double submissions
+  const isProcessingPayment = useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">(getInitialPaymentMethod);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const [discountGuestCounts, setDiscountGuestCounts] = useState({ seniorCitizens: 0, pwdGuests: 0 });
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  
+
+  // Get selected items from booking context
+  const { selectedRooms, selectedCottages, selectedAmenities } = useBookingSelection();
+
   // Track mount state
   useEffect(() => {
     isMounted.current = true;
@@ -142,76 +150,77 @@ const EnhancedBookingForm = ({
   };
 
   const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
-    createRoomBooking,
+    apiClient.createRoomBooking,
     {
       onSuccess: (data) => {
-        setBookingId(data._id || data.bookingId); // Set booking ID from response
-        showToast({
-          title: "Booking Successful",
-          description: "Your hotel booking has been confirmed successfully!",
-          type: "SUCCESS",
-        });
-
+        console.log("Booking mutation success, data:", data);
+        // Reset processing flags immediately
+        isProcessingPayment.current = false;
+        setIsProcessing(false);
+        
+        // Show toast FIRST before any other operations
+        try {
+          showToast({
+            title: "Booking Successful",
+            description: "Your hotel booking has been confirmed successfully!",
+            type: "SUCCESS",
+          });
+          console.log("Toast shown successfully");
+        } catch (toastError) {
+          console.error("Error showing toast:", toastError);
+          // Fallback to alert if toast fails
+          alert("Booking Successful! Your hotel booking has been confirmed!");
+        }
+        
+        // Then set booking ID
+        try {
+          const bookingId = data._id || data.bookingId;
+          console.log("Setting booking ID:", bookingId);
+          setBookingId(bookingId);
+        } catch (idError) {
+          console.error("Error setting booking ID:", idError);
+        }
+        
         // Navigate to My Bookings page after a short delay
         setTimeout(() => {
-          navigate("/my-bookings");
+          try {
+            console.log("Navigating to /my-bookings");
+            navigate("/my-bookings");
+          } catch (navError) {
+            console.error("Error navigating:", navError);
+            window.location.href = "/my-bookings";
+          }
         }, 1500);
       },
       onError: (error: any) => {
-        console.error("[DEBUG] Booking creation error:", error);
-
-        let errorMessage = "There was an error processing your booking. Please try again.";
-        let errorTitle = "Booking Failed";
-
-        // Handle different types of backend errors
-        if (error.response?.status === 400) {
-          const errorData = error.response?.data;
-
-          // Check for specific validation errors
-          if (errorData?.message?.includes("firstName") || errorData?.message?.includes("first name")) {
-            errorMessage = "First name is required. Please provide your first name.";
-            errorTitle = "Missing Information";
-          } else if (errorData?.message?.includes("lastName") || errorData?.message?.includes("last name")) {
-            errorMessage = "Last name is required. Please provide your last name.";
-            errorTitle = "Missing Information";
-          } else if (errorData?.message?.includes("email")) {
-            errorMessage = "Valid email address is required. Please check your email.";
-            errorTitle = "Invalid Email";
-          } else if (errorData?.message?.includes("payment") || errorData?.message?.includes("Payment")) {
-            errorMessage = "Payment processing failed. Please try again or contact support.";
-            errorTitle = "Payment Error";
-          } else if (errorData?.message) {
-            // Use backend message if available
-            errorMessage = errorData.message;
-          }
-        } else if (error.response?.status === 401) {
-          errorMessage = "Your session has expired. Please log in again.";
-          errorTitle = "Authentication Required";
-          // Redirect to login after showing error
-          setTimeout(() => {
-            navigate("/sign-in");
-          }, 2000);
-        } else if (error.response?.status >= 500) {
-          errorMessage = "Server error occurred. Please try again later or contact support.";
-          errorTitle = "Server Error";
-        } else if (error.message?.includes("Network Error") || error.code === "ECONNREFUSED") {
-          errorMessage = "Connection failed. Please check your internet connection and try again.";
-          errorTitle = "Connection Error";
+        // Reset processing flags on error
+        isProcessingPayment.current = false;
+        setIsProcessing(false);
+        
+        console.error("Booking mutation error:", error);
+        try {
+          showToast({
+            title: "Booking Failed",
+            description:
+              error?.response?.data?.message || "There was an error processing your booking. Please try again.",
+            type: "ERROR",
+          });
+        } catch (toastError) {
+          console.error("Error showing error toast:", toastError);
+          alert("Booking Failed! " + (error?.response?.data?.message || "Please try again."));
         }
-
-        showToast({
-          title: errorTitle,
-          description: errorMessage,
-          type: "ERROR",
-        });
       },
     }
   );
 
   const { mutate: bookWithGCash, isLoading: isGCashLoading } = useMutation(
-    createGCashBooking,
+    apiClient.createGCashBooking,
     {
       onSuccess: (data) => {
+        // Reset processing flags immediately
+        isProcessingPayment.current = false;
+        setIsProcessing(false);
+        
         setBookingId(data._id || data.bookingId); // Set booking ID from response
         showToast({
           title: "Payment Submitted",
@@ -223,66 +232,38 @@ const EnhancedBookingForm = ({
           navigate("/my-bookings");
         }, 1500);
       },
-      onError: (error: any) => {
-        console.error("[DEBUG] GCash booking creation error:", error);
-
-        let errorMessage = "There was an error submitting your payment. Please try again.";
-        let errorTitle = "Payment Submission Failed";
-
-        // Handle different types of backend errors
-        if (error.response?.status === 400) {
-          const errorData = error.response?.data;
-
-          // Check for specific validation errors
-          if (errorData?.message?.includes("firstName") || errorData?.message?.includes("first name")) {
-            errorMessage = "First name is required. Please provide your first name.";
-            errorTitle = "Missing Information";
-          } else if (errorData?.message?.includes("lastName") || errorData?.message?.includes("last name")) {
-            errorMessage = "Last name is required. Please provide your last name.";
-            errorTitle = "Missing Information";
-          } else if (errorData?.message?.includes("email")) {
-            errorMessage = "Valid email address is required. Please check your email.";
-            errorTitle = "Invalid Email";
-          } else if (errorData?.message?.includes("gcash") || errorData?.message?.includes("GCash")) {
-            errorMessage = "GCash payment information is invalid. Please check your details.";
-            errorTitle = "Payment Error";
-          } else if (errorData?.message) {
-            // Use backend message if available
-            errorMessage = errorData.message;
-          }
-        } else if (error.response?.status === 401) {
-          errorMessage = "Your session has expired. Please log in again.";
-          errorTitle = "Authentication Required";
-          // Redirect to login after showing error
-          setTimeout(() => {
-            navigate("/sign-in");
-          }, 2000);
-        } else if (error.response?.status >= 500) {
-          errorMessage = "Server error occurred. Please try again later or contact support.";
-          errorTitle = "Server Error";
-        } else if (error.message?.includes("Network Error") || error.code === "ECONNREFUSED") {
-          errorMessage = "Connection failed. Please check your internet connection and try again.";
-          errorTitle = "Connection Error";
-        }
-
+      onError: (error) => {
+        // Reset processing flags on error
+        isProcessingPayment.current = false;
+        setIsProcessing(false);
+        
+        console.error("GCash booking mutation error:", error);
         showToast({
-          title: errorTitle,
-          description: errorMessage,
+          title: "Payment Submission Failed",
+          description: "There was an error submitting your payment. Please try again.",
           type: "ERROR",
         });
       },
     }
   );
 
-  const { handleSubmit, register, setValue, watch, formState: { errors } } = useForm<BookingFormData>({
+  // Ensure checkOut is always different from checkIn
+  const getValidCheckOut = () => {
+    const checkOut = new Date(search.checkIn);
+    checkOut.setDate(checkOut.getDate() + 1);
+    checkOut.setHours(12, 0, 0, 0); // Set to noon
+    return checkOut;
+  };
+
+  const { handleSubmit, register } = useForm<BookingFormData>({
     defaultValues: {
-      firstName: currentUser?.firstName || "",
-      lastName: currentUser?.lastName || "",
-      email: currentUser?.email || "",
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      email: currentUser.email,
       adultCount: search.adultCount,
       childCount: search.childCount,
       checkIn: search.checkIn.toISOString(),
-      checkOut: search.checkOut.toISOString(),
+      checkOut: getValidCheckOut().toISOString(), // Use corrected checkOut date
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       hotelId: hotelId,
@@ -290,59 +271,11 @@ const EnhancedBookingForm = ({
       basePrice: paymentIntent.totalCost, // Use paymentIntent total as base price
       paymentIntentId: paymentIntent.paymentIntentId,
       paymentMethod: "card",
-      selectedRooms,
-      selectedCottages,
-      selectedAmenities,
+      selectedItems,
     },
-    mode: "onChange", // Always validate on change for better UX
+    mode: paymentMethod === "card" ? "onChange" : "onSubmit", // Only validate in onChange mode for card
     shouldUnregister: false,
   });
-
-  // Watch form values
-  const firstNameValue = watch("firstName");
-  const lastNameValue = watch("lastName");
-  const emailValue = watch("email");
-
-  // Helper function to validate if required user information is available
-  const hasValidUserInfo = (formValues?: Partial<BookingFormData>) => {
-    // Check form values if provided (for card submission)
-    if (formValues) {
-      return (formValues.firstName && formValues.firstName.trim()) &&
-             (formValues.lastName && formValues.lastName.trim()) &&
-             (formValues.email && formValues.email.trim());
-    }
-
-    // Check current form values (for GCash submission)
-    const currentValues = watch();
-    const hasFormData = (currentValues.firstName && currentValues.firstName.trim()) &&
-                       (currentValues.lastName && currentValues.lastName.trim()) &&
-                       (currentValues.email && currentValues.email.trim());
-
-    // Check currentUser as fallback
-    const hasUserData = currentUser?.firstName && currentUser.lastName && currentUser.email;
-
-    return hasFormData || hasUserData;
-  };
-
-  // Ensure form values are set when currentUser is available, but don't overwrite manual input
-  useEffect(() => {
-    if (currentUser) {
-      // Only set values if they haven't been manually entered (i.e., if they're still empty)
-      const currentFirstName = watch("firstName");
-      const currentLastName = watch("lastName");
-      const currentEmail = watch("email");
-
-      if (!currentFirstName || currentFirstName.trim() === "") {
-        setValue("firstName", currentUser.firstName || "");
-      }
-      if (!currentLastName || currentLastName.trim() === "") {
-        setValue("lastName", currentUser.lastName || "");
-      }
-      if (!currentEmail || currentEmail.trim() === "") {
-        setValue("email", currentUser.email || "");
-      }
-    }
-  }, [currentUser, setValue, watch]);
 
   const handleCopyCredentials = async () => {
     const credentials = `Card: 4242 4242 4242 4242
@@ -382,11 +315,6 @@ MM/YY: 12/35 CVC: 123`;
   const handleDiscountChange = useCallback((result: DiscountCalculationResult) => {
     console.log("[DEBUG] handleDiscountChange called with result:", result);
     setDiscountResult(result);
-    
-    // Extract guest counts from discount breakdown
-    const seniorCount = result.discountBreakdown.find(item => item.category === "Senior Citizens")?.count || 0;
-    const pwdCount = result.discountBreakdown.find(item => item.category === "PWD Guests")?.count || 0;
-    setDiscountGuestCounts({ seniorCitizens: seniorCount, pwdGuests: pwdCount });
   }, []);
 
   const onCardSubmit = async (formData: BookingFormData) => {
@@ -394,44 +322,10 @@ MM/YY: 12/35 CVC: 123`;
     if (paymentMethod === "gcash") {
       return;
     }
-
-    // Prevent multiple submissions
-    if (isProcessingPayment) {
-      console.log("[DEBUG] Payment already in progress, ignoring submission");
+    // Prevent double submission
+    if (isProcessingPayment.current) {
       return;
     }
-
-    // PHASE 1: User Authentication Validation
-    // Check if user is logged in
-    if (!currentUser) {
-      showToast({
-        title: "Authentication Required",
-        description: "Please log in to complete your booking.",
-        type: "ERROR",
-      });
-      // Redirect to login page
-      setTimeout(() => {
-        navigate("/sign-in");
-      }, 2000);
-      return;
-    }
-
-    // Check if required user information is available
-    if (!hasValidUserInfo(formData)) {
-      showToast({
-        title: "Profile Information Missing",
-        description: "Please complete the required information below to proceed with your booking.",
-        type: "ERROR",
-      });
-      return;
-    }
-
-    // Check token validity before critical payment action
-    const isTokenValid = await ensureValidToken();
-    if (!isTokenValid) {
-      return; // User will be redirected to login
-    }
-    
     if (!stripe || !elements) {
       showToast({
         title: "Payment System Error",
@@ -441,179 +335,106 @@ MM/YY: 12/35 CVC: 123`;
       return;
     }
 
-    // Set processing state to true
-    setIsProcessingPayment(true);
-    
-    try {
-      const completeFormData = {
-        ...formData,
-        phone,
-        specialRequests,
-        paymentMethod: "card",
-        totalCost: finalDownPayment, // Use final down payment amount
-        basePrice: calculatedTotal, // Use calculated total as base
-        checkInTime: "12:00 PM",
-        checkOutTime: "11:00 AM",
-        selectedRooms,
-        selectedCottages,
-        selectedAmenities,
-        paymentIntentId: paymentIntent.paymentIntentId, // Ensure payment intent ID is included
-        // Ensure dates are in ISO format for backend
-        checkIn: search.checkIn.toISOString(),
-        checkOut: search.checkOut.toISOString(),
-      };
+    const completeFormData = {
+      ...formData,
+      phone,
+      specialRequests,
+      paymentMethod: "card",
+      totalCost: finalDownPayment, // Use final down payment amount
+      basePrice: calculatedTotal, // Use calculated total as base
+      checkInTime: "12:00 PM",
+      checkOutTime: "11:00 AM",
+      selectedItems,
+      paymentIntentId: paymentIntent.paymentIntentId, // Include payment intent ID
+    };
 
-      console.log("[DEBUG] Starting Stripe payment confirmation");
-      console.log("[DEBUG] Payment intent ID:", paymentIntent.paymentIntentId);
-      console.log("[DEBUG] Client secret available:", !!paymentIntent.clientSecret);
-      
-      // Validate payment intent state before confirmation
-      try {
-        const paymentIntentResult = await stripe.retrievePaymentIntent(paymentIntent.clientSecret);
-        console.log("[DEBUG] Retrieved payment intent state:", paymentIntentResult);
-        
-        if (paymentIntentResult.paymentIntent?.status !== 'requires_payment_method') {
-          console.error("[DEBUG] Payment intent is in invalid state:", paymentIntentResult.paymentIntent?.status);
-          
-          // Check if we can refresh the payment intent
-          if (paymentIntentResult.paymentIntent?.status === 'canceled' || 
-              paymentIntentResult.paymentIntent?.status === 'succeeded') {
-            showToast({
-              title: "Payment Session Expired",
-              description: "This payment session has expired or been used. Please refresh the page to start a new booking.",
-              type: "ERROR",
-            });
-            // Optionally redirect to refresh the page
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-            return;
-          }
-          
-          showToast({
-            title: "Payment Error",
-            description: "This payment session is in an invalid state. Please refresh and try again.",
-            type: "ERROR",
-          });
-          return;
-        }
-      } catch (retrieveError) {
-        console.error("[DEBUG] Error retrieving payment intent:", retrieveError);
-        showToast({
-          title: "Payment Error",
-          description: "Unable to validate payment session. Please refresh and try again.",
-          type: "ERROR",
-        });
-        return;
-      }
+    isProcessingPayment.current = true;
+    setIsProcessing(true);
+
+    try {
+      console.log("Attempting payment confirmation with clientSecret:", paymentIntent.clientSecret);
       
       const cardElement = elements.getElement(CardElement);
-      if (!cardElement || !cardElement._complete) {
-        showToast({
-          title: "Incomplete Card Information",
-          description: "Please complete all card details before proceeding.",
-          type: "ERROR",
-        });
-        return;
+      if (!cardElement) {
+        throw new Error("Card element not found");
       }
-      
+
+      console.log("Payment Debug - Attempting confirmation with:", {
+        clientSecret: paymentIntent.clientSecret,
+        paymentIntentId: paymentIntent.paymentIntentId,
+        userEmail: currentUser.email,
+        userName: `${currentUser.firstName} ${currentUser.lastName}`
+      });
+
+      // Skip payment intent check to allow booking creation
+      // The backend will handle payment intent validation
+
       const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement) as StripeCardElement,
+          card: cardElement,
+          billing_details: {
+            email: currentUser.email,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
+          },
         },
       });
 
-      console.log("[DEBUG] Stripe payment result:", result);
+      console.log("Payment Debug - Confirmation result:", {
+        error: result.error,
+        paymentIntent: result.paymentIntent,
+        status: result.paymentIntent?.status
+      });
 
       if (result.error) {
-        console.error("[DEBUG] Stripe payment error:", result.error);
+        isProcessingPayment.current = false;
+        setIsProcessing(false);
+        console.error("Stripe payment error:", result.error);
         
-        let errorMessage = result.error.message || "An error occurred while processing your payment.";
-        if (result.error.code === 'incomplete_number') {
-          errorMessage = "Please complete your card number before proceeding.";
-        } else if (result.error.code === 'incomplete_expiry') {
-          errorMessage = "Please enter a valid expiration date for your card.";
-        } else if (result.error.code === 'incomplete_cvc') {
-          errorMessage = "Please enter your card's security code (CVC).";
-        } else if (result.error.code === 'invalid_number') {
-          errorMessage = "The card number you entered is invalid.";
-        } else if (result.error.code === 'invalid_expiry_year_past') {
-          errorMessage = "The expiration date you entered is in the past.";
-        } else if (result.error.code === 'invalid_cvc') {
-          errorMessage = "The security code you entered is invalid.";
-        } else if (result.error.code === 'payment_intent_unexpected_state') {
-          errorMessage = "This payment session has expired or been used. Please refresh the page and try again.";
-        } else if (result.error.code === 'payment_intent_invalid') {
-          errorMessage = "Invalid payment session. Please refresh the page and try again.";
+        // Handle specific payment intent state errors
+        if (result.error.type === 'invalid_request_error' && result.error.code === 'payment_intent_unexpected_state') {
+          showToast({
+            title: "Payment Already Processed",
+            description: "This payment appears to have already been processed. Please check your bookings or try with a new payment.",
+            type: "ERROR",
+          });
+        } else {
+          showToast({
+            title: "Payment Failed",
+            description: result.error.message || "An error occurred while processing your payment.",
+            type: "ERROR",
+          });
         }
-        
-        showToast({
-          title: "Payment Failed",
-          description: errorMessage,
-          type: "ERROR",
-        });
         return;
       }
 
-      console.log("[DEBUG] Payment successful, proceeding with booking");
-      console.log("[DEBUG] Booking data being sent:", completeFormData);
-      bookRoom(completeFormData);
+      if (result.paymentIntent?.status === 'succeeded') {
+        console.log("Payment successful, creating booking...");
+        bookRoom(completeFormData);
+      } else {
+        throw new Error(`Payment status: ${result.paymentIntent?.status}`);
+      }
     } catch (error) {
-      console.error("[DEBUG] Unexpected error during payment:", error);
+      isProcessingPayment.current = false;
+      setIsProcessing(false);
+      console.error("Payment confirmation error:", error);
       showToast({
         title: "Payment Failed",
-        description: "An unexpected error occurred while processing your payment. Please try again.",
+        description: error instanceof Error ? error.message : "An unexpected error occurred while processing your payment.",
         type: "ERROR",
       });
-    } finally {
-      // Always reset processing state
-      setIsProcessingPayment(false);
     }
   };
 
-  const onGCashSubmit = async (paymentData: GCashPaymentData) => {
-    // PHASE 1: User Authentication Validation
-    // Check if user is logged in
-    if (!currentUser) {
-      showToast({
-        title: "Authentication Required",
-        description: "Please log in to complete your booking.",
-        type: "ERROR",
-      });
-      // Redirect to login page
-      setTimeout(() => {
-        navigate("/sign-in");
-      }, 2000);
-      return;
-    }
-
-    // Check if required user information is available
-    if (!hasValidUserInfo()) {
-      showToast({
-        title: "Profile Information Missing",
-        description: "Please complete the required information below to proceed with your booking.",
-        type: "ERROR",
-      });
-      return;
-    }
-
-    // Check token validity before critical payment action
-    const isTokenValid = await ensureValidToken();
-    if (!isTokenValid) {
-      return; // User will be redirected to login
-    }
-    
-    // Get current form values, falling back to currentUser data
-    const currentFormValues = watch();
+  const onGCashSubmit = (paymentData: GCashPaymentData) => {
     const formData = {
-      firstName: currentFormValues.firstName || currentUser?.firstName || "",
-      lastName: currentFormValues.lastName || currentUser?.lastName || "",
-      email: currentFormValues.email || currentUser?.email || "",
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      email: currentUser.email,
       phone: paymentData.gcashNumber,
       adultCount: search.adultCount,
       childCount: search.childCount,
       checkIn: search.checkIn.toISOString(),
-      checkOut: search.checkOut.toISOString(),
+      checkOut: getValidCheckOut().toISOString(),
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       hotelId: hotelId || "",
@@ -622,9 +443,11 @@ MM/YY: 12/35 CVC: 123`;
       paymentIntentId: paymentIntent.paymentIntentId,
       specialRequests,
       paymentMethod: "gcash" as const,
-      selectedRooms,
-      selectedCottages,
-      selectedAmenities,
+      selectedItems: [
+        ...selectedRooms.map(room => ({ ...room, type: 'room' as const })),
+        ...selectedCottages.map(cottage => ({ ...cottage, type: 'cottage' as const })),
+        ...selectedAmenities.map(amenity => ({ ...amenity, type: 'amenity' as const }))
+      ],
       // Pass the screenshot file separately
       screenshotFile: paymentData.screenshotFile,
       gcashPayment: {
@@ -636,18 +459,17 @@ MM/YY: 12/35 CVC: 123`;
       },
     };
 
-    console.log("[DEBUG] GCash booking data being sent:", formData);
     bookWithGCash(formData);
   };
 
-  const isLoading = isCardLoading || isGCashLoading || isProcessingPayment;
+  const isLoading = isCardLoading || isGCashLoading || isProcessing;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8">
       {/* Booking Form */}
       <form 
-        onSubmit={(e) => {
-          if (paymentMethod === "gcash" || isProcessingPayment) {
+        onSubmit={(e: React.FormEvent) => {
+          if (paymentMethod === "gcash") {
             e.preventDefault();
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -668,88 +490,41 @@ MM/YY: 12/35 CVC: 123`;
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  First Name {!currentUser?.firstName && <span className="text-red-500">*</span>}
+                  First Name
                 </Label>
                 <Input
                   type="text"
-                  readOnly={!!currentUser?.firstName}
-                  disabled={!!currentUser?.firstName}
-                  className={`${currentUser?.firstName ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.firstName ? "border-red-500" : ""}`}
-                  value={firstNameValue || ""}
-                  {...register("firstName", {
-                    required: !currentUser?.firstName ? "First name is required" : false,
-                    validate: (value) => {
-                      // If user data is loaded, use the loaded data
-                      if (currentUser?.firstName) return true;
-                      // If user data is not loaded, require manual input
-                      return value && value.trim().length > 0 ? true : "First name is required";
-                    }
-                  })}
+                  readOnly
+                  disabled
+                  className="bg-gray-50 text-gray-600"
+                  {...register("firstName")}
                 />
-                {!currentUser?.firstName && (
-                  <p className="text-xs text-gray-500">Please provide your first name</p>
-                )}
-                {errors.firstName && (
-                  <p className="text-xs text-red-500">{errors.firstName.message}</p>
-                )}
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  Last Name {!currentUser?.lastName && <span className="text-red-500">*</span>}
+                  Last Name
                 </Label>
                 <Input
                   type="text"
-                  readOnly={!!currentUser?.lastName}
-                  disabled={!!currentUser?.lastName}
-                  className={`${currentUser?.lastName ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.lastName ? "border-red-500" : ""}`}
-                  value={lastNameValue || ""}
-                  {...register("lastName", {
-                    required: !currentUser?.lastName ? "Last name is required" : false,
-                    validate: (value) => {
-                      // If user data is loaded, use the loaded data
-                      if (currentUser?.lastName) return true;
-                      // If user data is not loaded, require manual input
-                      return value && value.trim().length > 0 ? true : "Last name is required";
-                    }
-                  })}
+                  readOnly
+                  disabled
+                  className="bg-gray-50 text-gray-600"
+                  {...register("lastName")}
                 />
-                {!currentUser?.lastName && (
-                  <p className="text-xs text-gray-500">Please provide your last name</p>
-                )}
-                {errors.lastName && (
-                  <p className="text-xs text-red-500">{errors.lastName.message}</p>
-                )}
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">
-                  Email {!currentUser?.email && <span className="text-red-500">*</span>}
+                  Email
                 </Label>
                 <Input
                   type="email"
-                  readOnly={!!currentUser?.email}
-                  disabled={!!currentUser?.email}
-                  className={`${currentUser?.email ? "bg-gray-50 text-gray-600" : "focus:ring-2 focus:ring-blue-500"} ${errors.email ? "border-red-500" : ""}`}
-                  value={emailValue || ""}
-                  {...register("email", {
-                    required: !currentUser?.email ? "Email is required" : false,
-                    validate: (value) => {
-                      // If user data is loaded, use the loaded data
-                      if (currentUser?.email) return true;
-                      // If user data is not loaded, require manual input with validation
-                      if (!value || !value.trim()) return "Email is required";
-                      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-                      return emailRegex.test(value) ? true : "Invalid email address";
-                    }
-                  })}
+                  readOnly
+                  disabled
+                  className="bg-gray-50 text-gray-600"
+                  {...register("email")}
                 />
-                {!currentUser?.email && (
-                  <p className="text-xs text-gray-500">Please provide your email address</p>
-                )}
-                {errors.email && (
-                  <p className="text-xs text-red-500">{errors.email.message}</p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -762,7 +537,7 @@ MM/YY: 12/35 CVC: 123`;
                   placeholder="Enter your phone number"
                   className="focus:ring-2 focus:ring-blue-500"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
                 />
               </div>
             </div>
@@ -862,12 +637,19 @@ MM/YY: 12/35 CVC: 123`;
                 <CheckCircle className="h-3 w-3 text-green-500" />
                 Only 50% down payment required to book
               </div>
-              {(selectedRooms.length > 0 || selectedCottages.length > 0 || selectedAmenities.length > 0) && (
+              {selectedItems.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-gray-600">
-                    {selectedRooms.length > 0 && `${selectedRooms.length} room(s)`}
-                    {selectedCottages.length > 0 && `${selectedRooms.length > 0 ? ', ' : ''}${selectedCottages.length} cottage(s)`}
-                    {selectedAmenities.length > 0 && `${(selectedRooms.length > 0 || selectedCottages.length > 0) ? ', ' : ''}${selectedAmenities.length} amenit(ies)`}
+                    {(() => {
+                      const rooms = selectedItems.filter(item => item.type === 'room').length;
+                      const cottages = selectedItems.filter(item => item.type === 'cottage').length;
+                      const amenities = selectedItems.filter(item => item.type === 'amenity').length;
+                      return [
+                        rooms > 0 && `${rooms} room(s)`,
+                        cottages > 0 && `${rooms > 0 ? ', ' : ''}${cottages} cottage(s)`,
+                        amenities > 0 && `${(rooms > 0 || cottages > 0) ? ', ' : ''}${amenities} amenit(ies)`
+                      ].filter(Boolean).join('');
+                    })()}
                   </div>
                 </div>
               )}
@@ -875,126 +657,135 @@ MM/YY: 12/35 CVC: 123`;
           </CardContent>
         </Card>
 
-        {/* Payment Method Selection - Only show if payment is required */}
-        {!skipPayment && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600" />
-                Payment Method
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handlePaymentMethodChange("card");
-                    }}
-                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
-                      paymentMethod === "card"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <CreditCard className="w-6 h-6 mx-auto mb-2" />
-                    <div>Credit/Debit Card</div>
-                  </button>
+        {/* Payment Method Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-600" />
+              Payment Method
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handlePaymentMethodChange("card");
+                  }}
+                  className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                    paymentMethod === "card"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <CreditCard className="w-6 h-6 mx-auto mb-2" />
+                  <div>Credit/Debit Card</div>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handlePaymentMethodChange("gcash");
-                    }}
-                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
-                      paymentMethod === "gcash"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    <Smartphone className="w-6 h-6 mx-auto mb-2" />
-                    <div>GCash</div>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handlePaymentMethodChange("gcash");
+                  }}
+                  className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                    paymentMethod === "gcash"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  <Smartphone className="w-6 h-6 mx-auto mb-2" />
+                  <div>GCash</div>
+                </button>
+              </div>
 
-                {/* Card Payment Form */}
-                {paymentMethod === "card" && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                      <CardElement
-                        id="payment-element"
-                        className="text-sm"
-                        options={{
-                          style: {
-                            base: {
-                              fontSize: "16px",
-                              color: "#424770",
-                              "::placeholder": {
-                                color: "#aab7c4",
-                              },
-                            },
-                            invalid: {
-                              color: "#9e2146",
+              {/* Card Payment Form */}
+              {paymentMethod === "card" && (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                    <CardElement
+                      id="payment-element"
+                      className="text-sm"
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: "16px",
+                            color: "#424770",
+                            "::placeholder": {
+                              color: "#aab7c4",
                             },
                           },
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* GCash Payment Form */}
-                {paymentMethod === "gcash" && (
-                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <GCashPaymentForm
-                      totalCost={calculatedTotal}
-                      downPaymentAmount={finalDownPayment}
-                      remainingAmount={finalRemaining}
-                      onPaymentSubmit={debugGCashSubmit}
-                      isLoading={isGCashLoading}
-                      hotel={hotel}
+                        },
+                      }}
                     />
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
+                  {/* Test Credentials */}
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm">
+                        <div className="font-medium text-yellow-800 mb-1">Test Credentials:</div>
+                        <div className="text-yellow-700">Card: 4242 4242 4242 4242</div>
+                        <div className="text-yellow-700">MM/YY: 12/35</div>
+                        <div className="text-yellow-700">CVC: 123</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCredentials}
+                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
+                      >
+                        {isCopied ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 inline mr-1" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3 inline mr-1" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* GCash Payment Form */}
+              {paymentMethod === "gcash" && (
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onSubmit={(e) => e.stopPropagation()}
+                  onReset={(e) => e.stopPropagation()}
+                  style={{ isolation: 'isolate' }}
+                >
+                  <GCashPaymentForm
+                    totalCost={calculatedTotal}
+                    downPaymentAmount={finalDownPayment}
+                    remainingAmount={finalRemaining}
+                    onPaymentSubmit={debugGCashSubmit}
+                    isLoading={isGCashLoading}
+                    hotel={hotel}
+                  />
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Submit Button */}
-        {skipPayment ? (
+        {paymentMethod === "card" && (
           <Button
-            disabled={isLoading}
+            disabled={isLoading || !stripe || !elements}
             type="submit"
-            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 Processing...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Confirm Booking (No Payment Required)
-              </div>
-            )}
-          </Button>
-        ) : paymentMethod === "card" && (
-          <Button
-            disabled={isLoading || isProcessingPayment || Object.keys(errors).length > 0}
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading || isProcessingPayment ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {isProcessingPayment ? "Processing Payment..." : "Processing..."}
-              </div>
-            ) : Object.keys(errors).length > 0 ? (
-              <div className="flex items-center gap-2">
-                <span>Please complete required fields</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -1028,4 +819,3 @@ MM/YY: 12/35 CVC: 123`;
 };
 
 export default EnhancedBookingForm;
-

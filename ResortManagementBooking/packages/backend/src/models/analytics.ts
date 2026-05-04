@@ -1,7 +1,8 @@
 import mongoose, { Document } from "mongoose";
+import { BaseDocument } from "../types/mongoose";
 
-export interface IAnalytics extends Document {
-  _id: string;
+export interface IAnalytics extends BaseDocument {
+  _id: mongoose.Types.ObjectId;
   date: Date;
   metrics: {
     totalBookings: number;

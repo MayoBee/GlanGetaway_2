@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from "../api-client";
+import { getApiBaseUrl } from "../../../shared/auth/api-client";
 
 interface HousekeepingMobileViewProps {
   staffId?: string;
@@ -33,7 +33,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       const url = staffId
         ? `${getApiBaseUrl()}/api/housekeeping-tasks/staff/${staffId}`
         : `${getApiBaseUrl()}/api/housekeeping-tasks/test-hotel-id`;
@@ -52,6 +52,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
     setError(null);
 
     try {
+      const token = localStorage.getItem("session_id");
       const response = await axios.get(
         `${getApiBaseUrl()}/api/housekeeping-tasks/qr/${qrCode}`
       );
@@ -69,7 +70,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/scan`,
         {},
@@ -89,7 +90,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
     if (!currentTask) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/checklist`,
         { itemIndex, status },
@@ -113,7 +114,7 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("session_id");
       await axios.post(
         `${getApiBaseUrl()}/api/housekeeping-tasks/${currentTask._id}/complete`,
         { depositAmount: 0 }, // No deposit refund for demo
@@ -311,4 +312,3 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 };
 
 export default HousekeepingMobileView;
-

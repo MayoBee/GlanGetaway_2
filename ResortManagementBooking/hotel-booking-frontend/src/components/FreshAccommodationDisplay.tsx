@@ -1,7 +1,6 @@
 import { HotelType } from "../../../shared/types";
 import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
-import { mergeUnitsWithBackendData } from "../utils/unitsStorage";
 
 type Props = {
   hotel: HotelType;
@@ -32,14 +31,11 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     numberOfNights 
   } = useBookingSelection();
 
-  // Merge backend data with saved units data
-  const mergedHotel = mergeUnitsWithBackendData(hotel._id, hotel);
-
-  // Get rooms and cottages from merged hotel data
-  const rooms = mergedHotel?.rooms || [];
-  const cottages = mergedHotel?.cottages || [];
-  const packages = mergedHotel?.packages || [];
-  const amenities = mergedHotel?.amenities || [];
+  // Get rooms and cottages from hotel data
+  const rooms = (hotel as any)?.rooms || [];
+  const cottages = (hotel as any)?.cottages || [];
+  const packages = (hotel as any)?.packages || [];
+  const amenities = hotel?.amenities || [];
 
   // Check if any amenity is included in a selected package
   const isAmenityInPackage = (amenityId: string) => {
@@ -55,12 +51,51 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     hasNightRate: cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0)
   }));
   
-  // Use fixed cottages data - no test data fallback
-  const cottagesToDisplay = fixedCottages;
+  // TEMPORARY: Add test data to debug display issue
+  const testCottages = [
+    {
+      id: "test-1",
+      name: "Test Cottage",
+      type: "Beach Villa",
+      hasDayRate: true,
+      hasNightRate: true,
+      dayRate: 100,
+      nightRate: 200,
+      minOccupancy: 1,
+      maxOccupancy: 3,
+      description: "Test cottage for debugging"
+    }
+  ];
+  
+  // Use fixed cottages data
+  const cottagesToDisplay = fixedCottages.length > 0 ? fixedCottages : testCottages;
   
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;
   const hasPackages = packages.length > 0;
+
+  console.log('=== FRESH ACCOMMODATION DEBUG ===');
+  console.log('Hotel data:', hotel);
+  console.log('Rooms found:', rooms);
+  console.log('Cottages found:', cottages);
+  console.log('Fixed cottages:', fixedCottages);
+  console.log('Packages found:', packages);
+  console.log('Has rooms:', hasRooms);
+  console.log('Has cottages:', hasCottages);
+  console.log('Has packages:', hasPackages);
+  console.log('Selected rate type:', selectedRateType);
+  
+  // Debug cottage data specifically
+  cottagesToDisplay.forEach((cottage: any, index: any) => {
+    console.log(`Cottage ${index} details:`, {
+      id: cottage.id,
+      name: cottage.name,
+      hasDayRate: cottage.hasDayRate,
+      hasNightRate: cottage.hasNightRate,
+      dayRate: cottage.dayRate,
+      nightRate: cottage.nightRate
+    });
+  });
 
   return (
     <div className="space-y-8">
@@ -124,12 +159,14 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Rooms:</span>
                           <div className="ml-2">
-                            {pkg.includedRooms.map((roomId: string) => {
+                            {pkg.includedRooms.map((includedRoom: any) => {
+                              const roomId = typeof includedRoom === 'string' ? includedRoom : includedRoom.roomId;
                               const room = rooms.find((r: any) => r.id === roomId);
+                              const units = typeof includedRoom === 'string' ? 1 : includedRoom.units || 1;
                               return room ? (
                                 <div key={roomId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
-                                  {room.name}
+                                  {room.name} ({units} unit{units > 1 ? 's' : ''})
                                 </div>
                               ) : null;
                             })}
@@ -141,12 +178,14 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Cottages:</span>
                           <div className="ml-2">
-                            {pkg.includedCottages.map((cottageId: string) => {
+                            {pkg.includedCottages.map((includedCottage: any) => {
+                              const cottageId = typeof includedCottage === 'string' ? includedCottage : includedCottage.cottageId;
                               const cottage = cottages.find((c: any) => c.id === cottageId);
+                              const units = typeof includedCottage === 'string' ? 1 : includedCottage.units || 1;
                               return cottage ? (
                                 <div key={cottageId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
-                                  {cottage.name}
+                                  {cottage.name} ({units} unit{units > 1 ? 's' : ''})
                                 </div>
                               ) : null;
                             })}
@@ -158,12 +197,14 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Amenities:</span>
                           <div className="ml-2">
-                            {pkg.includedAmenities.map((amenityId: string) => {
+                            {pkg.includedAmenities.map((includedAmenity: any) => {
+                              const amenityId = typeof includedAmenity === 'string' ? includedAmenity : includedAmenity.amenityId;
                               const amenity = hotel.amenities?.find((a: any) => a.id === amenityId);
+                              const quantity = typeof includedAmenity === 'string' ? 1 : includedAmenity.quantity || 1;
                               return amenity ? (
                                 <div key={amenityId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
-                                  {amenity.name}
+                                  {amenity.name} ({quantity} unit{quantity > 1 ? 's' : ''})
                                 </div>
                               ) : null;
                             })}
@@ -218,7 +259,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                             name: pkg.name,
                             description: pkg.description,
                             price: pkg.price,
-                            includedCottages: pkg.includedCottages.map((cottageId: string) => {
+                            includedCottages: pkg.includedCottages.map((includedCottage: any) => {
+                              const cottageId = typeof includedCottage === 'string' ? includedCottage : includedCottage.cottageId;
                               const cottage = cottages.find((c: any) => c.id === cottageId);
                               return cottage || {
                                 id: cottageId,
@@ -232,7 +274,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                                 maxOccupancy: 1
                               };
                             }),
-                            includedRooms: pkg.includedRooms.map((roomId: string) => {
+                            includedRooms: pkg.includedRooms.map((includedRoom: any) => {
+                              const roomId = typeof includedRoom === 'string' ? includedRoom : includedRoom.roomId;
                               const room = rooms.find((r: any) => r.id === roomId);
                               return room || {
                                 id: roomId,
@@ -242,7 +285,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                                 maxOccupancy: 1
                               };
                             }),
-                            includedAmenities: pkg.includedAmenities.map((amenityId: string) => {
+                            includedAmenities: pkg.includedAmenities.map((includedAmenity: any) => {
+                              const amenityId = typeof includedAmenity === 'string' ? includedAmenity : includedAmenity.amenityId;
                               const amenity = hotel.amenities?.find((a: any) => a.id === amenityId);
                               return amenity || {
                                 id: amenityId,
@@ -797,4 +841,3 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
 };
 
 export default FreshAccommodationDisplay;
-

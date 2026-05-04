@@ -4,24 +4,22 @@ import "react-datepicker/dist/react-datepicker.css";
 import useSearchContext from "../../hooks/useSearchContext";
 import useAppContext from "../../hooks/useAppContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Label } from "../../components/ui/label";
+import { Button } from "@shared/ui/button";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Calendar, Users, User, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
+} from "@shared/ui/card";
+import { Badge } from "@shared/ui/badge";
+import { Calendar, Users, User, Baby, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import BookingSummary from "../../components/BookingSummary";
-import { axiosInstance } from "../../api-client";
-import { fetchHotelById, updateBooking, fetchMyBookings } from "../../api-client";
+import * as apiClient from "../../api-client";
 import { useQuery } from "react-query";
-import { PricingEngine } from "../../utils/pricingEngine";
-import { FieldValidator, ValidationMessage, validationRules } from "../../components/ui/form-validation";
 
 type Props = {
   hotelId: string;
@@ -43,6 +41,8 @@ type GuestInfoFormData = {
 
 const GuestInfoForm = ({ 
   hotelId, 
+  pricePerNight, 
+  initialRateType = 'night', 
   editMode = false, 
   bookingId, 
   bookingData 
@@ -55,26 +55,25 @@ const GuestInfoForm = ({
   // Fetch hotel data to get entrance fees
   const { data: hotel } = useQuery(
     "fetchHotelById",
-    () => fetchHotelById(hotelId),
+    () => apiClient.fetchHotelById(hotelId),
     {
       enabled: !!hotelId,
     }
   );
 
-  const {
-    setBasePrice,
-    setNumberOfNights,
-    totalCost,
-    selectedRooms,
-    selectedCottages,
+  const { 
+    setBasePrice, 
+    setNumberOfNights, 
+    totalCost, 
+    selectedRooms, 
+    selectedCottages, 
     selectedAmenities,
-    selectedRateType
+    clearSelections,
+    selectedRateType,
+    setRateType
   } = useBookingSelection();
 
-  // Time state variables - initialize with booking data 
-  // Form validation state
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [fieldValidation, setFieldValidation] = useState<Record<string, boolean>>({});
+  // Time state variables - initialize with booking data if in edit mode
   const [checkInTime, setCheckInTime] = useState<string>(
     editMode && bookingData?.checkInTime ? bookingData.checkInTime : search.checkInTime
   );
@@ -99,10 +98,6 @@ const GuestInfoForm = ({
   
   // Verification files state
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
-
-  // Availability state
-  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
-  const [availabilityConflict, setAvailabilityConflict] = useState<string | null>(null);
 
   // Rate type state - use from context instead of local state
   const [selectedNights, setSelectedNights] = useState<number>(1);
@@ -129,126 +124,80 @@ const GuestInfoForm = ({
     };
   };
 
-  // Calculate entrance fee total using centralized pricing engine
+  // Calculate entrance fee total based on adults, children, and their ages
   const calculateEntranceFeeTotal = () => {
-    return PricingEngine.calculateEntranceFees(
-      adultCount,
-      childCount,
-      childAges,
-      hotel,
-      selectedRateType
-    );
-  };
+    if (!hotel) return 0;
 
-  // Fetch availability for the selected dates
-  const fetchAvailability = async () => {
-    if (!checkIn || !checkOut) return;
+    let total = 0;
+    const rate = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
 
-    // Extract IDs from selected rooms and cottages
-    const roomIds = selectedRooms?.map(room => room.id) || [];
-    const cottageIds = selectedCottages?.map(cottage => cottage.id) || [];
-
-    try {
-      const response = await axiosInstance.get(`/api/hotels/${hotelId}/availability`, {
-        params: {
-          checkIn: checkIn.toISOString(),
-          checkOut: checkOut.toISOString(),
-          roomIds: roomIds.length > 0 ? roomIds.join(',') : undefined,
-          cottageIds: cottageIds.length > 0 ? cottageIds.join(',') : undefined
-        },
-        timeout: 15000, // 15 second timeout
-        retry: 2, // Retry twice for network errors
-        retryDelay: 1000 // 1 second delay between retries
-      });
-      const availabilityData = response.data;
-      const unavailable: Date[] = [];
-      const selectedStart = new Date(checkIn);
-      const selectedEnd = new Date(checkOut);
-
-      // Check if availability is available
-      if (availabilityData.available) {
-        setUnavailableDates(unavailable);
-        setAvailabilityConflict(null);
+    // Adult entrance fees
+    if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+        // Per group pricing - one charge covers groupQuantity people
+        const groupsNeeded = Math.ceil(adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
+        total += groupsNeeded * hotel.adultEntranceFee[rate];
       } else {
-        // Handle conflicts - mark dates as unavailable based on conflicts
-        if (availabilityData.conflicts && Array.isArray(availabilityData.conflicts)) {
-          availabilityData.conflicts.forEach((conflict: any) => {
-            if (conflict.checkIn && conflict.checkOut) {
-              const conflictStart = new Date(conflict.checkIn);
-              const conflictEnd = new Date(conflict.checkOut);
-              
-              // Add all dates in the conflict range to unavailable
-              const currentDate = new Date(conflictStart);
-              while (currentDate < conflictEnd) {
-                unavailable.push(new Date(currentDate));
-                currentDate.setDate(currentDate.getDate() + 1);
-              }
+        // Per head pricing
+        total += adultCount * hotel.adultEntranceFee[rate];
+      }
+    }
+
+    // Child entrance fees
+    if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0) {
+      childAges.forEach((age) => {
+        // Find the appropriate age group for this child
+        const ageGroup = hotel.childEntranceFee?.find(
+          (group) => age >= group.minAge && age <= group.maxAge
+        );
+        
+        if (ageGroup) {
+          // Child falls within a defined age group
+          if (ageGroup[rate] > 0) {
+            if (ageGroup.pricingModel === 'per_group') {
+              // Per group pricing - one charge covers groupQuantity people
+              const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+              total += groupsNeeded * ageGroup[rate];
+            } else {
+              // Per head pricing
+              total += ageGroup[rate];
             }
-          });
+          }
+          // If ageGroup[rate] is 0, it means free entrance for this age group
+        } else {
+          // Child does not fall within any defined age group - charge adult rate
+          if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+            if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+              // Per group pricing - one charge covers groupQuantity people
+              const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
+              total += groupsNeeded * hotel.adultEntranceFee[rate];
+            } else {
+              // Per head pricing
+              total += hotel.adultEntranceFee[rate];
+            }
+          }
         }
-        setUnavailableDates(unavailable);
-        setAvailabilityConflict('Some dates are not available. Please select different dates.');
-      }
-    } catch (error: any) {
-      console.error('Error fetching availability:', error);
-      
-      // Enhanced error handling
-      const isNetworkError = error.message?.includes('Failed to fetch') || 
-                            error.message?.includes('Network Error') ||
-                            error.code === 'ECONNREFUSED' ||
-                            error.message?.includes('ERR_CONNECTION_REFUSED') ||
-                            error.message?.includes('ERR_CONNECTION_RESET');
-      
-      const isCORS_ERROR = error.message?.includes('CORS') || 
-                          error.message?.includes('Access-Control');
-      
-      const isTimeoutError = error.code === 'ECONNABORTED' || 
-                            error.message?.includes('timeout');
-      
-      if (isNetworkError || isCORS_ERROR || isTimeoutError) {
-        // For network/CORS issues, don't block the user - allow them to proceed
-        console.warn('Network/CORS error in availability check, allowing user to proceed');
-        setAvailabilityConflict('Unable to verify availability due to connection issues. Please proceed with caution.');
-      } else if (error.response?.status === 401) {
-        // Auth errors should be handled by the global interceptors
-        console.warn('Authentication error in availability check');
+      });
+    } else if (childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+      // No child age groups defined but there are children - charge all children adult rates
+      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+        // Per group pricing - one charge covers groupQuantity people
+        const groupsNeeded = Math.ceil(childCount / (hotel.adultEntranceFee.groupQuantity || 1));
+        total += groupsNeeded * hotel.adultEntranceFee[rate];
       } else {
-        // Other server errors
-        setAvailabilityConflict('Unable to check availability. Please try again later.');
+        // Per head pricing
+        total += childCount * hotel.adultEntranceFee[rate];
       }
     }
+
+    return total;
   };
 
-  // Check availability before submission
-  const checkAvailabilityBeforeSubmit = async (): Promise<boolean> => {
-    if (!checkIn || !checkOut) return false;
-
-    try {
-      const response = await axiosInstance.get(`/api/hotels/${hotelId}/bookings`);
-      const bookings = response.data;
-      const selectedStart = new Date(checkIn);
-      const selectedEnd = new Date(checkOut);
-
-      for (const booking of bookings) {
-        if (booking.status === 'cancelled') continue;
-
-        const bookingStart = new Date(booking.checkIn);
-        const bookingEnd = new Date(booking.checkOut);
-
-        if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
-          setAvailabilityConflict('The selected dates are no longer available. Please choose different dates.');
-          return false;
-        }
-      }
-
-      setAvailabilityConflict(null);
-      return true;
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      setAvailabilityConflict('Unable to verify availability. Please try again.');
-      return false;
-    }
-  };
+  // Determine available rate types based on entrance fees
+  const hasDayRate = hotel?.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 || 
+                    hotel?.childEntranceFee?.some(child => child.dayRate > 0);
+  const hasNightRate = hotel?.adultEntranceFee?.nightRate && hotel.adultEntranceFee.nightRate > 0 || 
+                     hotel?.childEntranceFee?.some(child => child.nightRate > 0);
 
   const {
     watch,
@@ -305,13 +254,6 @@ const GuestInfoForm = ({
     }
   }, [selectedRateType]);
 
-  // Fetch availability when dates or selections change
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      fetchAvailability();
-    }
-  }, [checkIn, checkOut, hotelId, selectedRooms, selectedCottages]);
-
   const minDate = new Date();
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 1);
@@ -357,7 +299,7 @@ const GuestInfoForm = ({
           selectedAmenities,
         };
 
-        await updateBooking(bookingId, updatedBookingData);
+        await apiClient.updateBooking(bookingId, updatedBookingData);
         alert("Booking updated successfully!");
         navigate("/my-bookings");
       } catch (error: any) {
@@ -478,17 +420,6 @@ const GuestInfoForm = ({
           {/* Booking Summary */}
           <BookingSummary />
 
-          {/* Availability Conflict Message */}
-          {availabilityConflict && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-red-700">
-                <AlertCircle className="h-5 w-5" />
-                <span className="font-medium">Availability Conflict</span>
-              </div>
-              <p className="text-sm text-red-600 mt-1">{availabilityConflict}</p>
-            </div>
-          )}
-
           <form
             onSubmit={
               isLoggedIn ? handleSubmit(onSubmit) : handleSubmit(onSignInClick)
@@ -519,7 +450,6 @@ const GuestInfoForm = ({
                       }}
                       minDate={minDate}
                       maxDate={maxDate}
-                      excludeDates={unavailableDates}
                       placeholderText="Check-in Date"
                       className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       wrapperClassName="w-full"
@@ -556,7 +486,6 @@ const GuestInfoForm = ({
                         }}
                         minDate={minDate}
                         maxDate={maxDate}
-                        excludeDates={unavailableDates}
                         placeholderText="Check-in Date"
                         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         wrapperClassName="w-full"
@@ -584,7 +513,6 @@ const GuestInfoForm = ({
                           }
                         }}
                         minDate={checkIn || minDate}
-                        excludeDates={unavailableDates}
                         placeholderText="Check-out Date"
                         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         wrapperClassName="w-full"
@@ -957,4 +885,3 @@ const GuestInfoForm = ({
 };
 
 export default GuestInfoForm;
-

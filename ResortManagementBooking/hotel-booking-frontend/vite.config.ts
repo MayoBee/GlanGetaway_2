@@ -7,7 +7,16 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@glan-getaway/shared-auth': path.resolve(__dirname, '../packages/shared/auth'),
+      "@shared": path.resolve(__dirname, "./src/shared"),
+      "@shared/auth": path.resolve(__dirname, "./src/shared/auth"),
+      "@shared/types": path.resolve(__dirname, "./src/shared/types"),
+      "@shared/ui": path.resolve(__dirname, "./src/shared/ui"),
+      "@shared/components": path.resolve(__dirname, "./src/shared/components"),
+      "@shared/hooks": path.resolve(__dirname, "./src/shared/hooks"),
+      "@shared/config": path.resolve(__dirname, "./src/shared/config"),
+      "@shared/forms": path.resolve(__dirname, "./src/shared/forms"),
+      "@shared/utils": path.resolve(__dirname, "./src/shared/utils"),
+      "@shared/lib": path.resolve(__dirname, "./src/shared/lib"),
     },
   },
   server: {

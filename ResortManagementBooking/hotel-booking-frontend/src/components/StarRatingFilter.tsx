@@ -24,4 +24,3 @@ const StarRatingFilter = ({ selectedStars, onChange }: Props) => {
 };
 
 export default StarRatingFilter;
-

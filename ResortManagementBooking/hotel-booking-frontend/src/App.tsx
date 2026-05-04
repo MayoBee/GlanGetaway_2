@@ -7,13 +7,10 @@ import {
 import Layout from "./layouts/Layout";
 import AuthLayout from "./layouts/AuthLayout";
 import ScrollToTop from "./components/ScrollToTop";
-import { Toaster } from "./components/ui/toaster";
+import { Toaster } from "../../shared/ui/toaster";
 import { BookingSelectionProvider } from "./contexts/BookingSelectionContext";
-import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import Register from "./pages/Register";
 import SignIn from "./pages/SignIn";
-import AdminLogin from "./pages/AdminLogin";
-import AdminRouteGuard from "./components/AdminRouteGuard";
 import AddHotel from "./pages/AddHotel";
 import MyHotels from "./pages/MyHotels";
 import EditHotel from "./pages/EditHotel";
@@ -26,37 +23,30 @@ import ApiDocs from "./pages/ApiDocs";
 import ApiStatus from "./pages/ApiStatus";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AuthCallback from "./pages/AuthCallback";
-import AutoLogin from "./pages/AutoLogin";
-import ApplyForResortOwner from "./pages/ApplyForResortOwner";
-import MyApplication from "./pages/MyApplication";
+import AdminReports from "./pages/AdminReports";
+import AdminManagement from "./pages/AdminManagement";
+import BusinessInsights from "./pages/BusinessInsights";
+import ResortApproval from "./pages/Admin/ResortApproval";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import WebsiteFeedbackManagement from "./pages/Admin/WebsiteFeedbackManagement";
 import WebsiteFeedback from "./components/WebsiteFeedback";
 import ErrorBoundary from "./components/ErrorBoundary";
-import ResortDashboard from "./pages/ResortDashboard";
 import ResortReports from "./pages/ResortReports";
-import AdminDashboard from './pages/AdminDashboard';
-import AdminManagement from './pages/AdminManagement';
-import AdminApplicationReview from './pages/AdminApplicationReview';
-import ResortApproval from './pages/Admin/ResortApproval';
-import AdminReports from './pages/AdminReports';
-import AdminAnalytics from './pages/AdminAnalytics';
-import AdminSettings from "./pages/AdminSettings";
-import StaffManagement from "./pages/StaffManagement";
-import HousekeepingTasks from "./pages/HousekeepingTasks";
-import MaintenanceManagement from "./pages/MaintenanceManagement";
-import WeatherTriggers from "./pages/WeatherTriggers";
-import FeatureFlags from "./pages/FeatureFlags";
-import RoomBlocks from "./pages/RoomBlocks";
-import IdentityVerification from "./pages/IdentityVerification";
-import AmenitySlots from "./pages/AmenitySlots";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AuthDebug from "./components/AuthDebug";
+import AdminLogin from "./pages/AdminLogin";
+import { AdminAuthProvider } from "./contexts/AdminAuthContext";
+import AdminLayout from "./layouts/AdminLayout";
+import ApplyResortOwner from "./pages/ApplyResortOwner";
 import Kiosk from "./pages/Kiosk";
+import ManageFrontDesk from "./pages/ManageFrontDesk";
 
 const App = () => {
   return (
     <ErrorBoundary>
-      <AdminAuthProvider>
-        <BookingSelectionProvider>
-          <Router>
+      <BookingSelectionProvider>
+        <Router>
           <ScrollToTop />
           <Routes>
             <Route
@@ -131,14 +121,6 @@ const App = () => {
                 </Layout>
               }
             />
-            <Route
-              path="/auto-login"
-              element={
-                <Layout>
-                  <AutoLogin />
-                </Layout>
-              }
-            />
 
             {/* Protected Routes - Require Login */}
             <Route
@@ -182,41 +164,11 @@ const App = () => {
               }
             />
             <Route
-              path="/website-feedback"
-              element={
-                <Layout>
-                  <WebsiteFeedback />
-                </Layout>
-              }
-            />
-            <Route
               path="/apply-resort-owner"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <ApplyForResortOwner />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-application"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <MyApplication />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Resort Management Routes */}
-            <Route
-              path="/resort/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ResortDashboard />
+                    <ApplyResortOwner />
                   </Layout>
                 </ProtectedRoute>
               }
@@ -232,13 +184,91 @@ const App = () => {
               }
             />
             <Route
-              path="/staff-management"
+              path="/manage-front-desk"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <StaffManagement />
+                    <ManageFrontDesk />
                   </Layout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kiosk/:hotelId"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Kiosk />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Secret Admin Login Route - No public links to this */}
+            <Route 
+              path="/admin-login" 
+              element={
+                <AdminAuthProvider>
+                  <AdminLogin />
+                </AdminAuthProvider>
+              } 
+            />
+            <Route
+              path="/website-feedback"
+              element={
+                <Layout>
+                  <WebsiteFeedback />
+                </Layout>
+              }
+            />
+            {/* Secret Admin Dashboard Routes - Protected and hidden */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                <AdminProtectedRoute>
+                  <AdminAuthProvider>
+                    <AdminLayout />
+                  </AdminAuthProvider>
+                </AdminProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="management" replace />} />
+              <Route
+                path="business-insights"
+                element={<BusinessInsights />}
+              />
+              <Route
+                path="resort-approval"
+                element={<ResortApproval />}
+              />
+              <Route
+                path="management"
+                element={<AdminManagement />}
+              />
+              <Route
+                path="analytics"
+                element={<AdminAnalytics />}
+              />
+              <Route
+                path="feedback"
+                element={<WebsiteFeedbackManagement />}
+              />
+              <Route
+                path="reports"
+                element={<AdminReports />}
+              />
+              <Route
+                path="resort-reports"
+                element={<ResortReports />}
+              />
+            </Route>
+
+            {/* Debug Route */}
+            <Route
+              path="/debug-auth"
+              element={
+                <Layout>
+                  <AuthDebug />
+                </Layout>
               }
             />
 
@@ -253,183 +283,13 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            
-            {/* Kiosk Route - Standalone */}
-            <Route
-              path="/kiosk/:hotelId"
-              element={<Kiosk />}
-            />
-            
-            {/* Admin Routes */}
-            <Route
-              path="/admin-login"
-              element={
-                <AuthLayout>
-                  <AdminLogin />
-                </AuthLayout>
-              }
-            />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route
-              path="/admin/dashboard"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminDashboard />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/admin-management"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminManagement />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/applications"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminApplicationReview />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/resort-approval"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <ResortApproval />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/admin-reports"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminReports />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/admin-analytics"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminAnalytics />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/settings"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <AdminSettings />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/staff-management"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <StaffManagement />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/housekeeping-tasks"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <HousekeepingTasks />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/maintenance"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <MaintenanceManagement />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/weather-triggers"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <WeatherTriggers />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/feature-flags"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <FeatureFlags />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/room-blocks"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <RoomBlocks />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/admin/identity-verification"
-              element={
-                <AdminRouteGuard>
-                  <Layout>
-                    <IdentityVerification />
-                  </Layout>
-                </AdminRouteGuard>
-              }
-            />
-            <Route
-              path="/amenity-slots"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <AmenitySlots />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
           <Toaster />
         </Router>
       </BookingSelectionProvider>
-      </AdminAuthProvider>
     </ErrorBoundary>
   );
 };
 
 export default App;
-

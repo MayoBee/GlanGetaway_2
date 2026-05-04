@@ -3,9 +3,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
+} from "../../../shared/ui/dialog";
 
 interface PrivacyPolicyModalProps {
   open: boolean;
@@ -18,7 +19,7 @@ const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col" onOpenChange={onOpenChange}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">
             Privacy Policy
@@ -28,7 +29,7 @@ const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="overflow-y-auto max-h-[60vh] pr-4">
+        <div className="overflow-y-auto flex-1 max-h-[60vh] pr-4">
           <div className="space-y-6 text-sm">
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">1. Introduction</h3>
@@ -277,18 +278,17 @@ const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t">
+        <DialogFooter className="pt-4 border-t">
           <button
             onClick={() => onOpenChange(false)}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
           >
             I Understand
           </button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
 
 export default PrivacyPolicyModal;
-

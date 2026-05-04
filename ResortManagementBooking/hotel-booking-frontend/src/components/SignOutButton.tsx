@@ -1,7 +1,6 @@
 import { useQueryClient } from "react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
-import { signOut } from "../api-client";
-import { clearAllStorage } from "../api-client";
+import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Trash2, RefreshCw } from "lucide-react";
@@ -12,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "../../../shared/ui/dropdown-menu";
 
 // Google profile image if exists, otherwise Robohash avatar
 const getAvatarUrl = () => {
@@ -29,7 +28,7 @@ const SignOutButton = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
 
-  const mutation = useMutationWithLoading(signOut, {
+  const mutation = useMutationWithLoading(apiClient.signOut, {
     onSuccess: async () => {
       await queryClient.invalidateQueries("validateToken");
       showToast({
@@ -51,7 +50,7 @@ const SignOutButton = () => {
     loadingMessage: "Signing out...",
   });
 
-  const clearAuthMutation = useMutationWithLoading(signOut, {
+  const clearAuthMutation = useMutationWithLoading(apiClient.signOut, {
     onSuccess: async () => {
       await queryClient.invalidateQueries("validateToken");
       showToast({
@@ -73,8 +72,8 @@ const SignOutButton = () => {
     loadingMessage: "Clearing auth state...",
   });
 
-  const handleClearAllStorage = () => {
-    clearAllStorage();
+  const clearAllStorage = () => {
+    apiClient.clearAllStorage();
     showToast({
       title: "Storage Cleared",
       description:
@@ -139,7 +138,7 @@ const SignOutButton = () => {
               Clear Auth State
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={handleClearAllStorage}
+              onClick={clearAllStorage}
               className="text-orange-600"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
@@ -153,4 +152,3 @@ const SignOutButton = () => {
 };
 
 export default SignOutButton;
-

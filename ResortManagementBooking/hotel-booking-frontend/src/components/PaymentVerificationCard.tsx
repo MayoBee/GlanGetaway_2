@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle, XCircle, Clock, Eye, Download } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Eye, Download, AlertCircle } from "lucide-react";
 import { BookingType } from "../../../shared/types";
 
 type Props = {
@@ -259,4 +259,3 @@ const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading, showActi
 };
 
 export default PaymentVerificationCard;
-

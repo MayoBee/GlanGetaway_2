@@ -1,18 +1,17 @@
 import { useForm } from "react-hook-form";
-import { PaymentIntentResponse, UserType } from "../../../../shared/types";
+import { PaymentIntentResponse, UserType } from "@shared/types";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import type { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
 import useAppContext from "../../hooks/useAppContext";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
+import { Button } from "@shared/ui/button";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
-import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { useMutation, useQuery } from "react-query";
-import { axiosInstance } from "../../api-client";
-import { fetchHotelById, createRoomBooking, checkAvailability } from '../../api-client';
+import { CardContent, CardHeader, CardTitle } from "@shared/ui/card";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import * as apiClient from "../../api-client";
 import { useState, useEffect } from "react";
 import {
   User,
@@ -106,27 +105,27 @@ export type BookingFormData = {
     type: "pwd" | "senior_citizen" | null;
     percentage: number;
     amount: number;
-  } | null;
+  };
 };
 
 const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const stripe = useStripe();
   const elements = useElements();
-
+  const { showToast } = useAppContext();
+  const navigate = useNavigate();
   const search = useSearchContext();
   const { hotelId } = useParams();
-  const navigate = useNavigate();
-  const { 
-    selectedRooms, 
-    selectedCottages, 
+  const queryClient = useQueryClient();
+  const {
+    selectedRooms,
+    selectedCottages,
     selectedAmenities,
     selectedPackages,
-    basePrice, 
     totalCost,
-    discountInfo,
-    hotelDiscounts,
-    setDiscountInfo,
-    setHotelDiscounts
+    basePrice,
+    downPaymentAmount,
+    numberOfNights,
+    setNumberOfNights,
   } = useBookingSelection();
 
   const { showToast } = useAppContext();
@@ -134,7 +133,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   // Load hotel data to get discount settings
   const { data: hotel } = useQuery(
     "fetchHotelByID",
-    () => fetchHotelById(hotelId || ""),
+    () => apiClient.fetchHotelById(hotelId || ""),
     {
       enabled: !!hotelId,
       onSuccess: (data) => {
@@ -151,7 +150,6 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isPwdBooking, setIsPwdBooking] = useState<boolean>(false);
   const [isSeniorCitizenBooking, setIsSeniorCitizenBooking] = useState<boolean>(false);
-  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   // Update discount info when checkboxes change
   const handlePwdChange = (checked: boolean) => {
@@ -183,7 +181,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   };
 
   const { mutate: bookRoom, isLoading } = useMutation(
-    createRoomBooking,
+    apiClient.createRoomBooking,
     {
       onSuccess: () => {
         showToast({
@@ -197,7 +195,12 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
           navigate("/my-bookings");
         }, 1500);
       },
-      onError: () => {
+      onError: (error: any) => {
+        console.error("Booking failed:", error);
+
+        // Invalidate payment intent cache so a new one is created on retry
+        queryClient.invalidateQueries(["createPaymentIntent"]);
+
         showToast({
           title: "Booking Failed",
           description:
@@ -208,11 +211,11 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     }
   );
 
-  const { register, handleSubmit, setValue, watch } = useForm<BookingFormData>({
+  const { register, handleSubmit } = useForm<BookingFormData>({
     defaultValues: {
-      firstName: currentUser.firstName || "",
-      lastName: currentUser.lastName || "",
-      email: currentUser.email || "",
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      email: currentUser.email,
       adultCount: search.adultCount,
       childCount: search.childCount,
       checkIn: search.checkIn.toISOString(),
@@ -231,20 +234,6 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     mode: "onChange",
     shouldUnregister: false,
   });
-
-  // Watch form values
-  const firstNameValue = watch("firstName");
-  const lastNameValue = watch("lastName");
-  const emailValue = watch("email");
-
-  // Ensure form values are set when currentUser is available
-  useEffect(() => {
-    if (currentUser) {
-      setValue("firstName", currentUser.firstName || "");
-      setValue("lastName", currentUser.lastName || "");
-      setValue("email", currentUser.email || "");
-    }
-  }, [currentUser, setValue]);
 
   const handleCopyCredentials = async () => {
     const credentials = `Card: 4242 4242 4242 4242
@@ -279,38 +268,6 @@ MM/YY: 12/35 CVC: 123`;
       discountInfo,
       totalCost: totalCost, // Use the calculated total cost with discounts
     };
-
-    // Check availability before proceeding with payment
-    setAvailabilityError(null);
-    try {
-      const availability = await checkAvailability({
-        hotelId: formData.hotelId,
-        checkIn: formData.checkIn,
-        checkOut: formData.checkOut,
-        selectedRooms: formData.selectedRooms?.map(r => ({ id: r.id, units: r.units })),
-        selectedCottages: formData.selectedCottages?.map(c => ({ id: c.id, units: c.units })),
-        selectedAmenities: formData.selectedAmenities?.map(a => ({ id: a.id, units: a.units })),
-        selectedPackages: formData.selectedPackages?.map(p => ({ id: p.id })),
-      });
-
-      if (!availability.available) {
-        const errorMessage = availability.message || "The selected items are not available for the chosen dates.";
-        setAvailabilityError(errorMessage);
-        showToast({
-          title: "Availability Conflict",
-          description: errorMessage,
-          type: "ERROR",
-        });
-        return;
-      }
-    } catch (error: any) {
-      showToast({
-        title: "Availability Check Failed",
-        description: "Failed to check availability. Please try again.",
-        type: "ERROR",
-      });
-      return;
-    }
 
     const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
       payment_method: {
@@ -372,7 +329,6 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
-                  value={firstNameValue || ""}
                   {...register("firstName")}
                 />
               </div>
@@ -386,7 +342,6 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
-                  value={lastNameValue || ""}
                   {...register("lastName")}
                 />
               </div>
@@ -400,7 +355,6 @@ MM/YY: 12/35 CVC: 123`;
                   readOnly
                   disabled
                   className="bg-gray-50 text-gray-600"
-                  value={emailValue || ""}
                   {...register("email")}
                 />
               </div>
@@ -660,4 +614,3 @@ MM/YY: 12/35 CVC: 123`;
 };
 
 export default BookingForm;
-

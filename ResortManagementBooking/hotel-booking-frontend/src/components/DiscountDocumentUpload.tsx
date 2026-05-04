@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
+import { Label } from "../../../shared/ui/label";
 import { Upload, FileText, CheckCircle, AlertCircle, X, Download } from "lucide-react";
-import { axiosInstance } from "../api-client";
+import axiosInstance from "../../../shared/auth/api-client";
 
 interface UploadedDocument {
   _id: string;
@@ -224,7 +224,7 @@ const DiscountDocumentUpload: React.FC<DiscountDocumentUploadProps> = ({
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <a
-                          href={`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:7002'}${doc.fileUrl}`}
+                          href={`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}${doc.fileUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 text-sm"
@@ -271,4 +271,3 @@ const DiscountDocumentUpload: React.FC<DiscountDocumentUploadProps> = ({
 };
 
 export default DiscountDocumentUpload;
-

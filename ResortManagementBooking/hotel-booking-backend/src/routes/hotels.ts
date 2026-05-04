@@ -321,10 +321,6 @@ router.post(
       const { hotelId } = req.params;
       const userId = req.userId;
       
-      console.log("Booking request received:", req.body);
-      console.log("User ID:", userId);
-      console.log("Hotel ID:", hotelId);
-      
       // Validate required fields
       const { 
         firstName, 
@@ -349,6 +345,12 @@ router.post(
         discountInfo
       } = req.body;
 
+      console.log("Booking request received:", req.body);
+      console.log("User ID:", userId);
+      console.log("Hotel ID:", hotelId);
+      console.log("CheckIn type:", typeof checkIn, "CheckIn value:", checkIn);
+      console.log("CheckOut type:", typeof checkOut, "CheckOut value:", checkOut);
+
       // Verify hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
@@ -372,6 +374,10 @@ router.post(
       // Use normalized dates from validation
       const { checkIn: normalizedCheckIn, checkOut: normalizedCheckOut } = validation.normalizedDates!;
 
+      // Extract room and cottage IDs for booking data
+      const roomIds = selectedRooms?.map((room: any) => room.id) || [];
+      const cottageIds = selectedCottages?.map((cottage: any) => cottage.id) || [];
+
       // Prepare booking data
       const bookingData = {
         userId,
@@ -391,6 +397,8 @@ router.post(
         selectedRooms: selectedRooms || [],
         selectedCottages: selectedCottages || [],
         selectedAmenities: selectedAmenities || [],
+        roomIds: roomIds, // Add roomIds array
+        cottageIds: cottageIds, // Add cottageIds array
         paymentMethod: paymentMethod || "card",
         specialRequests: specialRequests || "",
         status: "pending",
@@ -482,7 +490,7 @@ router.post(
         });
       }
     } catch (error) {
-      console.error("Booking error:", error);
+      console.error("Outer booking error:", error);
       res.status(500).json({ 
         message: "Booking failed",
         error: error instanceof Error ? error.message : "Unknown error"

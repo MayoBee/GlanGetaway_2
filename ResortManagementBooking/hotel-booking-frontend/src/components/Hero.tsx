@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Users } from "lucide-react";
+import { Search, MapPin, Calendar, Users, Star } from "lucide-react";
 import SearchBar from "./SearchBar";
 
 const Hero = () => {
@@ -55,4 +55,3 @@ const Hero = () => {
 };
 
 export default Hero;
-

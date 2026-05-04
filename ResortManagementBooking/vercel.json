@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm install && cd hotel-booking-frontend && npm run build",
+  "outputDirectory": "hotel-booking-frontend/dist",
+  "installCommand": "npm install"
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './ui/button';
-import SmartImage from './SmartImage';
+import { Button } from '@shared/ui/button';
+import SmartImage from '@shared/components/SmartImage';
 
 interface ImageCarouselProps {
   images: string[];
@@ -146,4 +146,3 @@ const ImageCarousel = ({ images, isOpen, onClose, initialIndex = 0 }: ImageCarou
 };
 
 export default ImageCarousel;
-
