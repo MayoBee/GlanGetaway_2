@@ -2,5 +2,13 @@
   "version": 2,
   "name": "glangetaway-booking",
   "framework": "vite",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "builds": {
+    "src": "package.json",
+    "use": "@vercel/static-build",
+    "config": {
+      "distDir": "dist"
+    }
+  }
 }
