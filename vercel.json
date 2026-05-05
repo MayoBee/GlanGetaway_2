@@ -1,7 +1,5 @@
 {
   "version": 2,
   "name": "glangetaway-booking",
-  "framework": "vite",
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": "out"
+  "framework": "vite"
 }
