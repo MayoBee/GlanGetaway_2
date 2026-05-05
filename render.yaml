@@ -7,7 +7,7 @@ services:
     repo: https://github.com/MayoBee/GlanGetaway_2.git
     rootDir: ResortManagementBooking/hotel-booking-backend
     buildCommand: cd ResortManagementBooking/hotel-booking-backend && npm install && npm run build && node build-fix.js
-    startCommand: cd ResortManagementBooking/hotel-booking-backend && node dist/src/index.js
+    startCommand: node dist/src/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
