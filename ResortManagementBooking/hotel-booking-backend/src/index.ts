@@ -20,8 +20,8 @@ async function startServer() {
   const app = createAndConfigureApp();
 
   // Dynamic Port Configuration (for Render, Coolify/VPS and local development)
-  const PORT = process.env.PORT || 5000;
-
+  const PORT = parseInt(process.env.PORT || "5000", 10);
+  
   const backendBaseUrl =
     process.env.BACKEND_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;
 
