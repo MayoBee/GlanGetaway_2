@@ -6,7 +6,7 @@ services:
     plan: free
     repo: https://github.com/MayoBee/GlanGetaway_2.git
     rootDir: hotel-booking-backend
-    dockerfilePath: Dockerfile.render
+    dockerfilePath: Dockerfile
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
