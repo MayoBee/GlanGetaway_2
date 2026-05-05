@@ -19,6 +19,9 @@ export default defineConfig({
       "@shared/lib": path.resolve(__dirname, "./src/shared/lib"),
     },
   },
+  build: {
+    outDir: "dist"
+  },
   server: {
     port: 5174,
     strictPort: true,
