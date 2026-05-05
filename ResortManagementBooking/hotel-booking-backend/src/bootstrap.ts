@@ -94,7 +94,13 @@ export const connectDB = async () => {
       throw new Error(`Invalid MongoDB connection string scheme. Must start with "mongodb://" or "mongodb+srv://". Received: ${connectionString.substring(0, 30)}...`);
     }
     
-    await mongoose.connect(connectionString);
+    // Set a 10-second timeout for connection to fail fast
+    const connectionTimeoutMs = 10000;
+    
+    await mongoose.connect(connectionString, {
+      serverSelectionTimeoutMS: connectionTimeoutMs,
+      socketTimeoutMS: connectionTimeoutMs,
+    });
     console.log("✅ MongoDB connected successfully");
     console.log(`📦 Database: ${mongoose.connection.db.databaseName}`);
   } catch (error) {

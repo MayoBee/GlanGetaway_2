@@ -25,7 +25,7 @@ async function startServer() {
   const backendBaseUrl =
     process.env.BACKEND_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log("🚀 ============================================");
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`🌐 Local: http://localhost:${PORT}`);
