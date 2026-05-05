@@ -7,7 +7,7 @@
     "build": "tsc --skipLibCheck --noEmitOnError",
     "build-local": "tsc --skipLibCheck",
     "lint": "tsc --noEmit",
-    "start": "node /opt/render/project/src/ResortManagementBooking/hotel-booking-backend/dist/src/index.js",
+    "start": "node dist/src/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "e2e": "cross-env DOTENV_CONFIG_PATH=.env.e2e nodemon",
     "init-db": "ts-node scripts/init-database.ts",
