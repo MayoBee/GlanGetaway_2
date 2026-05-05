@@ -83,12 +83,23 @@ export const createUploadsDirectory = () => {
 export const connectDB = async () => {
   try {
     console.log("📡 Attempting to connect to MongoDB...");
-    await mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string);
+    
+    const connectionString = (process.env.MONGODB_CONNECTION_STRING || "").trim();
+    
+    if (!connectionString) {
+      throw new Error("MONGODB_CONNECTION_STRING is empty");
+    }
+    
+    if (!connectionString.startsWith("mongodb://") && !connectionString.startsWith("mongodb+srv://")) {
+      throw new Error(`Invalid MongoDB connection string scheme. Must start with "mongodb://" or "mongodb+srv://". Received: ${connectionString.substring(0, 30)}...`);
+    }
+    
+    await mongoose.connect(connectionString);
     console.log("✅ MongoDB connected successfully");
     console.log(`📦 Database: ${mongoose.connection.db.databaseName}`);
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
-    console.error("💡 Please check your MONGODB_CONNECTION_STRING");
+    console.error("❌ MongoDB connection error:", error instanceof Error ? error.message : error);
+    console.error("💡 Please check your MONGODB_CONNECTION_STRING environment variable on Render");
     process.exit(1);
   }
 };
