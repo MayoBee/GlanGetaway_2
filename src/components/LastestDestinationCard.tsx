@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "../shared/types";
 import { MapPin, Star } from "lucide-react";
-import { Badge } from "../../../shared/ui/badge";
+import { Badge } from "../shared/ui/badge";
 import SmartImage from "./SmartImage";
 
 type Props = {

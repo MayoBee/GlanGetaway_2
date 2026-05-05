@@ -7,7 +7,7 @@ import {
 import Layout from "./layouts/Layout";
 import AuthLayout from "./layouts/AuthLayout";
 import ScrollToTop from "./components/ScrollToTop";
-import { Toaster } from "../../shared/ui/toaster";
+import { Toaster } from "./shared/ui/toaster";
 import { BookingSelectionProvider } from "./contexts/BookingSelectionContext";
 import Register from "./pages/Register";
 import SignIn from "./pages/SignIn";

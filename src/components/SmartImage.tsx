@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
-import { getApiBaseUrl } from '../../../shared/auth/api-client';
-import { isValidImageUrl } from '../../../shared/utils/imageUtils';
+import { getApiBaseUrl } from '../shared/auth/api-client';
+import { isValidImageUrl } from '../shared/utils/imageUtils';
 
 interface SmartImageProps {
   src?: string | string[];

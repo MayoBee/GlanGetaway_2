@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import useAppContext from "../hooks/useAppContext";
-import axiosInstance from "../../../shared/auth/api-client";
-import { Badge } from "../../../shared/ui/badge";
-import { Button } from "../../../shared/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/ui/card";
+import axiosInstance from "../shared/auth/api-client";
+import { Badge } from "../shared/ui/badge";
+import { Button } from "../shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../shared/ui/card";
 import { CheckCircle, XCircle, AlertTriangle, User, Shield, Settings } from "lucide-react";
 
 const AuthDebug: React.FC = () => {

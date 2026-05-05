@@ -33,10 +33,10 @@ import {
   Eye,
   ArrowLeft
 } from "lucide-react";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
-import { Badge } from "../../../shared/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/ui/card";
+import { Button } from "../shared/ui/button";
+import { Input } from "../shared/ui/input";
+import { Badge } from "../shared/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../shared/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,8 +45,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../../shared/ui/dialog";
-import { Separator } from "../../../shared/ui/separator";
+} from "../shared/ui/dialog";
+import { Separator } from "../shared/ui/separator";
 
 const AdminManagement = () => {
   const navigate = useNavigate();

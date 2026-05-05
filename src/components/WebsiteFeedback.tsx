@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { MessageSquare, Send, X, Bug, Lightbulb, AlertTriangle, ThumbsUp } from "lucide-react";
-import axiosInstance from "../../../shared/auth/api-client";
+import axiosInstance from "../shared/auth/api-client";
 
 interface WebsiteFeedbackProps {
   className?: string;

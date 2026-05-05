@@ -3,10 +3,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../../shared/ui/dropdown-menu";
+} from "../shared/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { Separator } from "../../../shared/ui/separator";
-import { Button } from "../../../shared/ui/button";
+import { Separator } from "../shared/ui/separator";
+import { Button } from "../shared/ui/button";
 import { useState } from "react";
 import * as apiClient from "../api-client";
 import { Plus, LogOut, Building, UserCheck, BarChart3, Users } from "lucide-react";

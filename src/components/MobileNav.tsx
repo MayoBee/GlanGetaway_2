@@ -5,8 +5,8 @@ import {
   SheetDescription,
   SheetTitle,
   SheetTrigger,
-} from "../../../shared/ui/sheet";
-import { Separator } from "../../../shared/ui/separator";
+} from "../shared/ui/sheet";
+import { Separator } from "../shared/ui/separator";
 import MobileNavLinks from "./MobileNavLinks";
 
 const MobileNav = () => {

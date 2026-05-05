@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Flag, AlertTriangle, MessageSquare, X } from "lucide-react";
-import axiosInstance from "../../../shared/auth/api-client";
+import axiosInstance from "../shared/auth/api-client";
 
 interface ReportButtonProps {
   itemId: string;

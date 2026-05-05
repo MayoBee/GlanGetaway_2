@@ -1,5 +1,5 @@
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../shared/ui/card";
 import { Bed, Home, Star, DollarSign, X } from "lucide-react";
 
 const BookingSummary = () => {

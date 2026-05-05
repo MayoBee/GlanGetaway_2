@@ -6,12 +6,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../../shared/ui/dialog";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
-import { Label } from "../../../shared/ui/label";
-import { Checkbox } from "../../../shared/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../shared/ui/select";
+} from "../shared/ui/dialog";
+import { Button } from "../shared/ui/button";
+import { Input } from "../shared/ui/input";
+import { Label } from "../shared/ui/label";
+import { Checkbox } from "../shared/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../shared/ui/select";
 import { RefreshCw, Copy, Check } from "lucide-react";
 import * as apiClient from "../api-client";
 

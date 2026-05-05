@@ -3,7 +3,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { useQuery } from "react-query";
 import * as apiClient from "../api-client";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
-import { useToast } from "../../../shared/hooks/use-toast";
+import { useToast } from "../shared/hooks/use-toast";
 import { UserType, UserRole } from "@shared/types";
 
 const STRIPE_PUB_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";

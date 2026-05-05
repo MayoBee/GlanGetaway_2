@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import useAppContext from "../hooks/useAppContext";
 import * as apiClient from "../api-client";
-import { Button } from "../../../shared/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
-import { Badge } from "../../../shared/ui/badge";
+import { Button } from "../shared/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../shared/ui/card";
+import { Badge } from "../shared/ui/badge";
 import { Users, Plus, Edit, Trash2, Key, Copy, RefreshCw } from "lucide-react";
 import FrontDeskDialog from "../components/FrontDeskDialog";
 

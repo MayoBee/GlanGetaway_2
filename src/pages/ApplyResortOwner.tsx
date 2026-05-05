@@ -12,17 +12,17 @@ import {
   File,
   Image as ImageIcon,
 } from "lucide-react";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
+import { Button } from "../shared/ui/button";
+import { Input } from "../shared/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../shared/ui/card";
-import { Label } from "../../../shared/ui/label";
-import { Separator } from "../../../shared/ui/separator";
+} from "../shared/ui/card";
+import { Label } from "../shared/ui/label";
+import { Separator } from "../shared/ui/separator";
 
 export type ResortOwnerApplicationFormData = {
   dtiPermit: File;

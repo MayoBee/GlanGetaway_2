@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Button } from "../../../shared/ui/button";
+import { Button } from "../shared/ui/button";
 import {
   Hotel,
   Calendar,
@@ -11,7 +11,7 @@ import {
 import UsernameMenu from "./UsernameMenu";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
-import { getHotelsSearchUrl } from "../../../shared/lib/nav-utils";
+import { getHotelsSearchUrl } from "../shared/lib/nav-utils";
 
 const linkClass =
   "flex items-center gap-2 w-full py-3 font-bold text-gray-900 hover:text-primary-600 transition-colors";

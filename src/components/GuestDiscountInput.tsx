@@ -5,14 +5,14 @@ import {
   CardHeader, 
   CardTitle,
   CardDescription 
-} from "../../../shared/ui/card";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
-import { Label } from "../../../shared/ui/label";
-import { Checkbox } from "../../../shared/ui/checkbox";
+} from "../shared/ui/card";
+import { Button } from "../shared/ui/button";
+import { Input } from "../shared/ui/input";
+import { Label } from "../shared/ui/label";
+import { Checkbox } from "../shared/ui/checkbox";
 import { 
   Badge 
-} from "../../../shared/ui/badge";
+} from "../shared/ui/badge";
 import { 
   Users,
   Percent,
@@ -27,8 +27,8 @@ import {
   DiscountConfig,
   DiscountCalculationResult,
   validateDiscountInput
-} from "../../../shared/lib/discountCalculation";
-import axiosInstance from "../../../shared/auth/api-client";
+} from "../shared/lib/discountCalculation";
+import axiosInstance from "../shared/auth/api-client";
 
 export type { DiscountCalculationResult };
 

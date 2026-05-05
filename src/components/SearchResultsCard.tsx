@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "../shared/types";
 import { AiFillStar } from "react-icons/ai";
 import {
   MapPin,
@@ -15,7 +15,7 @@ import {
   Plane,
   Building,
 } from "lucide-react";
-import { Badge } from "../../../shared/ui/badge";
+import { Badge } from "../shared/ui/badge";
 import ReportButton from "./ReportButton";
 
 type Props = {

@@ -1,4 +1,4 @@
-import { Button } from "../../../shared/ui/button";
+import { Button } from "../shared/ui/button";
 
 import UsernameMenu from "./UsernameMenu";
 
@@ -16,7 +16,7 @@ import {
 
   DropdownMenuTrigger,
 
-} from "../../../shared/ui/dropdown-menu";
+} from "../shared/ui/dropdown-menu";
 
 import {
 
@@ -28,7 +28,7 @@ import {
 
 } from "lucide-react";
 
-import { getHotelsSearchUrl } from "../../../shared/lib/nav-utils";
+import { getHotelsSearchUrl } from "../shared/lib/nav-utils";
 
 
 

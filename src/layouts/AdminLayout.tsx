@@ -12,13 +12,13 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { Button } from "../../../shared/ui/button";
+import { Button } from "../shared/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../../shared/ui/dropdown-menu";
+} from "../shared/ui/dropdown-menu";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import * as apiClient from "../api-client";
 import { useState } from "react";
