@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "glangetaway-booking",
-  "buildCommand": "cd ResortManagementBooking/hotel-booking-frontend && npm install && npm run build",
-  "outputDirectory": "ResortManagementBooking/hotel-booking-frontend/dist",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
   "framework": "vite"
 }
