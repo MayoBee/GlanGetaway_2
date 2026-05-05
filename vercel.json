@@ -3,7 +3,7 @@
   "name": "glangetaway-booking",
   "builds": [
     {
-      "src": "hotel-booking-frontend/package.json",
+      "src": "ResortManagementBooking/hotel-booking-frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
@@ -13,11 +13,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/hotel-booking-frontend/$1"
+      "dest": "/ResortManagementBooking/hotel-booking-frontend/$1"
     }
   ],
-  "installCommand": "cd hotel-booking-frontend && npm install",
-  "buildCommand": "cd hotel-booking-frontend && npm run build",
-  "outputDirectory": "hotel-booking-frontend/dist",
+  "installCommand": "cd ResortManagementBooking/hotel-booking-frontend && npm install",
+  "buildCommand": "cd ResortManagementBooking/hotel-booking-frontend && npm run build",
+  "outputDirectory": "ResortManagementBooking/hotel-booking-frontend/dist",
   "framework": "vite"
 }
