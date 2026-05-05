@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import ManageHotelForm, { HotelFormData } from "../forms/ManageHotelForm/ManageHotelForm";
 import useAppContext from "../hooks/useAppContext";
 import { addMyHotel } from "../api-client";
+import { HotelFormData as ApiHotelFormData } from "../shared/types";
 
 const AddHotel = () => {
-  const { showToast } = useAppContext();
+  const { showToast, user, isLoggedIn } = useAppContext();
   const navigate = useNavigate();
 
   const { mutate, isLoading } = useMutation(addMyHotel, {
@@ -61,7 +62,27 @@ const AddHotel = () => {
             
           case 401:
             errorTitle = "Authentication Error";
-            errorMessage = "Your session has expired. Please log in again and retry.";
+            errorMessage = "Your session has expired. Redirecting to login page...";
+            // Save current form data to localStorage before redirecting
+            const currentFormData = (window as any).currentHotelFormData;
+            if (currentFormData) {
+              localStorage.setItem('pendingHotelFormData', JSON.stringify(currentFormData));
+              localStorage.setItem('pendingHotelFormTimestamp', Date.now().toString());
+              showToast({
+                title: "Session Expired",
+                description: "Your form data has been saved. Please log in again to continue adding your resort.",
+                type: "INFO",
+              });
+            }
+            // Redirect to login after a short delay
+            setTimeout(() => {
+              navigate('/signin', { 
+                state: { 
+                  message: "Your session expired. Please log in again to continue adding your resort.",
+                  returnUrl: '/add-hotel'
+                } 
+              });
+            }, 2000);
             break;
             
           case 403:
@@ -137,84 +158,40 @@ const AddHotel = () => {
     console.log('Cottages units:', hotelFormData.cottages?.map(c => ({ name: c.name, units: c.units })));
     console.log('Amenities units:', hotelFormData.amenities?.map(a => ({ name: a.name, units: a.units })));
     
-    // Create FormData for file upload support
-    const formData = new FormData();
-    
-    // Add all form fields to FormData
-    Object.keys(hotelFormData).forEach(key => {
-      const value = hotelFormData[key];
-      if (key === 'imageFiles') {
-        const files = value as unknown as FileList | File[] | Record<string, any>;
-        // Skip imageFiles if it's an invalid object (e.g., { "0": {} })
-        if (files && (files instanceof FileList || Array.isArray(files))) {
-          Array.from(files).forEach((file: File) => {
-            // Only append if it's an actual File object with size > 0
-            if (file instanceof File && file.size > 0) {
-              formData.append('imageFiles', file);
-            }
-          });
-        }
-        // If imageFiles is an object with empty values, skip it entirely
-        // This prevents sending invalid data to the backend
-      } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
-        // Handle nested objects with images
-        if (Array.isArray(value)) {
-          value.forEach((item: any, itemIndex: number) => {
-            Object.keys(item).forEach(itemKey => {
-              if (itemKey === 'imageUrl' && item.imageUrl && item.imageUrl.startsWith('data:')) {
-                // Convert data URL to file if needed
-                // For now, just add the data URL as string
-                formData.append(`${key}[${itemIndex}][${itemKey}]`, item.imageUrl);
-              } else {
-                formData.append(`${key}[${itemIndex}][${itemKey}]`, item[itemKey]);
-              }
-            });
-          });
-        }
-      } else if (key === 'policies' && typeof value === 'object') {
-        // Handle policies object by appending individual fields
-        Object.keys(value).forEach(policyKey => {
-          const policyValue = (value as any)[policyKey];
-          if (policyKey === 'resortPolicies' && Array.isArray(policyValue)) {
-            // Handle resort policies array - send both individual fields AND JSON string
-            policyValue.forEach((policy, policyIndex) => {
-              Object.keys(policy).forEach(policyField => {
-                const fieldValue = policy[policyField];
-                if (fieldValue !== undefined && fieldValue !== null) {
-                  formData.append(`policies.resortPolicies[${policyIndex}][${policyField}]`, String(fieldValue));
-                }
-              });
-            });
-          } else if (policyValue !== undefined && policyValue !== null) {
-            formData.append(`policies.${policyKey}`, policyValue);
-          }
+    // Check if user is authenticated before attempting to save
+    if (!isLoggedIn || !user) {
+      showToast({
+        title: "Authentication Required",
+        description: "Please log in to add a resort. Your form data will be saved.",
+        type: "ERROR",
+      });
+      
+      // Save form data before redirecting to login
+      localStorage.setItem('pendingHotelFormData', JSON.stringify(hotelFormData));
+      localStorage.setItem('pendingHotelFormTimestamp', Date.now().toString());
+      
+      // Redirect to login page
+      setTimeout(() => {
+        navigate('/signin', { 
+          state: { 
+            message: "Please log in to add a resort. Your form data has been saved.",
+            returnUrl: '/add-hotel'
+          } 
         });
-      } else if (Array.isArray(value)) {
-        // Check if this is a simple array of primitives (strings/numbers) vs objects
-        const isSimpleArray = value.every(item => 
-          typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
-        );
-        
-        if (isSimpleArray) {
-          // Handle simple arrays like type: ["Cliffside Resort", ...], facilities: [...]
-          value.forEach((item: any, index: number) => {
-            formData.append(`${key}[${index}]`, String(item));
-          });
-        } else {
-          // Handle object arrays (rooms, cottages, amenities)
-          value.forEach((item: any, index: number) => {
-            Object.keys(item).forEach(itemKey => {
-              formData.append(`${key}[${index}][${itemKey}]`, item[itemKey]);
-            });
-          });
-        }
-      } else {
-        // Handle simple fields
-        formData.append(key, value);
-      }
-    });
+      }, 1500);
+      return;
+    }
     
-    mutate(formData);
+    // Add missing required fields for API
+    const apiFormData: ApiHotelFormData = {
+      ...hotelFormData,
+      userId: user?._id || "", // Use actual user ID from auth context
+      lastUpdated: new Date()
+    };
+    
+    // Pass the complete HotelFormData to addMyHotel function
+    // The addMyHotel function in api-client.ts will handle FormData conversion
+    mutate(apiFormData);
   };
 
   return <ManageHotelForm onSave={handleSave} isLoading={isLoading} />;  

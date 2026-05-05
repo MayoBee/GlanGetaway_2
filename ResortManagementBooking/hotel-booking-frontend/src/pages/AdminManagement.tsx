@@ -27,6 +27,7 @@ import {
   Power,
   PowerOff,
   FileText,
+  Download,
   UserCheck,
   UserX,
   Eye,
@@ -61,6 +62,34 @@ const AdminManagement = () => {
   const [recentPromotions, setRecentPromotions] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<{name: string, url: string} | null>(null);
+  const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
+
+  // Handle document viewing
+  const handleViewDocument = (documentType: string, filename: string) => {
+    if (!filename) {
+      console.error('Filename is null or undefined:', filename);
+      return;
+    }
+    
+    // Extract just the filename from the full path
+    const justFilename = filename.split('/').pop() || filename;
+    
+    // Use the backend URL from environment variable
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const documentUrl = `${backendUrl}/uploads/${justFilename}`;
+    
+    console.log('=== DOCUMENT VIEW DEBUG ===');
+    console.log('Document Type:', documentType);
+    console.log('Original Filename:', filename);
+    console.log('Extracted Filename:', justFilename);
+    console.log('Backend URL:', backendUrl);
+    console.log('Final Document URL:', documentUrl);
+    
+    // Set the selected document and open the image gallery
+    setSelectedDocument({ name: documentType, url: documentUrl });
+    setIsImageGalleryOpen(true);
+  };
 
   // Add to recent promotions when promotion succeeds
   const addToRecentPromotions = (user: any) => {
@@ -205,13 +234,16 @@ const AdminManagement = () => {
   });
 
   // Approve role request mutation
-  const approveRequestMutation = useMutationWithLoading(apiClient.approveResortOwnerApplication, {
-    onSuccess: (data) => {
+  const approveRequestMutation = useMutationWithLoading(apiClient.approveRoleRequest, {
+    onSuccess: async (data) => {
       showToast({
         title: "Role Request Approved",
         description: `User has been promoted to resort owner.`,
         type: "SUCCESS",
       });
+      
+      // Add delay to allow toast to show before refreshing data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       queryClient.invalidateQueries("pendingRoleRequests");
       queryClient.invalidateQueries("existingResortOwners");
     },
@@ -228,14 +260,17 @@ const AdminManagement = () => {
   // Decline role request mutation
   const declineRequestMutation = useMutationWithLoading(
     ({ requestId, reason }: { requestId: string; reason: string }) => 
-      apiClient.declineResortOwnerApplication(requestId, reason),
+      apiClient.declineRoleRequest(requestId, reason),
     {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         showToast({
           title: "Role Request Declined",
           description: `Request has been declined.`,
           type: "SUCCESS",
         });
+        
+        // Add delay to allow toast to show before refreshing data
+        await new Promise(resolve => setTimeout(resolve, 1000));
         queryClient.invalidateQueries("pendingRoleRequests");
       },
       onError: (error: Error) => {
@@ -957,14 +992,14 @@ const AdminManagement = () => {
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </h4>
                   {url && (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm block"
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => handleViewDocument(key.replace(/([A-Z])/g, ' $1').trim(), url)}
+                      className="text-blue-600 hover:underline text-sm p-0 h-auto"
                     >
                       View Document
-                    </a>
+                    </Button>
                   )}
                 </div>
               ))}
@@ -978,6 +1013,76 @@ const AdminManagement = () => {
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Gallery Modal */}
+      <Dialog open={isImageGalleryOpen} onOpenChange={setIsImageGalleryOpen}>
+        <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-4">
+            <DialogTitle className="text-xl font-semibold">
+              {selectedDocument?.name}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Scroll to view the full document. Use the download button to save.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto p-6 pt-0">
+            {selectedDocument && (
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden bg-gray-50">
+                  <img
+                    src={selectedDocument.url}
+                    alt={selectedDocument.name}
+                    className="w-full h-auto max-w-full object-contain"
+                    style={{ maxHeight: '60vh' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', selectedDocument.url);
+                      e.currentTarget.src = '/placeholder-document.png';
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', selectedDocument.url);
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    <p>Document: {selectedDocument.name}</p>
+                    <p className="text-xs mt-1">If the image appears blurry, try downloading for full quality</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedDocument.url) {
+                          const link = document.createElement('a');
+                          link.href = selectedDocument.url;
+                          link.download = `${selectedDocument.name}.jpg`;
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsImageGalleryOpen(false)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

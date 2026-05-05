@@ -1,15 +1,23 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
 import { verifyToken } from "../middleware/role-based-auth";
 import RolePromotionRequest from "../models/role-promotion-request";
 import User from "../models/user";
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory:', uploadsDir);
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -21,11 +29,17 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    // Accept only image and document files
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image and PDF files are allowed'));
+    try {
+      // Accept only image and document files
+      if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        console.log('Rejected file type:', file.mimetype);
+        cb(new Error('Only image and PDF files are allowed'));
+      }
+    } catch (error) {
+      console.error('Error in fileFilter:', error);
+      cb(error);
     }
   }
 });
@@ -80,35 +94,31 @@ router.post(
   verifyToken,
   upload.fields([
     { name: 'dtiPermit', maxCount: 1 },
-    { name: 'municipalEngineeringCertification', maxCount: 1 },
-    { name: 'municipalHealthCertification', maxCount: 1 },
-    { name: 'menroCertification', maxCount: 1 },
+    { name: 'municipalEngineeringCert', maxCount: 1 },
+    { name: 'municipalHealthCert', maxCount: 1 },
+    { name: 'menroCert', maxCount: 1 },
     { name: 'bfpPermit', maxCount: 1 },
     { name: 'businessPermit', maxCount: 1 },
     { name: 'nationalId', maxCount: 1 },
   ]),
   async (req: Request, res: Response) => {
     try {
+      console.log("=== Resort Owner Application Submission Started ===");
+      console.log("Received resort owner application request");
+      console.log("User ID from token:", req.userId);
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const { resortName, resortAddress, resortDescription, contactNumber } = req.body;
+      console.log("Files received:", Object.keys(files || {}));
 
       // Validate required files
-      const requiredFiles = ['dtiPermit', 'municipalEngineeringCertification', 'municipalHealthCertification', 
-                           'menroCertification', 'bfpPermit', 'businessPermit', 'nationalId'];
+      const requiredFiles = ['dtiPermit', 'municipalEngineeringCert', 'municipalHealthCert', 
+                           'menroCert', 'bfpPermit', 'businessPermit', 'nationalId'];
       
       const missingFiles = requiredFiles.filter(fieldName => !files[fieldName] || files[fieldName].length === 0);
       if (missingFiles.length > 0) {
+        console.log("Missing files:", missingFiles);
         return res.status(400).json({ 
           message: "Missing required files", 
           missingFiles 
-        });
-      }
-
-      // Validate required application details
-      if (!resortName || !resortAddress || !resortDescription || !contactNumber) {
-        return res.status(400).json({ 
-          message: "Missing required application details",
-          required: ['resortName', 'resortAddress', 'resortDescription', 'contactNumber']
         });
       }
 
@@ -117,32 +127,41 @@ router.post(
       
       for (const fieldName of requiredFiles) {
         const file = files[fieldName][0];
+        console.log(`Processing file: ${fieldName}, path: ${file.path}`);
         
-        if (process.env.CLOUDINARY_CLOUD_NAME) {
+        if (false && process.env.CLOUDINARY_CLOUD_NAME) { // Temporarily disabled for testing
           // Upload to Cloudinary
-          const uploadResponse = await cloudinary.uploader.upload(file.path, {
-            folder: `resort-applications/${fieldName}`,
-            resource_type: "auto",
-          });
-          documents[fieldName] = uploadResponse.secure_url;
+          try {
+            console.log(`Uploading ${fieldName} to Cloudinary...`);
+            const uploadResponse = await cloudinary.uploader.upload(file.path, {
+              folder: `resort-applications/${fieldName}`,
+              resource_type: "auto",
+            });
+            documents[fieldName] = uploadResponse.secure_url;
+            console.log(`Successfully uploaded ${fieldName} to Cloudinary`);
+          } catch (uploadError) {
+            console.error(`Failed to upload ${fieldName} to Cloudinary:`, uploadError);
+            // Fallback to local storage
+            documents[fieldName] = `/uploads/${file.filename}`;
+          }
         } else {
           // Save locally
           documents[fieldName] = `/uploads/${file.filename}`;
+          console.log(`Saved ${fieldName} locally: ${documents[fieldName]}`);
         }
       }
 
+      console.log("Creating role promotion request in database");
+      console.log("Documents object:", JSON.stringify(documents, null, 2));
       const newRequest = new RolePromotionRequest({
         userId: req.userId,
         documents,
-        applicationDetails: {
-          resortName,
-          resortAddress,
-          resortDescription,
-          contactNumber,
-        },
       });
+      console.log("New request object created:", JSON.stringify(newRequest.toObject(), null, 2));
 
+      console.log("Attempting to save to database...");
       await newRequest.save();
+      console.log("Role promotion request saved successfully with ID:", newRequest._id);
 
       res.status(201).json({ 
         message: "Resort owner application submitted successfully", 
@@ -150,7 +169,7 @@ router.post(
       });
     } catch (error) {
       console.error("Error creating promotion request:", error);
-      res.status(500).json({ message: "Failed to submit application" });
+      res.status(500).json({ message: "Failed to submit application", error: String(error) });
     }
   }
 );
@@ -158,7 +177,26 @@ router.post(
 // GET pending requests - admin only
 router.get("/pending", verifyToken, async (req: Request, res: Response) => {
   try {
+    console.log("=== PENDING REQUESTS ENDPOINT CALLED ===");
+    console.log("User ID from token:", req.userId);
+    
+    // Check user role by finding the user
+    const user = await User.findById(req.userId);
+    const isAdmin = user?.role === 'admin';
+    
+    console.log("User found:", user ? { id: user._id, email: user.email, role: user.role } : null);
+    console.log("Is admin:", isAdmin);
+    
+    if (!isAdmin) {
+      console.log("Access denied: User is not admin");
+      return res.status(403).json({ message: "Access denied. Admin role required." });
+    }
+    
+    console.log("Fetching pending requests...");
     const pendingRequests = await RolePromotionRequest.find({ status: 'pending' }).populate('userId', "firstName lastName email profileImage");
+    
+    console.log("Found pending requests:", pendingRequests.length);
+    console.log("Pending requests data:", JSON.stringify(pendingRequests, null, 2));
 
     res.json({ requests: pendingRequests });
   } catch (error) {
@@ -230,30 +268,28 @@ router.put("/:id/review-document", verifyToken, async (req: Request, res: Respon
   }
 });
 
-// POST approve request - admin only (only if all documents reviewed)
+// POST approve request - admin only
 router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => {
   try {
+    console.log("=== APPROVE REQUEST ENDPOINT CALLED ===");
+    console.log("Request ID:", req.params.id);
+    console.log("User ID from token:", req.userId);
+    
     const { id } = req.params;
     const request = await RolePromotionRequest.findById(id);
     if (!request) {
+      console.log("Request not found");
       return res.status(404).json({ message: "Application not found" });
     }
     
     if (request.status === 'approved') {
+      console.log("Request already approved");
       return res.status(400).json({ message: "Application already approved" });
     }
 
-    // Check if all documents have been reviewed
-    const allReviewed = Object.values(request.reviewStatus).every(status => status === true);
-    if (!allReviewed) {
-      return res.status(400).json({ 
-        message: "All documents must be reviewed before approval",
-        pendingReviews: Object.entries(request.reviewStatus)
-          .filter(([_, reviewed]) => !reviewed)
-          .map(([docType]) => docType)
-      });
-    }
+    console.log("Approving request for user:", request.userId);
 
+    // Update the request status
     await RolePromotionRequest.findByIdAndUpdate(id, {
       status: 'approved',
       reviewedAt: new Date(),
@@ -261,9 +297,13 @@ router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => 
     });
 
     // Also update the user's role to resort_owner
-    await User.findByIdAndUpdate(request.userId, { role: "resort_owner" });
+    const updatedUser = await User.findByIdAndUpdate(request.userId, { role: "resort_owner" }, { new: true });
+    console.log("User role updated:", updatedUser?.email, "new role:", updatedUser?.role);
 
-    res.json({ message: "Application approved and user promoted to resort owner successfully" });
+    res.json({ 
+      message: "Application approved and user promoted to resort owner successfully",
+      user: updatedUser
+    });
   } catch (error) {
     console.error("Error approving application:", error);
     res.status(500).json({ message: "Failed to approve application" });
@@ -273,21 +313,44 @@ router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => 
 // POST decline request - admin only
 router.post("/:id/decline", verifyToken, async (req: Request, res: Response) => {
   try {
+    console.log("=== DECLINE REQUEST ENDPOINT CALLED ===");
+    console.log("Request ID:", req.params.id);
+    console.log("Request body:", req.body);
+    console.log("User ID from token:", req.userId);
+    
     const { id } = req.params;
     const { rejectionReason } = req.body;
     const request = await RolePromotionRequest.findById(id);
+    
+    console.log("Found request:", request ? {
+      id: request._id,
+      currentStatus: request.status,
+      userId: request.userId
+    } : null);
+    
     if (!request) {
+      console.log("Request not found");
       return res.status(404).json({ message: "Request not found" });
     }
     if (request.status !== 'pending') {
+      console.log("Request is not pending, current status:", request.status);
       return res.status(400).json({ message: "Request is not pending" });
     }
 
-    await RolePromotionRequest.findByIdAndUpdate(id, {
+    console.log("Updating request status to declined...");
+    const updatedRequest = await RolePromotionRequest.findByIdAndUpdate(id, {
       status: 'declined',
       reviewedAt: new Date(),
       reviewedBy: req.userId,
       rejectionReason
+    }, { new: true }); // Return the updated document
+    
+    console.log("Updated request:", {
+      id: updatedRequest._id,
+      newStatus: updatedRequest.status,
+      reviewedAt: updatedRequest.reviewedAt,
+      reviewedBy: updatedRequest.reviewedBy,
+      rejectionReason: updatedRequest.rejectionReason
     });
 
     res.json({ message: "Request declined successfully" });

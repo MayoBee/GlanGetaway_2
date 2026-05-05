@@ -75,7 +75,7 @@ const AdminLayout = () => {
   const visibleNavItems = navItems.filter(item => item.show);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -86,23 +86,23 @@ const AdminLayout = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <div className="bg-red-600 p-2 rounded-lg">
-                <LayoutDashboard className="w-6 h-6" />
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <LayoutDashboard className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">Admin Panel</span>
+              <span className="text-xl font-bold text-gray-900">Admin Panel</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden text-white hover:bg-gray-800"
+              className="lg:hidden text-gray-500 hover:bg-gray-100"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="w-5 h-5" />
@@ -121,8 +121,8 @@ const AdminLayout = () => {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? "bg-red-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      ? "bg-blue-50 text-blue-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -133,12 +133,13 @@ const AdminLayout = () => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-gray-200">
             <Button
               onClick={handleLogout}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              variant="outline"
+              className="w-full flex items-center gap-2"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-4 h-4" />
               Logout
             </Button>
           </div>

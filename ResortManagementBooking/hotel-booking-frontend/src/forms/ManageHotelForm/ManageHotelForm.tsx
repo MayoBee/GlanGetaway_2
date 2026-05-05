@@ -402,6 +402,46 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     }
   }, [hotel, reset, formMethods]);
 
+  // Check for saved form data after authentication
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('pendingHotelFormData');
+    const savedTimestamp = localStorage.getItem('pendingHotelFormTimestamp');
+    
+    if (savedFormData && savedTimestamp) {
+      const timestamp = parseInt(savedTimestamp);
+      const now = Date.now();
+      const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+      
+      // Only restore if data is less than 1 hour old
+      if (now - timestamp < oneHour) {
+        try {
+          const parsedData = JSON.parse(savedFormData);
+          console.log('=== RESTORING SAVED FORM DATA ===');
+          console.log('Restored data:', parsedData);
+          
+          // Restore form data
+          reset(parsedData);
+          
+          // Clear the saved data
+          localStorage.removeItem('pendingHotelFormData');
+          localStorage.removeItem('pendingHotelFormTimestamp');
+          
+          // Show notification to user
+          alert('Your previous form data has been restored. You can continue editing your resort.');
+        } catch (error) {
+          console.error('Error restoring saved form data:', error);
+          // Clear corrupted data
+          localStorage.removeItem('pendingHotelFormData');
+          localStorage.removeItem('pendingHotelFormTimestamp');
+        }
+      } else {
+        // Clear expired data
+        localStorage.removeItem('pendingHotelFormData');
+        localStorage.removeItem('pendingHotelFormTimestamp');
+      }
+    }
+  }, [reset]);
+
   const handleSave = async (formDataJson: HotelFormData) => {
     // Only allow submission if manually triggered by user
     if (!isManualSubmit) {
@@ -411,6 +451,9 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     
     console.log('=== FORM SUBMISSION DEBUG ===');
     console.log('Complete form data:', JSON.stringify(formDataJson, null, 2));
+    
+    // Save form data to global variable for recovery after authentication
+    (window as any).currentHotelFormData = formDataJson;
     
     // Comprehensive validation gatekeeper
     const validationErrors: string[] = [];

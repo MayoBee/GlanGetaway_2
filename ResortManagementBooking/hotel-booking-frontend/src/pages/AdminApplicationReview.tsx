@@ -46,18 +46,29 @@ interface Application {
     lastName: string;
     email: string;
   };
-  dtiPermit: string;
-  municipalEngineeringCert: string;
-  municipalHealthCert: string;
-  menroCert: string;
-  bfpPermit: string;
-  businessPermit: string;
-  nationalId: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
+  documents: {
+    dtiPermit: string;
+    municipalEngineeringCert: string;
+    municipalHealthCert: string;
+    menroCert: string;
+    bfpPermit: string;
+    businessPermit: string;
+    nationalId: string;
+  };
+  status: 'pending' | 'approved' | 'declined';
+  requestedAt: string;
   reviewedAt?: string;
   reviewedBy?: any;
   rejectionReason?: string;
+  reviewStatus?: {
+    dtiPermit: boolean;
+    municipalEngineeringCert: boolean;
+    municipalHealthCert: boolean;
+    menroCert: boolean;
+    bfpPermit: boolean;
+    businessPermit: boolean;
+    nationalId: boolean;
+  };
 }
 
 const AdminApplicationReview = () => {
@@ -68,26 +79,49 @@ const AdminApplicationReview = () => {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{name: string, url: string} | null>(null);
+  const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
 
   console.log('AdminApplicationReview rendering, selectedDocument:', selectedDocument, 'selectedApplication:', selectedApplication);
 
   const handleViewDocument = (documentType: string, filename: string) => {
-    console.log('handleViewDocument called:', { documentType, filename });
     if (!filename) {
       console.error('Filename is null or undefined:', filename);
       return;
     }
-    const documentUrl = `http://localhost:5000/uploads/resort-owner-applications/${filename}`;
-    console.log('Setting selectedDocument to:', { name: documentType, url: documentUrl });
-    setSelectedDocument({name: documentType, url: documentUrl});
-    console.log('selectedDocument after setting:', { name: documentType, url: documentUrl });
+    
+    // Extract just the filename from the full path
+    const justFilename = filename.split('/').pop() || filename;
+    
+    // Use the backend URL from environment variable
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const documentUrl = `${backendUrl}/uploads/${justFilename}`;
+    
+    console.log('=== DOCUMENT VIEW DEBUG ===');
+    console.log('Document Type:', documentType);
+    console.log('Original Filename:', filename);
+    console.log('Extracted Filename:', justFilename);
+    console.log('Backend URL:', backendUrl);
+    console.log('Final Document URL:', documentUrl);
+    
+    // Set the selected document and open the image gallery
+    setSelectedDocument({ name: documentType, url: documentUrl });
+    setIsImageGalleryOpen(true);
   };
   const [adminNotes, setAdminNotes] = useState("");
 
   // Fetch pending resort owner applications
   const fetchPendingApplications = async () => {
-    const response = await axiosInstance.get("/api/resort-owner-application/all?status=pending");
-    return response.data.data;
+    console.log("=== FETCHING PENDING APPLICATIONS ===");
+    try {
+      const response = await axiosInstance.get("/api/role-promotion-requests/pending");
+      console.log("Response received:", response.data);
+      console.log("Requests array:", response.data.requests);
+      return response.data.requests;
+    } catch (error) {
+      console.error("Error fetching pending applications:", error);
+      console.error("Error response:", error.response?.data);
+      throw error;
+    }
   };
 
   const { data: applications = [], isLoading, refetch } = useQueryWithLoading(
@@ -130,8 +164,10 @@ const AdminApplicationReview = () => {
 
   // Approve application mutation
   const approveMutation = useMutationWithLoading(
-    (applicationId: string) =>
-      axiosInstance.post(`/api/resort-owner-application/${applicationId}/approve`),
+    async (applicationId: string) => {
+      const response = await axiosInstance.post(`/api/role-promotion-requests/${applicationId}/approve`);
+      return response.data;
+    },
     {
       onSuccess: (data) => {
         showToast({
@@ -156,7 +192,7 @@ const AdminApplicationReview = () => {
   // Decline application mutation
   const declineMutation = useMutationWithLoading(
     ({ applicationId, reason }: {applicationId: string, reason: string}) =>
-      axiosInstance.post(`/api/resort-owner-application/${applicationId}/decline`, {
+      axiosInstance.post(`/api/role-promotion-requests/${applicationId}/decline`, {
         rejectionReason: reason
       }),
     {
@@ -182,8 +218,8 @@ const AdminApplicationReview = () => {
 
   const fetchApplicationDetails = async (applicationId: string) => {
     try {
-      const response = await axiosInstance.get(`/api/resort-owner-application/${applicationId}`);
-      setSelectedApplication(response.data.application);
+      const response = await axiosInstance.get(`/api/role-promotion-requests/${applicationId}`);
+      setSelectedApplication(response.data.request);
     } catch (error) {
       console.error("Error fetching application details:", error);
     }
@@ -241,9 +277,9 @@ const AdminApplicationReview = () => {
   const getDocumentDisplayName = (documentType: string) => {
     const names: { [key: string]: string } = {
       dtiPermit: "DTI Permit",
-      municipalEngineeringCertification: "Municipal Engineering Certification",
-      municipalHealthCertification: "Municipal Health Certification",
-      menroCertification: "MENRO Certification",
+      municipalEngineeringCert: "Municipal Engineering Certification",
+      municipalHealthCert: "Municipal Health Certification",
+      menroCert: "MENRO Certification",
       bfpPermit: "BFP Permit",
       businessPermit: "Business Permit",
       nationalId: "National ID"
@@ -333,7 +369,7 @@ const AdminApplicationReview = () => {
                       <div className="text-sm text-gray-600">{application.userId.email}</div>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Calendar className="w-4 h-4 mr-1" />
-                        Applied {new Date(application.submittedAt).toLocaleDateString()}
+                        Applied {new Date(application.requestedAt).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -389,7 +425,7 @@ const AdminApplicationReview = () => {
                     <span className="font-medium">Application ID:</span> {selectedApplication._id}
                   </div>
                   <div>
-                    <span className="font-medium">Submitted:</span> {new Date(selectedApplication.submittedAt).toLocaleDateString()}
+                    <span className="font-medium">Submitted:</span> {new Date(selectedApplication.requestedAt).toLocaleDateString()}
                   </div>
                 </CardContent>
               </Card>
@@ -411,7 +447,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => handleViewDocument("DTI Permit", selectedApplication.dtiPermit)}
+                            onClick={() => handleViewDocument("DTI Permit", selectedApplication.documents.dtiPermit)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -430,15 +466,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => {
-                      console.log('Selected Application:', selectedApplication);
-                      console.log('Municipal Engineering Cert:', selectedApplication?.municipalEngineeringCert);
-                      if (selectedApplication?.municipalEngineeringCert) {
-                        setSelectedDocument({name: "Municipal Engineering Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.municipalEngineeringCert}`});
-                      } else {
-                        console.error('Municipal Engineering Cert not found in application');
-                      }
-                    }}
+                            onClick={() => handleViewDocument("Municipal Engineering Certification", selectedApplication.documents.municipalEngineeringCert)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -457,15 +485,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => {
-                      console.log('Selected Application:', selectedApplication);
-                      console.log('Municipal Health Cert:', selectedApplication?.municipalHealthCert);
-                      if (selectedApplication?.municipalHealthCert) {
-                        setSelectedDocument({name: "Municipal Health Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.municipalHealthCert}`});
-                      } else {
-                        console.error('Municipal Health Cert not found in application');
-                      }
-                    }}
+                            onClick={() => handleViewDocument("Municipal Health Certification", selectedApplication.documents.municipalHealthCert)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -484,15 +504,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => {
-                      console.log('Selected Application:', selectedApplication);
-                      console.log('MENRO Cert:', selectedApplication?.menroCert);
-                      if (selectedApplication?.menroCert) {
-                        setSelectedDocument({name: "MENRO Certification", url: `http://localhost:5000/uploads/resort-owner-applications/${selectedApplication.menroCert}`});
-                      } else {
-                        console.error('MENRO Cert not found in application');
-                      }
-                    }}
+                            onClick={() => handleViewDocument("MENRO Certification", selectedApplication.documents.menroCert)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -511,7 +523,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => handleViewDocument("BFP Permit", selectedApplication.bfpPermit)}
+                            onClick={() => handleViewDocument("BFP Permit", selectedApplication.documents.bfpPermit)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -530,7 +542,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => handleViewDocument("Business Permit", selectedApplication.businessPermit)}
+                            onClick={() => handleViewDocument("Business Permit", selectedApplication.documents.businessPermit)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -549,7 +561,7 @@ const AdminApplicationReview = () => {
                             variant="link"
                             size="sm"
                             className="p-0 h-auto text-blue-600"
-                            onClick={() => handleViewDocument("National ID", selectedApplication.nationalId)}
+                            onClick={() => handleViewDocument("National ID", selectedApplication.documents.nationalId)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Document
@@ -683,6 +695,76 @@ const AdminApplicationReview = () => {
                </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Gallery Modal */}
+      <Dialog open={isImageGalleryOpen} onOpenChange={setIsImageGalleryOpen}>
+        <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-4">
+            <DialogTitle className="text-xl font-semibold">
+              {selectedDocument?.name}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Scroll to view the full document. Use the download button to save.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto p-6 pt-0">
+            {selectedDocument && (
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden bg-gray-50">
+                  <img
+                    src={selectedDocument.url}
+                    alt={selectedDocument.name}
+                    className="w-full h-auto max-w-full object-contain"
+                    style={{ maxHeight: '60vh' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', selectedDocument.url);
+                      e.currentTarget.src = '/placeholder-document.png';
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', selectedDocument.url);
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    <p>Document: {selectedDocument.name}</p>
+                    <p className="text-xs mt-1">If the image appears blurry, try downloading for full quality</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedDocument.url) {
+                          const link = document.createElement('a');
+                          link.href = selectedDocument.url;
+                          link.download = `${selectedDocument.name}.jpg`;
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsImageGalleryOpen(false)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

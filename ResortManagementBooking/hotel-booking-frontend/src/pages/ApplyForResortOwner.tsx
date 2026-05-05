@@ -43,12 +43,15 @@ const ApplyForResortOwner = () => {
   const mutation = useMutationWithLoading(
     (formData: FormData) => apiClient.submitResortOwnerApplication(formData),
     {
-      onSuccess: () => {
+      onSuccess: async () => {
         showToast({
           title: "Application Submitted",
           description: "Your resort owner application has been submitted successfully. An admin will review your documents.",
           type: "SUCCESS",
         });
+        
+        // Add delay to allow toast to show before navigation
+        await new Promise(resolve => setTimeout(resolve, 1500));
         navigate("/");
       },
       onError: (error: Error) => {

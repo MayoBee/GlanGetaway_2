@@ -5,19 +5,12 @@ const rolePromotionRequestSchema = new mongoose.Schema({
   // Multiple document fields for resort owner application
   documents: {
     dtiPermit: { type: String, required: true },
-    municipalEngineeringCertification: { type: String, required: true },
-    municipalHealthCertification: { type: String, required: true },
-    menroCertification: { type: String, required: true },
+    municipalEngineeringCert: { type: String, required: true },
+    municipalHealthCert: { type: String, required: true },
+    menroCert: { type: String, required: true },
     bfpPermit: { type: String, required: true },
     businessPermit: { type: String, required: true },
     nationalId: { type: String, required: true },
-  },
-  // Application details
-  applicationDetails: {
-    resortName: { type: String, required: true },
-    resortAddress: { type: String, required: true },
-    resortDescription: { type: String, required: true },
-    contactNumber: { type: String, required: true },
   },
   status: {
     type: String,
@@ -32,9 +25,9 @@ const rolePromotionRequestSchema = new mongoose.Schema({
   // Review tracking
   reviewStatus: {
     dtiPermit: { type: Boolean, default: false },
-    municipalEngineeringCertification: { type: Boolean, default: false },
-    municipalHealthCertification: { type: Boolean, default: false },
-    menroCertification: { type: Boolean, default: false },
+    municipalEngineeringCert: { type: Boolean, default: false },
+    municipalHealthCert: { type: Boolean, default: false },
+    menroCert: { type: Boolean, default: false },
     bfpPermit: { type: Boolean, default: false },
     businessPermit: { type: Boolean, default: false },
     nationalId: { type: Boolean, default: false },

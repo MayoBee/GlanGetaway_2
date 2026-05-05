@@ -52,7 +52,7 @@ const AdminLogin = () => {
         type: "SUCCESS",
       });
 
-      navigate(location.state?.from?.pathname || "/admin/dashboard");
+      navigate(location.state?.from?.pathname || "/admin-dashboard");
     },
     onError: (error: Error) => {
       showToast({

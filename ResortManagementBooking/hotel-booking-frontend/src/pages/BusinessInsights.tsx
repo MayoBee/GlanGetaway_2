@@ -43,7 +43,7 @@ interface BusinessStats {
 }
 
 const fetchBusinessStats = async (timeRange: string): Promise<BusinessStats> => {
-  const response = await axiosInstance.get(`/api/admin/analytics/business-stats?timeRange=${timeRange}`);
+  const response = await axiosInstance.get(`/api/admin/business-stats?timeRange=${timeRange}`);
   return response.data;
 };
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
@@ -69,7 +69,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 
 const BusinessInsights = () => {
-  const { isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin, isSuperAdmin } = useRoleBasedAccess();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
 
   // Fetch business statistics
@@ -78,7 +78,7 @@ const BusinessInsights = () => {
     () => fetchBusinessStats(timeRange),
     {
       loadingMessage: "Loading business insights...",
-      enabled: isSuperAdmin,
+      enabled: isAdmin, // Allow both Admin and Super Admin
     }
   );
 
@@ -120,7 +120,7 @@ const BusinessInsights = () => {
     }
   };
 
-  if (!isSuperAdmin) {
+  if (!isAdmin && !isSuperAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md">
@@ -128,7 +128,7 @@ const BusinessInsights = () => {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <CardTitle className="text-2xl font-bold text-red-600">Access Denied</CardTitle>
             <CardDescription>
-              Only Super Admins can access the Business Insights dashboard.
+              Only Admins and Super Admins can access the Business Insights dashboard.
             </CardDescription>
           </CardHeader>
         </Card>

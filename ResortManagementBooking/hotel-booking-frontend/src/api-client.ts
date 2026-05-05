@@ -562,17 +562,23 @@ export const toggleUserStatus = async (userId: string) => {
 
 // Role Promotion Requests (for users applying to become resort owners)
 export const fetchPendingRoleRequests = async (): Promise<any[]> => {
-  const response = await axiosInstance.get("/api/admin-management/role-requests/pending");
-  return response.data;
+  const response = await axiosInstance.get("/api/role-promotion-requests/pending");
+  return response.data.requests;
 };
 
 export const approveRoleRequest = async (requestId: string): Promise<any> => {
-  const response = await axiosInstance.put(`/api/admin-management/role-requests/${requestId}/approve`);
+  const response = await axiosInstance.post(`/api/role-promotion-requests/${requestId}/approve`);
   return response.data;
 };
 
 export const declineRoleRequest = async (requestId: string, reason?: string): Promise<any> => {
-  const response = await axiosInstance.put(`/api/admin-management/role-requests/${requestId}/decline`, { reason });
+  console.log("=== FRONTEND DECLINE ROLE REQUEST ===");
+  console.log("Request ID:", requestId);
+  console.log("Reason:", reason);
+  console.log("Sending payload:", { rejectionReason: reason });
+  
+  const response = await axiosInstance.post(`/api/role-promotion-requests/${requestId}/decline`, { rejectionReason: reason });
+  console.log("Decline response:", response.data);
   return response.data;
 };
 
