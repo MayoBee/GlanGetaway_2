@@ -30,4 +30,3 @@ node_modules
 
 .vercel
 .env*.local
-render.yaml
