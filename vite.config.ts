@@ -20,7 +20,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "build"
+    outDir: "out"
   },
   server: {
     port: 5174,
