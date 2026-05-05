@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { UserType, HotelType, BookingType, UserRole } from "../../../shared/types";
+import { UserType, HotelType, BookingType, UserRole } from "./shared";
 
 // Backend only mongoose document interfaces
 export interface UserDocument extends Omit<mongoose.Document, '_id'>, Omit<UserType, 'role'> {
@@ -9,4 +9,4 @@ export interface UserDocument extends Omit<mongoose.Document, '_id'>, Omit<UserT
 }
 
 // Re-export all shared types for backend usage
-export * from "../../../shared/types";
+export * from "./shared";

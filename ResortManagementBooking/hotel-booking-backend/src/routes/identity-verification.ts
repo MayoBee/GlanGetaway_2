@@ -4,7 +4,7 @@ import IdentityVerification from "../models/identity-verification";
 import Booking from "../models/booking";
 import User from "../models/user";
 import { v2 as cloudinary } from "cloudinary";
-import { UserRole } from "../../../shared/types";
+import { UserRole } from "../types";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;

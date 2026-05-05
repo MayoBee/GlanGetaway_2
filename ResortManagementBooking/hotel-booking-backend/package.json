@@ -1,10 +1,10 @@
 {
   "name": "booking-backend",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "booking mern app backend",
   "main": "./dist/src/index.js",
   "scripts": {
-    "build": "tsc --skipLibCheck --noEmitOnError",
+    "build": "tsc --skipLibCheck",
     "build-local": "tsc --skipLibCheck",
     "lint": "tsc --noEmit",
     "start": "node dist/src/index.js",
