@@ -51,24 +51,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     hasNightRate: cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0)
   }));
   
-  // TEMPORARY: Add test data to debug display issue
-  const testCottages = [
-    {
-      id: "test-1",
-      name: "Test Cottage",
-      type: "Beach Villa",
-      hasDayRate: true,
-      hasNightRate: true,
-      dayRate: 100,
-      nightRate: 200,
-      minOccupancy: 1,
-      maxOccupancy: 3,
-      description: "Test cottage for debugging"
-    }
-  ];
-  
   // Use fixed cottages data
-  const cottagesToDisplay = fixedCottages.length > 0 ? fixedCottages : testCottages;
+  const cottagesToDisplay = fixedCottages;
   
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;

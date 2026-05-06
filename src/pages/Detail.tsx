@@ -63,7 +63,7 @@ const Detail = () => {
   }, [editMode, bookingData, setRateType]);
 
   const { data: hotel } = useQueryWithLoading(
-    "fetchHotelById",
+    ["fetchHotelById", id],
     () => fetchHotelById(id || ""),
     {
       enabled: !!id,
