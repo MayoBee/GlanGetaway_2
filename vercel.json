@@ -1,4 +1,9 @@
 {
   "version": 2,
-  "framework": "vite"
+  "framework": "vite",
+  "build": {
+    "env": {
+      "VITE_API_BASE_URL": "https://glangetaway-2-1.onrender.com"
+    }
+  }
 }
