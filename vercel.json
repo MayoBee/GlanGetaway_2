@@ -11,6 +11,18 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/admin-login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin-dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin-dashboard/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
