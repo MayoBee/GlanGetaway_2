@@ -8,7 +8,7 @@ services:
     rootDir: ResortManagementBooking/hotel-booking-backend
     buildCommand: npm install && npm run build
     startCommand: node dist/src/index.js
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
