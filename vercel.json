@@ -7,5 +7,18 @@
     "env": {
       "VITE_API_BASE_URL": "https://glangetaway-2-1.onrender.com"
     }
-  }
+  },
+  "installCommand": "npm install",
+  "functions": {},
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "ignore": [
+    "ResortManagementBooking/**",
+    "node_modules/**",
+    ".git/**"
+  ]
 }
