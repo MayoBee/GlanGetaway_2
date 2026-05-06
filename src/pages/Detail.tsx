@@ -176,6 +176,7 @@ const Detail = () => {
               onClick={() => handleImageClick(i)}
             >
               <SmartImage
+                key={`${hotel.id}-image-${i}`}
                 src={image}
                 alt={`${hotel.name} - Image ${i + 1}`}
                 className="rounded-md w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"

@@ -14,6 +14,7 @@ interface SmartImageProps {
   maxRetries?: number;
   retryDelay?: number;
   fallbackImageUrl?: string;
+  key?: string; // Add key prop for React re-rendering
 }
 
 const DEFAULT_FALLBACK_IMAGE = '/placeholder-resort.jpg';
@@ -28,7 +29,8 @@ const SmartImage: React.FC<SmartImageProps> = ({
   onLoad,
   maxRetries = 3,
   retryDelay = 1000,
-  fallbackImageUrl = DEFAULT_FALLBACK_IMAGE
+  fallbackImageUrl = DEFAULT_FALLBACK_IMAGE,
+  key: propKey
 }) => {
   const [currentSrc, setCurrentSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -54,8 +56,13 @@ const SmartImage: React.FC<SmartImageProps> = ({
       sourcesArray = Array.isArray(sources) ? sources : [sources];
     }
     
-    // Add fallback image as last resort if provided
-    if (fallbackImageUrl && !sourcesArray.includes(fallbackImageUrl)) {
+    // Filter out empty, null, undefined, and whitespace-only strings
+    sourcesArray = sourcesArray.filter(source => 
+      source && typeof source === 'string' && source.trim() !== ''
+    );
+    
+    // Add fallback image as last resort if provided and no valid sources found
+    if (sourcesArray.length === 0 && fallbackImageUrl) {
       sourcesArray.push(fallbackImageUrl);
     }
     
@@ -209,7 +216,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     };
 
     tryNextSource();
-  }, [src, retryCount, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
+  }, [src, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
 
   const handleRetry = () => {
     logImageEvent('MANUAL_RETRY', { 
@@ -261,6 +268,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
 
   return (
     <img
+      key={propKey || currentSrc}
       src={currentSrc}
       alt={alt}
       className={className}

@@ -101,6 +101,7 @@ const ImageCarousel = ({ images, isOpen, onClose, initialIndex = 0 }: ImageCarou
           {/* Main Image */}
           <div className="flex items-center justify-center">
             <SmartImage
+              key={`carousel-main-${currentIndex}`}
               src={images[currentIndex]}
               alt={`Resort image ${currentIndex + 1}`}
               className="max-w-full max-h-[80vh] object-contain rounded-lg"
@@ -125,6 +126,7 @@ const ImageCarousel = ({ images, isOpen, onClose, initialIndex = 0 }: ImageCarou
               }`}
             >
               <SmartImage
+                key={`carousel-thumb-${index}`}
                 src={image}
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
