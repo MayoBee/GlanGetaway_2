@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm install --prefix hotel-booking-frontend && npm run build --prefix hotel-booking-frontend",
+  "buildCommand": "cd hotel-booking-frontend && npm install && npm run build",
   "outputDirectory": "hotel-booking-frontend/dist",
-  "installCommand": "npm install --prefix hotel-booking-frontend",
+  "installCommand": "cd hotel-booking-frontend && npm install",
   "rewrites": [
     {
       "source": "/admin-login",
