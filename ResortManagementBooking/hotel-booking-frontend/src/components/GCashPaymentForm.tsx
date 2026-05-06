@@ -34,7 +34,8 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
         console.log("Fetching resort GCash for hotel ID:", hotel._id);
         
         // Direct API call to get hotel data with all fields
-        const response = await fetch(`http://localhost:5000/api/hotels/${hotel._id}`);
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://glangetaway-2-1.onrender.com';
+        const response = await fetch(`${apiBaseUrl}/api/hotels/${hotel._id}`);
         const hotelData = await response.json();
         
         console.log("Full hotel data received:", hotelData);

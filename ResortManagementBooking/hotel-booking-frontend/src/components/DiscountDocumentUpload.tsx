@@ -224,7 +224,7 @@ const DiscountDocumentUpload: React.FC<DiscountDocumentUploadProps> = ({
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <a
-                          href={`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}${doc.fileUrl}`}
+                          href={`${import.meta.env.VITE_API_BASE_URL || 'https://glangetaway-2-1.onrender.com'}${doc.fileUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 text-sm"
