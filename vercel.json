@@ -2,6 +2,9 @@
   "buildCommand": "cd hotel-booking-frontend && npm install && npm run build",
   "outputDirectory": "dist",
   "installCommand": "cd hotel-booking-frontend && npm install",
+  "env": {
+    "VITE_API_BASE_URL": "https://glangetaway-2-1.onrender.com"
+  },
   "rewrites": [
     {
       "source": "/admin-login",
