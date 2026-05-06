@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd hotel-booking-frontend && npm install && npm run build",
-  "outputDirectory": "hotel-booking-frontend/dist",
+  "outputDirectory": "dist",
   "installCommand": "cd hotel-booking-frontend && npm install",
   "rewrites": [
     {
