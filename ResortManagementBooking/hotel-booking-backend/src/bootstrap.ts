@@ -138,6 +138,9 @@ export const createAndConfigureApp = () => {
   app.use(compression());
   app.use(morgan("combined"));
 
+  // Static file serving for uploaded images
+  app.use('/uploads', express.static('uploads'));
+
   // Observability endpoints
   app.get("/health", metrics.getHealthCheckHandler.bind(metrics));
   app.get("/metrics", metrics.getMetricsHandler.bind(metrics));
