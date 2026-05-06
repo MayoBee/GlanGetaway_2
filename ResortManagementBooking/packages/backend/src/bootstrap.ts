@@ -32,28 +32,25 @@ export const createServer = async () => {
     })
   );
 
-  // File upload handling
-  app.get('/uploads/:filename', (req, res) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
-      return;
-    }
-
-    imageService.serveImage(req, res);
-  });
+  // Serve uploaded files statically with CORS headers
+  const uploadsPath = path.join(__dirname, '..', '..', 'uploads');
+  console.log('🔧 Static uploads path:', uploadsPath);
 
   app.use('/uploads', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+
+    console.log('📁 Serving static file:', req.path);
     next();
-  }, express.static(path.join(__dirname, '..', '..', 'uploads')));
+  }, express.static(uploadsPath));
 
   return app;
 };

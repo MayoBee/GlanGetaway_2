@@ -18,7 +18,16 @@ class ImageService {
       this.uploadDir = path.join(__dirname, '..', '..', 'uploads');
     }
     
-    this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 7002}`;
+    // Use BACKEND_URL if set, otherwise determine from environment
+    const backendUrl = process.env.BACKEND_URL || process.env.BACKEND_BASE_URL;
+    if (backendUrl) {
+      this.baseUrl = backendUrl.replace(/\/$/, ""); // Remove trailing slash
+    } else {
+      // Fallback for local development
+      this.baseUrl = `http://localhost:${process.env.PORT || 7002}`;
+    }
+
+    console.log('🔗 ImageService baseUrl:', this.baseUrl);
     
     // Ensure upload directory exists
     this.ensureUploadDir();

@@ -4,6 +4,7 @@ import { Express } from "express";
 export const configureCors = (app: Express): void => {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
+    process.env.ALLOWED_ORIGINS,
     "http://localhost:5174",
     "http://localhost:5175",
     "http://localhost:5173",
@@ -13,6 +14,7 @@ export const configureCors = (app: Express): void => {
     "https://hotel-mern-booking.vercel.app",
     "https://hotel-mern-booking.vercel.app/",
     "https://glan-getaway-tjuzxei5z-mayobees-projects.vercel.app",
+    "https://glan-getaway-2-c8sjgvg59-mayobees-projects.vercel.app",
   ].filter((origin): origin is string => Boolean(origin));
 
   const corsOptions = {
