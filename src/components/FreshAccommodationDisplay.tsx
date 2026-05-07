@@ -357,7 +357,15 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     )}
 
                     {/* Free Entrance Fee Display */}
-                    {room.includedEntranceFee?.enabled && (
+                    {(() => {
+                      console.log(`=== ROOM ENTRANCE FEE DEBUG ===`);
+                      console.log(`Room: ${room.name}`);
+                      console.log(`includedEntranceFee:`, room.includedEntranceFee);
+                      console.log(`enabled:`, room.includedEntranceFee?.enabled);
+                      console.log(`adultCount:`, room.includedEntranceFee?.adultCount);
+                      console.log(`childCount:`, room.includedEntranceFee?.childCount);
+                      return room.includedEntranceFee?.enabled;
+                    })() && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <div className="flex items-center gap-2">
                           <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">

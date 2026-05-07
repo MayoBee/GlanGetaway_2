@@ -630,6 +630,17 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     
     console.log('Final imageUrls to be sent:', finalImageUrls);
 
+    // Debug includedEntranceFee data before processing
+    console.log('=== INCLUDED ENTRANCE FEE DEBUG ===');
+    formDataJson.rooms?.forEach((room, index) => {
+      console.log(`Room ${index} (${room.name}):`, {
+        includedEntranceFee: room.includedEntranceFee,
+        enabled: room.includedEntranceFee?.enabled,
+        adultCount: room.includedEntranceFee?.adultCount,
+        childCount: room.includedEntranceFee?.childCount
+      });
+    });
+
     // Clean up amenities arrays - remove "Free entrance" entries if not enabled
     const cleanedRooms = formDataJson.rooms?.map(room => ({
       ...room,
@@ -702,6 +713,17 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('Rooms being sent:', processedData.rooms);
     console.log('Cottages being sent:', processedData.cottages);
     console.log('Packages being sent:', processedData.packages);
+
+    // Debug final includedEntranceFee data being sent
+    console.log('=== FINAL INCLUDED ENTRANCE FEE DATA BEING SENT ===');
+    processedData.rooms?.forEach((room, index) => {
+      console.log(`Final Room ${index} (${room.name}):`, {
+        includedEntranceFee: room.includedEntranceFee,
+        enabled: room.includedEntranceFee?.enabled,
+        adultCount: room.includedEntranceFee?.adultCount,
+        childCount: room.includedEntranceFee?.childCount
+      });
+    });
 
     // Reset manual submit flag
     setIsManualSubmit(false);
