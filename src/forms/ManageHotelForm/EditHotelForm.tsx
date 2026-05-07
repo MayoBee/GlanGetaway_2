@@ -39,26 +39,54 @@ const EditHotelForm = ({ hotelId, initialData, onSave }: EditHotelFormProps) => 
         }
       });
 
-      // Set extended fields based on existing data
-      const roomsEnabled = initialData.rooms?.some(room => room.includedEntranceFee?.enabled);
-      const cottagesEnabled = initialData.cottages?.some(cottage => cottage.includedEntranceFee?.enabled);
-
-      if (roomsEnabled) {
+      // Only set global checkboxes if ALL rooms have the same setting
+      // This preserves individual room settings
+      const roomsWithEntranceFee = initialData.rooms?.filter(room => room.includedEntranceFee?.enabled) || [];
+      const roomsWithoutEntranceFee = initialData.rooms?.filter(room => !room.includedEntranceFee?.enabled) || [];
+      
+      // Set global room entrance fee only if all rooms have the same setting
+      if (roomsWithEntranceFee.length === initialData.rooms?.length && initialData.rooms?.length > 0) {
+        // All rooms have entrance fees enabled
         setValue('roomsIncludedEntranceFee', true);
-        const firstRoomWithFee = initialData.rooms?.find(room => room.includedEntranceFee?.enabled);
-        if (firstRoomWithFee?.includedEntranceFee) {
-          setValue('roomsAdultCount', firstRoomWithFee.includedEntranceFee.adultCount || 0);
-          setValue('roomsChildCount', firstRoomWithFee.includedEntranceFee.childCount || 0);
+        const firstRoom = roomsWithEntranceFee[0];
+        if (firstRoom?.includedEntranceFee) {
+          setValue('roomsAdultCount', firstRoom.includedEntranceFee.adultCount || 0);
+          setValue('roomsChildCount', firstRoom.includedEntranceFee.childCount || 0);
         }
+      } else if (roomsWithoutEntranceFee.length === initialData.rooms?.length && initialData.rooms?.length > 0) {
+        // All rooms have entrance fees disabled
+        setValue('roomsIncludedEntranceFee', false);
+        setValue('roomsAdultCount', 0);
+        setValue('roomsChildCount', 0);
+      } else {
+        // Mixed settings - don't set global checkboxes to preserve individual settings
+        setValue('roomsIncludedEntranceFee', false);
+        setValue('roomsAdultCount', 0);
+        setValue('roomsChildCount', 0);
       }
 
-      if (cottagesEnabled) {
+      // Same logic for cottages
+      const cottagesWithEntranceFee = initialData.cottages?.filter(cottage => cottage.includedEntranceFee?.enabled) || [];
+      const cottagesWithoutEntranceFee = initialData.cottages?.filter(cottage => !cottage.includedEntranceFee?.enabled) || [];
+      
+      if (cottagesWithEntranceFee.length === initialData.cottages?.length && initialData.cottages?.length > 0) {
+        // All cottages have entrance fees enabled
         setValue('cottagesIncludedEntranceFee', true);
-        const firstCottageWithFee = initialData.cottages?.find(cottage => cottage.includedEntranceFee?.enabled);
-        if (firstCottageWithFee?.includedEntranceFee) {
-          setValue('cottagesAdultCount', firstCottageWithFee.includedEntranceFee.adultCount || 0);
-          setValue('cottagesChildCount', firstCottageWithFee.includedEntranceFee.childCount || 0);
+        const firstCottage = cottagesWithEntranceFee[0];
+        if (firstCottage?.includedEntranceFee) {
+          setValue('cottagesAdultCount', firstCottage.includedEntranceFee.adultCount || 0);
+          setValue('cottagesChildCount', firstCottage.includedEntranceFee.childCount || 0);
         }
+      } else if (cottagesWithoutEntranceFee.length === initialData.cottages?.length && initialData.cottages?.length > 0) {
+        // All cottages have entrance fees disabled
+        setValue('cottagesIncludedEntranceFee', false);
+        setValue('cottagesAdultCount', 0);
+        setValue('cottagesChildCount', 0);
+      } else {
+        // Mixed settings - don't set global checkboxes to preserve individual settings
+        setValue('cottagesIncludedEntranceFee', false);
+        setValue('cottagesAdultCount', 0);
+        setValue('cottagesChildCount', 0);
       }
     }
   }, [initialData, setValue]);
@@ -69,22 +97,56 @@ const EditHotelForm = ({ hotelId, initialData, onSave }: EditHotelFormProps) => 
       // Transform extended data to standard HotelFormData
       const transformedData: HotelFormData = {
         ...data,
-        rooms: data.rooms?.map(room => ({
-          ...room,
-          includedEntranceFee: data.roomsIncludedEntranceFee ? {
-            enabled: true,
-            adultCount: data.roomsAdultCount || 0,
-            childCount: data.roomsChildCount || 0,
-          } : { enabled: false, adultCount: 0, childCount: 0 }
-        })),
-        cottages: data.cottages?.map(cottage => ({
-          ...cottage,
-          includedEntranceFee: data.cottagesIncludedEntranceFee ? {
-            enabled: true,
-            adultCount: data.cottagesAdultCount || 0,
-            childCount: data.cottagesChildCount || 0,
-          } : { enabled: false, adultCount: 0, childCount: 0 }
-        }))
+        rooms: data.rooms?.map(room => {
+          // Preserve existing individual room entrance fee settings
+          // Only use global settings if the room doesn't have individual settings
+          if (room.includedEntranceFee && typeof room.includedEntranceFee.enabled === 'boolean') {
+            // Room has individual settings, preserve them
+            return {
+              ...room,
+              includedEntranceFee: {
+                enabled: room.includedEntranceFee.enabled,
+                adultCount: room.includedEntranceFee.adultCount || 0,
+                childCount: room.includedEntranceFee.childCount || 0,
+              }
+            };
+          } else {
+            // Room doesn't have individual settings, use global settings as fallback
+            return {
+              ...room,
+              includedEntranceFee: data.roomsIncludedEntranceFee ? {
+                enabled: true,
+                adultCount: data.roomsAdultCount || 0,
+                childCount: data.roomsChildCount || 0,
+              } : { enabled: false, adultCount: 0, childCount: 0 }
+            };
+          }
+        }),
+        cottages: data.cottages?.map(cottage => {
+          // Preserve existing individual cottage entrance fee settings
+          // Only use global settings if the cottage doesn't have individual settings
+          if (cottage.includedEntranceFee && typeof cottage.includedEntranceFee.enabled === 'boolean') {
+            // Cottage has individual settings, preserve them
+            return {
+              ...cottage,
+              includedEntranceFee: {
+                enabled: cottage.includedEntranceFee.enabled,
+                adultCount: cottage.includedEntranceFee.adultCount || 0,
+                childCount: cottage.includedEntranceFee.childCount || 0,
+              }
+            };
+          } else {
+            // Cottage doesn't have individual settings, use global settings as fallback
+            return {
+              ...cottage,
+              includedEntranceFee: data.cottagesIncludedEntranceFee ? {
+                enabled: true,
+                adultCount: data.cottagesAdultCount || 0,
+                childCount: data.cottagesChildCount || 0,
+              } : { enabled: false, adultCount: 0, childCount: 0 }
+            };
+          }
+        })
       };
 
       // Remove extended fields
@@ -156,6 +218,17 @@ const EditHotelForm = ({ hotelId, initialData, onSave }: EditHotelFormProps) => 
           </h3>
           
           <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4">
+              <p className="text-sm text-yellow-800 mb-2">
+                <strong>⚠️ Important: Individual Room Settings Preserved</strong>
+                </p>
+              <p className="text-xs text-yellow-700">
+                Each room and cottage has its own entrance fee settings that are preserved individually. 
+                The global settings below only apply when all rooms/cottages have the same configuration.
+                To modify individual room settings, use the main resort editing form.
+              </p>
+            </div>
+            
             <div className="bg-blue-50 border border-blue-200 rounded p-4">
               <p className="text-sm text-blue-700 mb-2">
                 <strong>✅ Enable Free Entrance</strong>
