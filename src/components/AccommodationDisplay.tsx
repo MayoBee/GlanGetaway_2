@@ -89,6 +89,12 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           Free Entrance Included
                         </div>
                       )}
+                      {/* Debug: Show entrance fee data */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+                          Debug: {JSON.stringify(room.includedEntranceFee)}
+                        </div>
+                      )}
                       {isInPackage && !isSelected && (
                         <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
                           In Package
@@ -207,6 +213,12 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                       {cottage.includedEntranceFee?.enabled && (
                         <div className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
                           Free Entrance Included
+                        </div>
+                      )}
+                      {/* Debug: Show entrance fee data */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">
+                          Debug: {JSON.stringify(cottage.includedEntranceFee)}
                         </div>
                       )}
                       {isInPackage && !isSelected && (
