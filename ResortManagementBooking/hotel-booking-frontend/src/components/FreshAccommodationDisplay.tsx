@@ -1,5 +1,5 @@
 import { HotelType } from "../../../shared/types";
-import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
+import { Bed, Home, Users, Plus, Minus, Package, Check, Ticket } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 
 type Props = {
@@ -8,17 +8,17 @@ type Props = {
 };
 
 const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
-  const { 
-    addRoom, 
-    removeRoom, 
-    addCottage, 
-    removeCottage, 
+  const {
+    addRoom,
+    removeRoom,
+    addCottage,
+    removeCottage,
     addPackage,
     removePackage,
     updateRoomUnits,
     updateCottageUnits,
     updateAmenityUnits,
-    isRoomSelected, 
+    isRoomSelected,
     isCottageSelected,
     isPackageSelected,
     isAmenitySelected,
@@ -28,7 +28,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     selectedRooms,
     selectedCottages,
     selectedAmenities,
-    numberOfNights 
+    numberOfNights
   } = useBookingSelection();
 
   // Get rooms and cottages from hotel data
@@ -36,6 +36,32 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
   const cottages = (hotel as any)?.cottages || [];
   const packages = (hotel as any)?.packages || [];
   const amenities = hotel?.amenities || [];
+
+  // Debug logging for entrance fee data
+  console.log('=== FRESH ACCOMMODATION DISPLAY DEBUG ===');
+  console.log('Hotel data:', hotel);
+  console.log('Cottages:', cottages);
+  console.log('Rooms:', rooms);
+
+  cottages.forEach((cottage, index) => {
+    console.log(`Fresh Cottage ${index} (${cottage.name}):`, {
+      id: cottage.id,
+      includedEntranceFee: cottage.includedEntranceFee,
+      enabled: cottage.includedEntranceFee?.enabled,
+      adultCount: cottage.includedEntranceFee?.adultCount,
+      childCount: cottage.includedEntranceFee?.childCount
+    });
+  });
+
+  rooms.forEach((room, index) => {
+    console.log(`Fresh Room ${index} (${room.name}):`, {
+      id: room.id,
+      includedEntranceFee: room.includedEntranceFee,
+      enabled: room.includedEntranceFee?.enabled,
+      adultCount: room.includedEntranceFee?.adultCount,
+      childCount: room.includedEntranceFee?.childCount
+    });
+  });
 
   // Check if any amenity is included in a selected package
   const isAmenityInPackage = (amenityId: string) => {
@@ -366,6 +392,26 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                       <span>{room.minOccupancy} - {room.maxOccupancy} people</span>
                     </div>
 
+                    {/* Debug: Always show entrance fee status */}
+                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
+                      DEBUG: Entrance Fee - enabled: {String(room.includedEntranceFee?.enabled)}, adults: {room.includedEntranceFee?.adultCount || 0}, children: {room.includedEntranceFee?.childCount || 0}
+                    </div>
+
+                    {/* Free Entrance Included Indicator */}
+                    {room.includedEntranceFee?.enabled && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
+                        <Ticket className="w-4 h-4 text-green-600" />
+                        <div className="text-sm">
+                          <span className="font-semibold text-green-700">Free Entrance Included</span>
+                          <div className="text-xs text-green-600">
+                            {room.includedEntranceFee.adultCount > 0 && `${room.includedEntranceFee.adultCount} adult${room.includedEntranceFee.adultCount > 1 ? 's' : ''}`}
+                            {room.includedEntranceFee.adultCount > 0 && room.includedEntranceFee.childCount > 0 && ', '}
+                            {room.includedEntranceFee.childCount > 0 && `${room.includedEntranceFee.childCount} child${room.includedEntranceFee.childCount > 1 ? 'ren' : ''}`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Description */}
                     {room.description && (
                       <p className="text-sm text-gray-600">{room.description}</p>
@@ -562,6 +608,26 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                       <Users className="w-4 h-4 mr-1" />
                       <span>{cottage.minOccupancy} - {cottage.maxOccupancy} people</span>
                     </div>
+
+                    {/* Debug: Always show entrance fee status */}
+                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
+                      DEBUG: Entrance Fee - enabled: {String(cottage.includedEntranceFee?.enabled)}, adults: {cottage.includedEntranceFee?.adultCount || 0}, children: {cottage.includedEntranceFee?.childCount || 0}
+                    </div>
+
+                    {/* Free Entrance Included Indicator */}
+                    {cottage.includedEntranceFee?.enabled && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
+                        <Ticket className="w-4 h-4 text-green-600" />
+                        <div className="text-sm">
+                          <span className="font-semibold text-green-700">Free Entrance Included</span>
+                          <div className="text-xs text-green-600">
+                            {cottage.includedEntranceFee.adultCount > 0 && `${cottage.includedEntranceFee.adultCount} adult${cottage.includedEntranceFee.adultCount > 1 ? 's' : ''}`}
+                            {cottage.includedEntranceFee.adultCount > 0 && cottage.includedEntranceFee.childCount > 0 && ', '}
+                            {cottage.includedEntranceFee.childCount > 0 && `${cottage.includedEntranceFee.childCount} child${cottage.includedEntranceFee.childCount > 1 ? 'ren' : ''}`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Description */}
                     {cottage.description && (
