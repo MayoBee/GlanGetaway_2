@@ -11,6 +11,32 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
   // Handle different possible data structures
   const rooms = hotel.rooms || [];
   const cottages = hotel.cottages || [];
+
+  // Debug logging for entrance fee data
+  console.log('=== ACCOMMODATION DISPLAY DEBUG ===');
+  console.log('Hotel data:', hotel);
+  console.log('Rooms:', rooms);
+  console.log('Cottages:', cottages);
+
+  cottages.forEach((cottage, index) => {
+    console.log(`Cottage ${index} (${cottage.name}):`, {
+      id: cottage.id,
+      includedEntranceFee: cottage.includedEntranceFee,
+      enabled: cottage.includedEntranceFee?.enabled,
+      adultCount: cottage.includedEntranceFee?.adultCount,
+      childCount: cottage.includedEntranceFee?.childCount
+    });
+  });
+
+  rooms.forEach((room, index) => {
+    console.log(`Room ${index} (${room.name}):`, {
+      id: room.id,
+      includedEntranceFee: room.includedEntranceFee,
+      enabled: room.includedEntranceFee?.enabled,
+      adultCount: room.includedEntranceFee?.adultCount,
+      childCount: room.includedEntranceFee?.childCount
+    });
+  });
   
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;
@@ -108,6 +134,11 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                       <span className="text-sm text-gray-600">
                         {room.minOccupancy} - {room.maxOccupancy} people
                       </span>
+                    </div>
+
+                    {/* Debug: Always show entrance fee status */}
+                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
+                      DEBUG: Entrance Fee - enabled: {String(room.includedEntranceFee?.enabled)}, adults: {room.includedEntranceFee?.adultCount || 0}, children: {room.includedEntranceFee?.childCount || 0}
                     </div>
 
                     {room.includedEntranceFee?.enabled && (
@@ -270,6 +301,11 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                       <span className="text-sm text-gray-600">
                         {cottage.minOccupancy} - {cottage.maxOccupancy} people
                       </span>
+                    </div>
+
+                    {/* Debug: Always show entrance fee status */}
+                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
+                      DEBUG: Entrance Fee - enabled: {String(cottage.includedEntranceFee?.enabled)}, adults: {cottage.includedEntranceFee?.adultCount || 0}, children: {cottage.includedEntranceFee?.childCount || 0}
                     </div>
 
                     {cottage.includedEntranceFee?.enabled && (
