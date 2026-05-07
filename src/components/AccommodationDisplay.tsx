@@ -89,8 +89,14 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           In Package
                         </div>
                       )}
+                      {room.includedEntranceFee?.enabled && (
+                        <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span>{room.includedEntranceFee.adultCount} Adults Free</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
                   
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center justify-between">
@@ -204,8 +210,14 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           In Package
                         </div>
                       )}
+                      {cottage.includedEntranceFee?.enabled && (
+                        <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span>{cottage.includedEntranceFee.adultCount} Adults Free</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
                   
                   <div className="space-y-2 mb-3">
                     {/* Day Rate - Only show if selectedRateType is 'day' and cottage has day rate */}
