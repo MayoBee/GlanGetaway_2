@@ -56,6 +56,11 @@ export type HotelFormData = {
     amenities?: string[];
     imageUrl?: string;
     isConfirmed?: boolean;
+    includedEntranceFee?: {
+      enabled: boolean;
+      adultCount: number;
+      childCount: number;
+    };
   }>;
   cottages?: Array<{
     id: string;
@@ -73,6 +78,11 @@ export type HotelFormData = {
     amenities?: string[];
     imageUrl?: string;
     isConfirmed?: boolean;
+    includedEntranceFee?: {
+      enabled: boolean;
+      adultCount: number;
+      childCount: number;
+    };
   }>;
   // New fields
   contact?: {

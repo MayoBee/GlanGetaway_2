@@ -12,6 +12,11 @@ const RoomSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   amenities: [{ type: String }],
   imageUrl: { type: String, default: '' },
+  includedEntranceFee: {
+    enabled: { type: Boolean, default: false },
+    adultCount: { type: Number, default: 0 },
+    childCount: { type: Number, default: 0 },
+  },
 }, { _id: false });
 
 const CottageSchema = new mongoose.Schema({
@@ -28,6 +33,11 @@ const CottageSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   amenities: [{ type: String }],
   imageUrl: { type: String, default: '' },
+  includedEntranceFee: {
+    enabled: { type: Boolean, default: false },
+    adultCount: { type: Number, default: 0 },
+    childCount: { type: Number, default: 0 },
+  },
 }, { _id: false });
 
 const AmenitySchema = new mongoose.Schema({
