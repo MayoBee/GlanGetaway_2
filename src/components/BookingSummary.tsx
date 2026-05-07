@@ -1,6 +1,7 @@
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../shared/ui/card";
 import { Bed, Home, Star, DollarSign, X } from "lucide-react";
+import IncludedEntranceFeeSummary from "./IncludedEntranceFeeSummary";
 
 const BookingSummary = () => {
   const {
@@ -48,6 +49,9 @@ const BookingSummary = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Included Entrance Fees */}
+        <IncludedEntranceFeeSummary />
+        
         {/* Base Price */}
         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
           <span className="text-gray-700 font-medium">Base Resort Price</span>

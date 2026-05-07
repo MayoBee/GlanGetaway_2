@@ -9,6 +9,11 @@ export interface SelectedRoom {
   maxOccupancy: number;
   units: number;
   description?: string;
+  includedEntranceFee?: {
+    enabled: boolean;
+    adultCount: number;
+    childCount: number;
+  };
 }
 
 export interface SelectedCottage {
@@ -23,6 +28,11 @@ export interface SelectedCottage {
   maxOccupancy: number;
   units: number;
   description?: string;
+  includedEntranceFee?: {
+    enabled: boolean;
+    adultCount: number;
+    childCount: number;
+  };
 }
 
 export interface SelectedAmenity {
@@ -96,6 +106,10 @@ interface BookingSelectionContextType {
     pwdEnabled: boolean;
     pwdPercentage: number;
   } | null;
+  includedEntranceFees: {
+    totalFreeAdults: number;
+    totalFreeChildren: number;
+  };
   addRoom: (room: SelectedRoom) => void;
   removeRoom: (roomId: string) => void;
   addCottage: (cottage: SelectedCottage) => void;
@@ -162,12 +176,44 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     downPayment: number;
     remaining: number;
     discountAmount: number;
+    includedEntranceFees: {
+      totalFreeAdults: number;
+      totalFreeChildren: number;
+    };
   }>({
     total: 0,
     downPayment: 0,
     remaining: 0,
-    discountAmount: 0
+    discountAmount: 0,
+    includedEntranceFees: {
+      totalFreeAdults: 0,
+      totalFreeChildren: 0
+    }
   });
+
+  // Calculate included entrance fees
+  const calculateIncludedEntranceFees = useCallback(() => {
+    let totalFreeAdults = 0;
+    let totalFreeChildren = 0;
+    
+    // Calculate free entrance from rooms
+    selectedRooms.forEach(room => {
+      if (room.includedEntranceFee?.enabled) {
+        totalFreeAdults += room.includedEntranceFee.adultCount * (room.units ?? 1);
+        totalFreeChildren += room.includedEntranceFee.childCount * (room.units ?? 1);
+      }
+    });
+    
+    // Calculate free entrance from cottages
+    selectedCottages.forEach(cottage => {
+      if (cottage.includedEntranceFee?.enabled) {
+        totalFreeAdults += cottage.includedEntranceFee.adultCount * (cottage.units ?? 1);
+        totalFreeChildren += cottage.includedEntranceFee.childCount * (cottage.units ?? 1);
+      }
+    });
+    
+    return { totalFreeAdults, totalFreeChildren };
+  }, [selectedRooms, selectedCottages]);
 
   // Trigger recalculation when dependencies change
   const calculateTotal = useCallback(() => {
@@ -182,6 +228,9 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
     let total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
+    
+    // Calculate included entrance fees for display
+    const { totalFreeAdults, totalFreeChildren } = calculateIncludedEntranceFees();
     let discountAmount = 0;
     
     // Apply discount if applicable
@@ -204,9 +253,13 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
       total,
       downPayment,
       remaining,
-      discountAmount
+      discountAmount,
+      includedEntranceFees: {
+        totalFreeAdults,
+        totalFreeChildren
+      }
     };
-  }, [selectedRooms, selectedCottages, selectedAmenities, selectedPackages, basePrice, numberOfNights, depositPercentage, selectedRateType, discountInfo, hotelDiscounts]);
+  }, [selectedRooms, selectedCottages, selectedAmenities, selectedPackages, basePrice, numberOfNights, depositPercentage, selectedRateType, discountInfo, hotelDiscounts, calculateIncludedEntranceFees]);
 
   useEffect(() => {
     const result = calculateTotal();
@@ -349,6 +402,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     selectedRateType,
     discountInfo,
     hotelDiscounts,
+    includedEntranceFees: calculatedTotals.includedEntranceFees,
     addRoom,
     removeRoom,
     addCottage,
