@@ -89,12 +89,15 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           In Package
                         </div>
                       )}
-                      {room.includedEntranceFee?.enabled && (
-                        <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span>{room.includedEntranceFee.adultCount} Adults Free</span>
-                        </div>
-                      )}
+                      {(() => {
+                        console.log('🔍 Room Debug:', room.name, room.includedEntranceFee);
+                        return room.includedEntranceFee?.enabled && (
+                          <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{room.includedEntranceFee.adultCount} Adults Free</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   
@@ -211,12 +214,15 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           In Package
                         </div>
                       )}
-                      {cottage.includedEntranceFee?.enabled && (
-                        <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span>{cottage.includedEntranceFee.adultCount} Adults Free</span>
-                        </div>
-                      )}
+                      {(() => {
+                        console.log('🔍 Cottage Debug:', cottage.name, cottage.includedEntranceFee);
+                        return cottage.includedEntranceFee?.enabled && (
+                          <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{cottage.includedEntranceFee.adultCount} Adults Free</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   
