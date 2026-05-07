@@ -244,25 +244,37 @@ const EditHotel = () => {
           });
         }
       } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
-        // Handle nested objects with images
+        // Handle nested objects with images - send as JSON to preserve nested structure
         if (Array.isArray(value)) {
+          // Extract image files separately, but send the main data as JSON
           value.forEach((item: any, itemIndex: number) => {
-            Object.keys(item).forEach(itemKey => {
-              const itemValue = item[itemKey];
-              if (itemKey === 'imageUrl' && itemValue && itemValue.startsWith('data:')) {
-                // Convert data URL to file if needed
-                // For now, just add data URL as string
-                formData.append(`${key}[${itemIndex}][${itemKey}]`, itemValue);
-              } else if (Array.isArray(itemValue)) {
-                // Handle nested arrays (like amenities)
-                itemValue.forEach((arrayItem: any, arrayIndex: number) => {
-                  formData.append(`${key}[${itemIndex}][${itemKey}][${arrayIndex}]`, arrayItem);
-                });
-              } else {
-                formData.append(`${key}[${itemIndex}][${itemKey}]`, itemValue);
+            if (item.imageUrl && item.imageUrl.startsWith('data:')) {
+              // Convert data URL to file and append separately
+              const dataUrl = item.imageUrl;
+              const base64Data = dataUrl.split(',')[1];
+              const mimeType = dataUrl.split(':')[1].split(';')[0];
+              
+              try {
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: mimeType });
+                const file = new File([blob], `${key}_${itemIndex}_${Date.now()}.jpg`, { type: mimeType });
+                
+                formData.append(`${key}Files`, file);
+                console.log(`Added ${key} file for ${key} ${itemIndex}:`, file.name);
+              } catch (error) {
+                console.error(`Error converting ${key} ${itemIndex} image to file:`, error);
               }
-            });
+            }
           });
+          
+          // Send the entire array as JSON to preserve nested structure
+          formData.append(key, JSON.stringify(value));
+          console.log(`Added ${key} as JSON string to preserve nested structure`);
         }
       } else if (key === 'policies' && typeof value === 'object') {
         console.log("=== POLICIES HANDLING ===");
