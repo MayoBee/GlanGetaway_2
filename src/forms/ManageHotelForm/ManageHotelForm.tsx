@@ -35,6 +35,7 @@ export type HotelFormData = {
   facilities: string[];
   imageFiles?: FileList;
   imageUrls: string[];
+  includeFreeEntranceFees?: boolean;
   amenities?: Array<{
     id: string;
     name: string;
