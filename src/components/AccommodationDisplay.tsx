@@ -90,7 +90,13 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                         </div>
                       )}
                       {(() => {
-                        console.log('🔍 Room Debug:', room.name, room.includedEntranceFee);
+                        console.log('🔍 Room Debug:', room.name, {
+                          includedEntranceFee: room.includedEntranceFee,
+                          hasIncludedEntranceFee: !!room.includedEntranceFee,
+                          isEnabled: room.includedEntranceFee?.enabled,
+                          adultCount: room.includedEntranceFee?.adultCount,
+                          fullRoomData: room
+                        });
                         return room.includedEntranceFee?.enabled && (
                           <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Users className="w-3 h-3" />
@@ -215,7 +221,13 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                         </div>
                       )}
                       {(() => {
-                        console.log('🔍 Cottage Debug:', cottage.name, cottage.includedEntranceFee);
+                        console.log('🔍 Cottage Debug:', cottage.name, {
+                          includedEntranceFee: cottage.includedEntranceFee,
+                          hasIncludedEntranceFee: !!cottage.includedEntranceFee,
+                          isEnabled: cottage.includedEntranceFee?.enabled,
+                          adultCount: cottage.includedEntranceFee?.adultCount,
+                          fullCottageData: cottage
+                        });
                         return cottage.includedEntranceFee?.enabled && (
                           <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Users className="w-3 h-3" />
