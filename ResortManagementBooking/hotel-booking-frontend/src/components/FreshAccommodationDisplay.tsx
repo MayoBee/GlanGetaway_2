@@ -392,11 +392,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                       <span>{room.minOccupancy} - {room.maxOccupancy} people</span>
                     </div>
 
-                    {/* Debug: Always show entrance fee status */}
-                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
-                      DEBUG: Entrance Fee - enabled: {String(room.includedEntranceFee?.enabled)}, adults: {room.includedEntranceFee?.adultCount || 0}, children: {room.includedEntranceFee?.childCount || 0}
-                    </div>
-
+                    
                     {/* Free Entrance Included Indicator */}
                     {room.includedEntranceFee?.enabled && (
                       <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
@@ -609,11 +605,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                       <span>{cottage.minOccupancy} - {cottage.maxOccupancy} people</span>
                     </div>
 
-                    {/* Debug: Always show entrance fee status */}
-                    <div className="text-xs bg-yellow-100 p-2 rounded mb-2">
-                      DEBUG: Entrance Fee - enabled: {String(cottage.includedEntranceFee?.enabled)}, adults: {cottage.includedEntranceFee?.adultCount || 0}, children: {cottage.includedEntranceFee?.childCount || 0}
-                    </div>
-
+                    
                     {/* Free Entrance Included Indicator */}
                     {cottage.includedEntranceFee?.enabled && (
                       <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
