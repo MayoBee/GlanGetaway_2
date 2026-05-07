@@ -69,9 +69,16 @@ const SmartImage: React.FC<SmartImageProps> = ({
     const apiBaseUrl = getApiBaseUrl();
     
     const processedSources = sourcesArray.map((source, index) => {
-      if (!isValidImageUrl(source)) {
+      // Skip empty or invalid sources early
+      if (!source || source.trim() === '') {
         logImageEvent('EMPTY_SOURCE', { index, message: 'Empty or invalid source encountered', source });
-        return null; // Return null instead of empty string to filter it out
+        return null;
+      }
+      
+      // Use isValidImageUrl for validation
+      if (!isValidImageUrl(source)) {
+        logImageEvent('INVALID_IMAGE_URL', { index, message: 'Invalid image URL format', source });
+        return null;
       }
       
       try {
@@ -105,7 +112,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
           index, 
           error: e instanceof Error ? e.message : 'Unknown error' 
         });
-        return null; // Return null instead of empty string to filter it out
+        return null;
       }
     }).filter((source): source is string => source !== null);
     
@@ -149,6 +156,12 @@ const SmartImage: React.FC<SmartImageProps> = ({
       }
 
       const source = sources[sourceIndex];
+      if (!source || source.trim() === '') {
+        logImageEvent('EMPTY_SOURCE_IN_LIST', { sourceIndex, source });
+        tryNextSource(sourceIndex + 1, 0);
+        return;
+      }
+
       setCurrentSrc(source);
       setIsLoading(true);
       setHasError(false);

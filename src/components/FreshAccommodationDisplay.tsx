@@ -1,7 +1,8 @@
 // Deployment trigger: Updated frontend URL to https://glan-getaway-2-git-015-mayobees-projects.vercel.app
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "../shared/types";
 import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
+import SmartImage from "./SmartImage";
 
 type Props = {
   hotel: HotelType;
@@ -118,10 +119,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Package Image */}
                     {pkg.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={pkg.imageUrl}
                           alt={pkg.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Package Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -325,10 +328,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Room Image */}
                     {room.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={room.imageUrl}
                           alt={room.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Room Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -554,10 +559,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Cottage Image */}
                     {cottage.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={cottage.imageUrl}
                           alt={cottage.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Cottage Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -737,10 +744,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                   {/* Amenity Image */}
                   {amenity.imageUrl && (
                     <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden mb-3">
-                      <img
+                      <SmartImage
                         src={amenity.imageUrl}
                         alt={amenity.name}
                         className="w-full h-full object-cover"
+                        fallbackText="No Amenity Image"
+                        showLoading={true}
                       />
                     </div>
                   )}
