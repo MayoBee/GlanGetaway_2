@@ -1,5 +1,5 @@
 import { HotelType } from "../../../shared/types";
-import { Bed, Home, Users, DollarSign, Plus } from "lucide-react";
+import { Bed, Home, Users, DollarSign, Plus, Ticket } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 
 type Props = {
@@ -109,6 +109,20 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                         {room.minOccupancy} - {room.maxOccupancy} people
                       </span>
                     </div>
+
+                    {room.includedEntranceFee?.enabled && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2">
+                        <Ticket className="w-4 h-4 text-green-600" />
+                        <div className="text-sm">
+                          <span className="font-semibold text-green-700">Free Entrance Included</span>
+                          <div className="text-xs text-green-600">
+                            {room.includedEntranceFee.adultCount > 0 && `${room.includedEntranceFee.adultCount} adult${room.includedEntranceFee.adultCount > 1 ? 's' : ''}`}
+                            {room.includedEntranceFee.adultCount > 0 && room.includedEntranceFee.childCount > 0 && ', '}
+                            {room.includedEntranceFee.childCount > 0 && `${room.includedEntranceFee.childCount} child${room.includedEntranceFee.childCount > 1 ? 'ren' : ''}`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {numberOfNights > 1 && (
                       <div className="text-sm text-blue-600 font-medium">
@@ -257,6 +271,20 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                         {cottage.minOccupancy} - {cottage.maxOccupancy} people
                       </span>
                     </div>
+
+                    {cottage.includedEntranceFee?.enabled && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded px-3 py-2">
+                        <Ticket className="w-4 h-4 text-green-600" />
+                        <div className="text-sm">
+                          <span className="font-semibold text-green-700">Free Entrance Included</span>
+                          <div className="text-xs text-green-600">
+                            {cottage.includedEntranceFee.adultCount > 0 && `${cottage.includedEntranceFee.adultCount} adult${cottage.includedEntranceFee.adultCount > 1 ? 's' : ''}`}
+                            {cottage.includedEntranceFee.adultCount > 0 && cottage.includedEntranceFee.childCount > 0 && ', '}
+                            {cottage.includedEntranceFee.childCount > 0 && `${cottage.includedEntranceFee.childCount} child${cottage.includedEntranceFee.childCount > 1 ? 'ren' : ''}`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Total calculation based on selected rate */}
                     {numberOfNights > 1 && ((selectedRateType === 'day' && cottage.dayRate) || (selectedRateType === 'night' && cottage.nightRate)) && (
