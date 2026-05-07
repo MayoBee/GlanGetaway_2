@@ -630,6 +630,23 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     
     console.log('Final imageUrls to be sent:', finalImageUrls);
 
+    // Clean up amenities arrays - remove "Free entrance" entries if not enabled
+    const cleanedRooms = formDataJson.rooms?.map(room => ({
+      ...room,
+      amenities: room.amenities?.filter(amenity =>
+        !amenity.toLowerCase().includes('free entrance') ||
+        (room.includedEntranceFee?.enabled && amenity.toLowerCase().includes('free entrance'))
+      ) || []
+    }));
+
+    const cleanedCottages = formDataJson.cottages?.map(cottage => ({
+      ...cottage,
+      amenities: cottage.amenities?.filter(amenity =>
+        !amenity.toLowerCase().includes('free entrance') ||
+        (cottage.includedEntranceFee?.enabled && amenity.toLowerCase().includes('free entrance'))
+      ) || []
+    }));
+
     // Convert units from strings to numbers for cottages and amenities
     const processedData = {
       ...formDataJson,
@@ -639,12 +656,12 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         ...amenity,
         units: parseInt(String(amenity.units)) || 1
       })),
-      cottages: formDataJson.cottages?.map(cottage => ({
+      cottages: cleanedCottages?.map(cottage => ({
         ...cottage,
         units: parseInt(String(cottage.units)) || 1
       })),
       // Rooms units are already numbers, but ensure consistency
-      rooms: formDataJson.rooms?.map(room => ({
+      rooms: cleanedRooms?.map(room => ({
         ...room,
         units: parseInt(String(room.units)) || 1
       }))

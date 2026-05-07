@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchMyHotelById, updateMyHotelById } from "../api-client";
 import ManageHotelForm from "../forms/ManageHotelForm/ManageHotelForm";
@@ -8,6 +8,7 @@ const EditHotel = () => {
   const { hotelId } = useParams();
   const { showToast } = useAppContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   console.log("EditHotel - hotelId:", hotelId);
   console.log("EditHotel - current URL:", window.location.href);
@@ -22,6 +23,10 @@ const EditHotel = () => {
 
   const { mutate, isLoading } = useMutation(updateMyHotelById, {
     onSuccess: () => {
+      // Invalidate hotel queries to ensure fresh data
+      queryClient.invalidateQueries("fetchMyHotelById");
+      queryClient.invalidateQueries("fetchHotelById");
+
       showToast({
         title: "Resort Updated Successfully",
         description:

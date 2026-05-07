@@ -364,15 +364,15 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                             🎫 Free Entrance Included
                           </span>
                         </div>
-                        <div className="text-xs text-blue-700 mt-1">
-                          {room.includedEntranceFee.adultCount > 0 && (
-                            <span>• {room.includedEntranceFee.adultCount} adult{room.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
-                          )}
-                          {(room.includedEntranceFee.adultCount > 0 && room.includedEntranceFee.childCount > 0) && ' • '}
-                          {room.includedEntranceFee.childCount > 0 && (
-                            <span>{room.includedEntranceFee.childCount} child{room.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
-                          )}
-                        </div>
+                         <div className="text-xs text-blue-700 mt-1">
+                           {room.includedEntranceFee.adultCount > 0 && (
+                             <span>• {room.includedEntranceFee.adultCount} adult{room.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
+                           )}
+                           {(room.includedEntranceFee.adultCount > 0 && room.includedEntranceFee.childCount > 0) && ' • '}
+                           {room.includedEntranceFee.childCount > 0 && (
+                             <span>{room.includedEntranceFee.childCount} child{room.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
+                           )}
+                         </div>
                       </div>
                     )}
 
@@ -581,15 +581,15 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                             🎫 Free Entrance Included
                           </span>
                         </div>
-                        <div className="text-xs text-green-700 mt-1">
-                          {cottage.includedEntranceFee.adultCount > 0 && (
-                            <span>• {cottage.includedEntranceFee.adultCount} adult{cottage.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
-                          )}
-                          {(cottage.includedEntranceFee.adultCount > 0 && cottage.includedEntranceFee.childCount > 0) && ' • '}
-                          {cottage.includedEntranceFee.childCount > 0 && (
-                            <span>{cottage.includedEntranceFee.childCount} child{cottage.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
-                          )}
-                        </div>
+                         <div className="text-xs text-green-700 mt-1">
+                           {cottage.includedEntranceFee.adultCount > 0 && (
+                             <span>• {cottage.includedEntranceFee.adultCount} adult{cottage.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
+                           )}
+                           {(cottage.includedEntranceFee.adultCount > 0 && cottage.includedEntranceFee.childCount > 0) && ' • '}
+                           {cottage.includedEntranceFee.childCount > 0 && (
+                             <span>{cottage.includedEntranceFee.childCount} child{cottage.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
+                           )}
+                         </div>
                       </div>
                     )}
 
