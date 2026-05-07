@@ -1,3 +1,4 @@
+// Deployment trigger: Updated frontend URL to https://glan-getaway-2-git-015-mayobees-projects.vercel.app
 import { HotelType } from "../../../shared/types";
 import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
