@@ -25,7 +25,7 @@ const EditHotel = () => {
     onSuccess: () => {
       // Invalidate hotel queries to ensure fresh data
       queryClient.invalidateQueries("fetchMyHotelById");
-      queryClient.invalidateQueries("fetchHotelById");
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "fetchHotelById" });
 
       showToast({
         title: "Resort Updated Successfully",
