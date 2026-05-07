@@ -97,10 +97,17 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           adultCount: room.includedEntranceFee?.adultCount,
                           fullRoomData: room
                         });
-                        return room.includedEntranceFee?.enabled && (
+                        
+                        // Simple test - always show for now to verify it works
+                        const hasEntranceFee = room.includedEntranceFee?.enabled === true;
+                        const adultCount = room.includedEntranceFee?.adultCount || 0;
+                        
+                        console.log('🔍 Room Test:', room.name, 'hasEntranceFee:', hasEntranceFee, 'adultCount:', adultCount);
+                        
+                        return hasEntranceFee && (
                           <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            <span>{room.includedEntranceFee.adultCount} Adults Free</span>
+                            <span>{adultCount} Adults Free</span>
                           </div>
                         );
                       })()}
@@ -228,10 +235,17 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                           adultCount: cottage.includedEntranceFee?.adultCount,
                           fullCottageData: cottage
                         });
-                        return cottage.includedEntranceFee?.enabled && (
+                        
+                        // Simple test - always show for now to verify it works
+                        const hasEntranceFee = cottage.includedEntranceFee?.enabled === true;
+                        const adultCount = cottage.includedEntranceFee?.adultCount || 0;
+                        
+                        console.log('🔍 Cottage Test:', cottage.name, 'hasEntranceFee:', hasEntranceFee, 'adultCount:', adultCount);
+                        
+                        return hasEntranceFee && (
                           <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            <span>{cottage.includedEntranceFee.adultCount} Adults Free</span>
+                            <span>{adultCount} Adults Free</span>
                           </div>
                         );
                       })()}
