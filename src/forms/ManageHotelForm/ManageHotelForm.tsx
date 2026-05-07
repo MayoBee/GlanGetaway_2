@@ -14,7 +14,7 @@ import ImagesSection from "./ImagesSection";
 import PaymentModuleSection from "./PaymentModuleSection";
 import DiscountsSection from "./DiscountsSection";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
-import { HotelType } from "../../../../shared/types";
+import { HotelType } from "../../shared/types";
 
 export type HotelFormData = {
   name: string;
@@ -35,7 +35,6 @@ export type HotelFormData = {
   facilities: string[];
   imageFiles?: FileList;
   imageUrls: string[];
-  includeFreeEntranceFees?: boolean;
   amenities?: Array<{
     id: string;
     name: string;
@@ -498,7 +497,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     if (formDataJson.contact) {
       if (!formDataJson.contact.phone || formDataJson.contact.phone.trim() === '') {
         validationErrors.push('Contact phone number is required');
-      } else if (!/^[\d\s\-\+\(\)]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
+      } else if (!/^[\d\s\-+()]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
         validationErrors.push('Please enter a valid phone number (at least 7 digits)');
       }
       if (!formDataJson.contact.email || formDataJson.contact.email.trim() === '') {

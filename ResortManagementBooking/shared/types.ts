@@ -160,11 +160,6 @@ export type HotelType = {
     description?: string;
     amenities?: string[];
     isConfirmed?: boolean;
-    includedEntranceFee?: {
-      enabled: boolean;
-      adultCount: number;
-      childCount: number;
-    };
   }>;
   cottages?: Array<{
     id: string;
@@ -180,11 +175,6 @@ export type HotelType = {
     description?: string;
     amenities?: string[];
     isConfirmed?: boolean;
-    includedEntranceFee?: {
-      enabled: boolean;
-      adultCount: number;
-      childCount: number;
-    };
   }>;
   totalBookings?: number;
   totalRevenue?: number;

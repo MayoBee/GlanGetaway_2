@@ -117,7 +117,7 @@ export const validationRules = {
 
   phone: (message = 'Please enter a valid phone number'): ValidationRule => ({
     validate: (value) => {
-      const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+      const phoneRegex = /^[\d\s\-+()]+$/;
       return !value || (phoneRegex.test(value) && value.replace(/\D/g, '').length >= 10);
     },
     message,

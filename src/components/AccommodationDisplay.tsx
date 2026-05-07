@@ -84,33 +84,16 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                       <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
                         {room.type}
                       </span>
+                      {room.includedEntranceFee?.enabled && (
+                        <div className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                          Free Entrance Included
+                        </div>
+                      )}
                       {isInPackage && !isSelected && (
                         <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
                           In Package
                         </div>
                       )}
-                      {(() => {
-                        console.log('🔍 Room Debug:', room.name, {
-                          includedEntranceFee: room.includedEntranceFee,
-                          hasIncludedEntranceFee: !!room.includedEntranceFee,
-                          isEnabled: room.includedEntranceFee?.enabled,
-                          adultCount: room.includedEntranceFee?.adultCount,
-                          fullRoomData: room
-                        });
-                        
-                        // Simple test - always show for now to verify it works
-                        const hasEntranceFee = room.includedEntranceFee?.enabled === true;
-                        const adultCount = room.includedEntranceFee?.adultCount || 0;
-                        
-                        console.log('🔍 Room Test:', room.name, 'hasEntranceFee:', hasEntranceFee, 'adultCount:', adultCount);
-                        
-                        return hasEntranceFee && (
-                          <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            <span>{adultCount} Adults Free</span>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
                   
@@ -166,8 +149,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                             pricePerNight: room.pricePerNight,
                             maxOccupancy: room.maxOccupancy,
                             units: 1,
-                            description: room.description,
-                            includedEntranceFee: room.includedEntranceFee
+                            description: room.description
                           });
                         }
                       }
@@ -222,33 +204,16 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                       <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
                         {cottage.type}
                       </span>
+                      {cottage.includedEntranceFee?.enabled && (
+                        <div className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                          Free Entrance Included
+                        </div>
+                      )}
                       {isInPackage && !isSelected && (
                         <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
                           In Package
                         </div>
                       )}
-                      {(() => {
-                        console.log('🔍 Cottage Debug:', cottage.name, {
-                          includedEntranceFee: cottage.includedEntranceFee,
-                          hasIncludedEntranceFee: !!cottage.includedEntranceFee,
-                          isEnabled: cottage.includedEntranceFee?.enabled,
-                          adultCount: cottage.includedEntranceFee?.adultCount,
-                          fullCottageData: cottage
-                        });
-                        
-                        // Simple test - always show for now to verify it works
-                        const hasEntranceFee = cottage.includedEntranceFee?.enabled === true;
-                        const adultCount = cottage.includedEntranceFee?.adultCount || 0;
-                        
-                        console.log('🔍 Cottage Test:', cottage.name, 'hasEntranceFee:', hasEntranceFee, 'adultCount:', adultCount);
-                        
-                        return hasEntranceFee && (
-                          <div className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            <span>{adultCount} Adults Free</span>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </div>
                   
@@ -342,8 +307,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                             hasNightRate: cottage.hasNightRate,
                             maxOccupancy: cottage.maxOccupancy,
                             units: 1,
-                            description: cottage.description,
-                            includedEntranceFee: cottage.includedEntranceFee
+                            description: cottage.description
                           });
                         }
                       }
