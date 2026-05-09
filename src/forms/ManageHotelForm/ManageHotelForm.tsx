@@ -14,7 +14,7 @@ import ImagesSection from "./ImagesSection";
 import PaymentModuleSection from "./PaymentModuleSection";
 import DiscountsSection from "./DiscountsSection";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
-import { HotelType } from "../../../../shared/types";
+import { HotelType } from "../../shared/types";
 
 export type HotelFormData = {
   name: string;
@@ -56,6 +56,11 @@ export type HotelFormData = {
     amenities?: string[];
     imageUrl?: string;
     isConfirmed?: boolean;
+    includedEntranceFee?: {
+      enabled: boolean;
+      adultCount: number;
+      childCount: number;
+    };
   }>;
   cottages?: Array<{
     id: string;
@@ -73,6 +78,11 @@ export type HotelFormData = {
     amenities?: string[];
     imageUrl?: string;
     isConfirmed?: boolean;
+    includedEntranceFee?: {
+      enabled: boolean;
+      adultCount: number;
+      childCount: number;
+    };
   }>;
   // New fields
   contact?: {
@@ -487,7 +497,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     if (formDataJson.contact) {
       if (!formDataJson.contact.phone || formDataJson.contact.phone.trim() === '') {
         validationErrors.push('Contact phone number is required');
-      } else if (!/^[\d\s\-\+\(\)]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
+      } else if (!/^[\d\s\-+()]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
         validationErrors.push('Please enter a valid phone number (at least 7 digits)');
       }
       if (!formDataJson.contact.email || formDataJson.contact.email.trim() === '') {
@@ -620,6 +630,34 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     
     console.log('Final imageUrls to be sent:', finalImageUrls);
 
+    // Debug includedEntranceFee data before processing
+    console.log('=== INCLUDED ENTRANCE FEE DEBUG ===');
+    formDataJson.rooms?.forEach((room, index) => {
+      console.log(`Room ${index} (${room.name}):`, {
+        includedEntranceFee: room.includedEntranceFee,
+        enabled: room.includedEntranceFee?.enabled,
+        adultCount: room.includedEntranceFee?.adultCount,
+        childCount: room.includedEntranceFee?.childCount
+      });
+    });
+
+    // Clean up amenities arrays - remove "Free entrance" entries if not enabled
+    const cleanedRooms = formDataJson.rooms?.map(room => ({
+      ...room,
+      amenities: room.amenities?.filter(amenity =>
+        !amenity.toLowerCase().includes('free entrance') ||
+        (room.includedEntranceFee?.enabled && amenity.toLowerCase().includes('free entrance'))
+      ) || []
+    }));
+
+    const cleanedCottages = formDataJson.cottages?.map(cottage => ({
+      ...cottage,
+      amenities: cottage.amenities?.filter(amenity =>
+        !amenity.toLowerCase().includes('free entrance') ||
+        (cottage.includedEntranceFee?.enabled && amenity.toLowerCase().includes('free entrance'))
+      ) || []
+    }));
+
     // Convert units from strings to numbers for cottages and amenities
     const processedData = {
       ...formDataJson,
@@ -629,12 +667,12 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         ...amenity,
         units: parseInt(String(amenity.units)) || 1
       })),
-      cottages: formDataJson.cottages?.map(cottage => ({
+      cottages: cleanedCottages?.map(cottage => ({
         ...cottage,
         units: parseInt(String(cottage.units)) || 1
       })),
       // Rooms units are already numbers, but ensure consistency
-      rooms: formDataJson.rooms?.map(room => ({
+      rooms: cleanedRooms?.map(room => ({
         ...room,
         units: parseInt(String(room.units)) || 1
       }))
@@ -675,6 +713,17 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('Rooms being sent:', processedData.rooms);
     console.log('Cottages being sent:', processedData.cottages);
     console.log('Packages being sent:', processedData.packages);
+
+    // Debug final includedEntranceFee data being sent
+    console.log('=== FINAL INCLUDED ENTRANCE FEE DATA BEING SENT ===');
+    processedData.rooms?.forEach((room, index) => {
+      console.log(`Final Room ${index} (${room.name}):`, {
+        includedEntranceFee: room.includedEntranceFee,
+        enabled: room.includedEntranceFee?.enabled,
+        adultCount: room.includedEntranceFee?.adultCount,
+        childCount: room.includedEntranceFee?.childCount
+      });
+    });
 
     // Reset manual submit flag
     setIsManualSubmit(false);

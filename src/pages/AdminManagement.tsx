@@ -75,8 +75,8 @@ const AdminManagement = () => {
     // Extract just the filename from the full path
     const justFilename = filename.split('/').pop() || filename;
     
-    // Use the backend URL from environment variable
-    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    // Use backend URL from environment variable
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://glangetaway-2-1.onrender.com';
     const documentUrl = `${backendUrl}/uploads/${justFilename}`;
     
     console.log('=== DOCUMENT VIEW DEBUG ===');

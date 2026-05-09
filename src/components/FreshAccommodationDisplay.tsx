@@ -1,6 +1,8 @@
-import { HotelType } from "../../../shared/types";
+// Deployment trigger: Updated frontend URL to https://glan-getaway-2-git-015-mayobees-projects.vercel.app
+import { HotelType } from "../shared/types";
 import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
+import SmartImage from "./SmartImage";
 
 type Props = {
   hotel: HotelType;
@@ -51,24 +53,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     hasNightRate: cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0)
   }));
   
-  // TEMPORARY: Add test data to debug display issue
-  const testCottages = [
-    {
-      id: "test-1",
-      name: "Test Cottage",
-      type: "Beach Villa",
-      hasDayRate: true,
-      hasNightRate: true,
-      dayRate: 100,
-      nightRate: 200,
-      minOccupancy: 1,
-      maxOccupancy: 3,
-      description: "Test cottage for debugging"
-    }
-  ];
-  
   // Use fixed cottages data
-  const cottagesToDisplay = fixedCottages.length > 0 ? fixedCottages : testCottages;
+  const cottagesToDisplay = fixedCottages;
   
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;
@@ -133,10 +119,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Package Image */}
                     {pkg.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={pkg.imageUrl}
                           alt={pkg.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Package Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -340,10 +328,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Room Image */}
                     {room.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={room.imageUrl}
                           alt={room.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Room Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -369,6 +359,34 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Description */}
                     {room.description && (
                       <p className="text-sm text-gray-600">{room.description}</p>
+                    )}
+
+                    {/* Free Entrance Fee Display */}
+                    {(() => {
+                      console.log(`=== ROOM ENTRANCE FEE DEBUG ===`);
+                      console.log(`Room: ${room.name}`);
+                      console.log(`includedEntranceFee:`, room.includedEntranceFee);
+                      console.log(`enabled:`, room.includedEntranceFee?.enabled);
+                      console.log(`adultCount:`, room.includedEntranceFee?.adultCount);
+                      console.log(`childCount:`, room.includedEntranceFee?.childCount);
+                      return room.includedEntranceFee?.enabled;
+                    })() && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                            🎫 Free Entrance Included
+                          </span>
+                        </div>
+                         <div className="text-xs text-blue-700 mt-1">
+                           {room.includedEntranceFee.adultCount > 0 && (
+                             <span>• {room.includedEntranceFee.adultCount} adult{room.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
+                           )}
+                           {(room.includedEntranceFee.adultCount > 0 && room.includedEntranceFee.childCount > 0) && ' • '}
+                           {room.includedEntranceFee.childCount > 0 && (
+                             <span>{room.includedEntranceFee.childCount} child{room.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
+                           )}
+                         </div>
+                      </div>
                     )}
 
                     {/* Unit Selection */}
@@ -541,10 +559,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Cottage Image */}
                     {cottage.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
+                        <SmartImage
                           src={cottage.imageUrl}
                           alt={cottage.name}
                           className="w-full h-full object-cover"
+                          fallbackText="No Cottage Image"
+                          showLoading={true}
                         />
                       </div>
                     )}
@@ -566,6 +586,26 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Description */}
                     {cottage.description && (
                       <p className="text-sm text-gray-600">{cottage.description}</p>
+                    )}
+
+                    {/* Free Entrance Fee Display */}
+                    {cottage.includedEntranceFee?.enabled && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                            🎫 Free Entrance Included
+                          </span>
+                        </div>
+                         <div className="text-xs text-green-700 mt-1">
+                           {cottage.includedEntranceFee.adultCount > 0 && (
+                             <span>• {cottage.includedEntranceFee.adultCount} adult{cottage.includedEntranceFee.adultCount > 1 ? 's' : ''} free</span>
+                           )}
+                           {(cottage.includedEntranceFee.adultCount > 0 && cottage.includedEntranceFee.childCount > 0) && ' • '}
+                           {cottage.includedEntranceFee.childCount > 0 && (
+                             <span>{cottage.includedEntranceFee.childCount} child{cottage.includedEntranceFee.childCount > 1 ? 'ren' : ''} free</span>
+                           )}
+                         </div>
+                      </div>
                     )}
 
                     {/* Rate Display */}
@@ -704,10 +744,12 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                   {/* Amenity Image */}
                   {amenity.imageUrl && (
                     <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden mb-3">
-                      <img
+                      <SmartImage
                         src={amenity.imageUrl}
                         alt={amenity.name}
                         className="w-full h-full object-cover"
+                        fallbackText="No Amenity Image"
+                        showLoading={true}
                       />
                     </div>
                   )}

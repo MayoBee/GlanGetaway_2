@@ -258,7 +258,7 @@ router.post(
       }
 
       // Use lean() for faster query - only fetch needed fields including rooms
-      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities').lean();
+      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities rooms.includedEntranceFee cottages.includedEntranceFee').lean();
       if (!hotel) {
         return res.status(400).json({ message: "Hotel not found" });
       }

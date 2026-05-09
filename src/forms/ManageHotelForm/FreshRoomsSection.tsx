@@ -3,6 +3,7 @@ import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Bed, Check, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import ImageUpload from "../../components/ImageUpload";
+import IncludedEntranceFeeField from "../../components/IncludedEntranceFeeField";
 
 const FreshRoomsSection = () => {
   const { control } = useFormContext<HotelFormData>();
@@ -30,6 +31,11 @@ const FreshRoomsSection = () => {
       amenities: [],
       imageUrl: "",
       isConfirmed: false,
+      includedEntranceFee: {
+        enabled: false,
+        adultCount: 0,
+        childCount: 0,
+      },
     });
   };
 
@@ -275,6 +281,15 @@ const FreshRoomsSection = () => {
                   rows={3}
                   placeholder="Describe the room features, view, amenities..."
                   className="w-full border rounded px-3 py-2 font-normal resize-none"
+                />
+              </div>
+
+              {/* Included Entrance Fee */}
+              <div className="mt-4">
+                <IncludedEntranceFeeField
+                  accommodationType="room"
+                  index={index}
+                  fieldName="rooms"
                 />
               </div>
 

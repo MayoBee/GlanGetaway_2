@@ -294,4 +294,10 @@ router.get("/business-stats", verifyToken, async (req: Request, res: Response) =
   }
 });
 
+// Import the edit hotel form route
+import editHotelFormRouter from './edit-hotel-form';
+
+// Mount the edit hotel form router
+router.use('/edit-hotel', editHotelFormRouter);
+
 export default router;

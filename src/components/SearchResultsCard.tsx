@@ -16,6 +16,7 @@ import {
   Building,
 } from "lucide-react";
 import { Badge } from "../shared/ui/badge";
+import SmartImage from "./SmartImage";
 import ReportButton from "./ReportButton";
 
 type Props = {
@@ -43,9 +44,12 @@ const SearchResultsCard = ({ hotel }: Props) => {
       <div className="grid grid-cols-1 xl:grid-cols-[2fr_3fr] gap-0 w-full h-full">
         {/* Image Section */}
         <div className="relative overflow-hidden h-64 xl:h-[500px]">
-          <img
-            src={hotel.imageUrls[0]}
+          <SmartImage
+            src={hotel.imageUrls && hotel.imageUrls.length > 0 ? hotel.imageUrls[0] : ''}
+            alt={hotel.name}
             className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            fallbackText="No Image Available"
+            showLoading={true}
           />
 
           {/* Overlay Badges */}
