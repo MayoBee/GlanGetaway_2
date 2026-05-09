@@ -51,65 +51,92 @@ const SmartImage: React.FC<SmartImageProps> = ({
   // Process image sources with enhanced validation
   const processImageSources = useCallback((sources: string | string[] | undefined): string[] => {
     let sourcesArray: string[] = [];
-    
+
     if (sources) {
       sourcesArray = Array.isArray(sources) ? sources : [sources];
     }
-    
-    // Add fallback image as last resort if provided
-    if (fallbackImageUrl && !sourcesArray.includes(fallbackImageUrl)) {
+
+    // Filter out invalid sources early
+    sourcesArray = sourcesArray.filter(source => {
+      const isValid = isValidImageUrl(source);
+      if (!isValid) {
+        logImageEvent('EMPTY_SOURCE', { message: 'Empty or invalid source encountered', source });
+      }
+      return isValid;
+    });
+
+    // Add fallback image as last resort if provided and we have no valid sources
+    if (sourcesArray.length === 0 && fallbackImageUrl) {
       sourcesArray.push(fallbackImageUrl);
     }
-    
+
     const apiBaseUrl = getApiBaseUrl();
-    
+
     const processedSources = sourcesArray.map((source, index) => {
-      if (!isValidImageUrl(source)) {
-        logImageEvent('EMPTY_SOURCE', { index, message: 'Empty or invalid source encountered', source });
-        return null; // Return null instead of empty string to filter it out
+      if (!source || source.trim() === '') {
+        return null;
       }
-      
+
       try {
         // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
         const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
-        
+
         if (isAbsoluteUrl) {
           const url = new URL(source);
-          
-          // Fix port issues by using current API base URL for localhost absolute URLs
-          if (url.hostname === 'localhost') {
-            // Construct new URL with correct port from API base URL
-            const apiUrl = new URL(apiBaseUrl);
-            url.port = apiUrl.port;
-            url.hostname = apiUrl.hostname;
-            url.protocol = apiUrl.protocol;
-            const fixedUrl = url.toString();
-            logImageEvent('URL_FIXED', { 
-              original: source, 
-              fixed: fixedUrl,
-              apiBaseUrl 
-            });
-            return fixedUrl;
+
+          // Fix URL issues for render.com and other deployment environments
+          if (url.hostname.includes('render.com') || url.hostname.includes('localhost')) {
+            // For render.com URLs, ensure they're using HTTPS and correct format
+            if (url.hostname.includes('render.com') && !url.protocol.includes('https')) {
+              url.protocol = 'https:';
+              const fixedUrl = url.toString();
+              logImageEvent('URL_FIXED', {
+                original: source,
+                fixed: fixedUrl,
+                reason: 'HTTPS protocol fix for render.com'
+              });
+              return fixedUrl;
+            }
+
+            // For localhost URLs, use API base URL
+            if (url.hostname === 'localhost') {
+              const apiUrl = new URL(apiBaseUrl);
+              url.port = apiUrl.port;
+              url.hostname = apiUrl.hostname;
+              url.protocol = apiUrl.protocol;
+              const fixedUrl = url.toString();
+              logImageEvent('URL_FIXED', {
+                original: source,
+                fixed: fixedUrl,
+                apiBaseUrl
+              });
+              return fixedUrl;
+            }
           }
         }
-        
+
         return source;
       } catch (e) {
-        logImageEvent('INVALID_URL', { 
-          source, 
-          index, 
-          error: e instanceof Error ? e.message : 'Unknown error' 
+        logImageEvent('INVALID_URL', {
+          source,
+          index,
+          error: e instanceof Error ? e.message : 'Unknown error'
         });
-        return null; // Return null instead of empty string to filter it out
+        return null;
       }
-    }).filter((source): source is string => source !== null);
-    
-    logImageEvent('SOURCES_PROCESSED', { 
+    }).filter((source): source is string => source !== null && source.trim() !== '');
+
+    // If still no valid sources, add fallback
+    if (processedSources.length === 0 && fallbackImageUrl) {
+      processedSources.push(fallbackImageUrl);
+    }
+
+    logImageEvent('SOURCES_PROCESSED', {
       originalCount: sourcesArray.length,
       validCount: processedSources.length,
-      sources: processedSources 
+      sources: processedSources
     });
-    
+
     return processedSources;
   }, [logImageEvent, fallbackImageUrl]);
 
@@ -166,7 +193,9 @@ const SmartImage: React.FC<SmartImageProps> = ({
           attemptCount,
           timeout: maxLoadTime
         });
-        testImg.onerror(new Error('Load timeout'));
+        // Create a proper error event for the image
+        const errorEvent = new Event('error');
+        testImg.dispatchEvent(errorEvent);
       }, maxLoadTime);
 
       testImg.onload = () => {
