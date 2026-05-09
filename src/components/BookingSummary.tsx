@@ -12,6 +12,7 @@ const BookingSummary = () => {
     amenitiesTotal,
     totalCost,
     numberOfNights,
+    selectedRateType,
     removeRoom,
     removeCottage,
     removeAmenity,
@@ -109,12 +110,12 @@ const BookingSummary = () => {
                           </span>
                         </div>
                         <div className="text-sm text-gray-600">
-                          ₱{cottage.pricePerNight} × {numberOfNights} night{numberOfNights > 1 ? 's' : ''}
+                          ₱{selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate} × {numberOfNights} {selectedRateType === 'day' ? 'day' : 'night'}{numberOfNights > 1 ? 's' : ''}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-bold text-green-600">
-                          ₱{(cottage.pricePerNight * numberOfNights).toLocaleString()}
+                          ₱{((selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate) * numberOfNights).toLocaleString()}
                         </span>
                         <button
                           onClick={() => removeCottage(cottage.id)}
