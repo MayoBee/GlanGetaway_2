@@ -10,10 +10,11 @@ interface SmartImageProps {
   fallbackText?: string;
   showLoading?: boolean;
   onError?: (error: Error) => void;
-  onLoad?: () => void;
-  maxRetries?: number;
-  retryDelay?: number;
-  fallbackImageUrl?: string;
+   onLoad?: () => void;
+   maxRetries?: number;
+   retryDelay?: number;
+   maxLoadTime?: number;
+   fallbackImageUrl?: string;
 }
 
 const DEFAULT_FALLBACK_IMAGE = '/placeholder-resort.jpg';
@@ -24,11 +25,12 @@ const SmartImage: React.FC<SmartImageProps> = ({
   className = '',
   fallbackText = 'No Image Available',
   showLoading = true,
-  onError,
-  onLoad,
-  maxRetries = 3,
-  retryDelay = 1000,
-  fallbackImageUrl = DEFAULT_FALLBACK_IMAGE
+   onError,
+   onLoad,
+   maxRetries = 1,
+   retryDelay = 500,
+   maxLoadTime = 5000,
+   fallbackImageUrl = DEFAULT_FALLBACK_IMAGE
 }) => {
   const [currentSrc, setCurrentSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -155,8 +157,20 @@ const SmartImage: React.FC<SmartImageProps> = ({
 
       // Create test image to verify it loads
       const testImg = new Image();
-      
+
+      // Set a timeout to prevent hanging
+      const loadTimeout = setTimeout(() => {
+        logImageEvent('LOAD_TIMEOUT', {
+          source,
+          sourceIndex,
+          attemptCount,
+          timeout: maxLoadTime
+        });
+        testImg.onerror(new Error('Load timeout'));
+      }, maxLoadTime);
+
       testImg.onload = () => {
+        clearTimeout(loadTimeout);
         logImageEvent('LOAD_SUCCESS', { 
           source, 
           sourceIndex, 
@@ -169,11 +183,12 @@ const SmartImage: React.FC<SmartImageProps> = ({
       };
       
       testImg.onerror = (error) => {
-        logImageEvent('LOAD_ERROR', { 
-          source, 
-          sourceIndex, 
+        clearTimeout(loadTimeout);
+        logImageEvent('LOAD_ERROR', {
+          source,
+          sourceIndex,
           attemptCount,
-          error: error || 'Unknown image loading error' 
+          error: error || 'Unknown image loading error'
         });
         
         // For connection refused errors, don't retry and move to next source immediately
@@ -209,7 +224,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     };
 
     tryNextSource();
-  }, [src, retryCount, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
+  }, [src, retryCount, maxRetries, retryDelay, maxLoadTime, logImageEvent, processImageSources, onError, onLoad]);
 
   const handleRetry = () => {
     logImageEvent('MANUAL_RETRY', { 
