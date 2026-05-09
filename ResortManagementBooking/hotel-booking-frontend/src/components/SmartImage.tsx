@@ -81,21 +81,8 @@ const SmartImage: React.FC<SmartImageProps> = ({
         // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
         const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
 
-        logImageEvent('DEBUG_URL_PROCESSING', {
-          source,
-          isAbsoluteUrl,
-          index
-        });
-
         if (isAbsoluteUrl) {
           const url = new URL(source);
-
-          logImageEvent('DEBUG_URL_PARSED', {
-            source,
-            hostname: url.hostname,
-            protocol: url.protocol,
-            includesRenderCom: url.hostname.includes('render.com')
-          });
 
           // Fix URL issues for render.com and other deployment environments
           if (url.hostname.includes('render.com') || url.hostname.includes('localhost')) {
@@ -128,10 +115,6 @@ const SmartImage: React.FC<SmartImageProps> = ({
           }
         }
 
-        logImageEvent('DEBUG_URL_RETURNING', {
-          source,
-          finalSource: source
-        });
         return source;
       } catch (e) {
         logImageEvent('INVALID_URL', {
@@ -146,6 +129,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     // If still no valid sources, add fallback
     if (processedSources.length === 0 && fallbackImageUrl) {
       processedSources.push(fallbackImageUrl);
+      logImageEvent('USING_FALLBACK_ONLY', { fallbackImageUrl });
     }
 
     logImageEvent('SOURCES_PROCESSED', {
@@ -237,16 +221,24 @@ const SmartImage: React.FC<SmartImageProps> = ({
           error: error || 'Unknown image loading error'
         });
         
-        // For connection refused errors, don't retry and move to next source immediately
+        // Check for specific error types that shouldn't be retried
         const isConnectionRefused = error && (
           error.toString().toLowerCase().includes('err_connection_refused')
         );
+        const isNotFoundError = error && (
+          error.toString().toLowerCase().includes('404') ||
+          error.toString().toLowerCase().includes('not found')
+        );
         
-        if (isConnectionRefused && sourceIndex < sources.length - 1) {
-          // Skip to next source immediately for connection refused
+        // For 404 errors and connection refused, don't retry and move to next source immediately
+        if ((isNotFoundError || isConnectionRefused) && sourceIndex < sources.length - 1) {
+          logImageEvent('SKIPPING_RETRY', {
+            source,
+            reason: isNotFoundError ? '404 Not Found' : 'Connection Refused'
+          });
           tryNextSource(sourceIndex + 1, 0);
-        } else if (attemptCount < maxRetries && !isConnectionRefused) {
-          // Retry logic for other types of errors
+        } else if (attemptCount < maxRetries && !isNotFoundError && !isConnectionRefused) {
+          // Retry logic for other types of errors (but not for 404 or connection refused)
           setTimeout(() => {
             tryNextSource(sourceIndex, attemptCount + 1);
           }, retryDelay * (attemptCount + 1)); // Exponential backoff
