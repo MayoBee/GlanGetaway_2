@@ -81,8 +81,21 @@ const SmartImage: React.FC<SmartImageProps> = ({
         // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
         const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
 
+        logImageEvent('DEBUG_URL_PROCESSING', {
+          source,
+          isAbsoluteUrl,
+          index
+        });
+
         if (isAbsoluteUrl) {
           const url = new URL(source);
+
+          logImageEvent('DEBUG_URL_PARSED', {
+            source,
+            hostname: url.hostname,
+            protocol: url.protocol,
+            includesRenderCom: url.hostname.includes('render.com')
+          });
 
           // Fix URL issues for render.com and other deployment environments
           if (url.hostname.includes('render.com') || url.hostname.includes('localhost')) {
@@ -115,6 +128,10 @@ const SmartImage: React.FC<SmartImageProps> = ({
           }
         }
 
+        logImageEvent('DEBUG_URL_RETURNING', {
+          source,
+          finalSource: source
+        });
         return source;
       } catch (e) {
         logImageEvent('INVALID_URL', {
