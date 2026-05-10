@@ -1,6 +1,7 @@
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, X, Bed, Users, DollarSign } from "lucide-react";
+import IncludedEntranceFeeField from "../../components/IncludedEntranceFeeField";
 
 const RoomsSection = () => {
   const { control, register, formState: { errors }, watch } = useFormContext<HotelFormData>();
@@ -21,6 +22,11 @@ const RoomsSection = () => {
       units: 1,
       description: "",
       amenities: [],
+      includedEntranceFee: {
+        enabled: false,
+        adultCount: 0,
+        childCount: 0,
+      },
     });
   };
 
@@ -216,9 +222,18 @@ const RoomsSection = () => {
                   Description (Optional)
                 </label>
                 <textarea
-                  placeholder="Describe the room features, view, and special amenities..."
+                  placeholder="Describe room features, view, and special amenities..."
                   className="w-full border rounded px-3 py-2 font-normal h-20 resize-none"
                   {...register(`rooms.${index}.description`)}
+                />
+              </div>
+
+              {/* Included Entrance Fee */}
+              <div className="md:col-span-2 lg:col-span-3">
+                <IncludedEntranceFeeField
+                  accommodationType="room"
+                  index={index}
+                  fieldName="rooms"
                 />
               </div>
             </div>
