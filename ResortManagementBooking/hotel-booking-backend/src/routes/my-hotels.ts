@@ -747,13 +747,24 @@ router.put(
       }
 
       // Parse stringified JSON fields that might come from frontend
-      const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee'];
+      const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee', 'rooms', 'cottages', 'packages', 'contact', 'policies'];
       for (const field of stringifiedFields) {
         if (updateData[field] && typeof updateData[field] === 'string') {
           try {
             updateData[field] = JSON.parse(updateData[field]);
+            console.log(`Successfully parsed ${field} from JSON string`);
           } catch (parseError) {
             console.log(`Failed to parse ${field} as JSON, keeping as is:`, updateData[field]);
+          }
+        } else if (updateData[field] && typeof updateData[field] === 'object') {
+          console.log(`${field} is already an object, checking for entrance fee data...`);
+          // Handle case where data is already an object (like from FormData with object notation)
+          if (field === 'rooms' || field === 'cottages') {
+            updateData[field].forEach((item: any, index: number) => {
+              if (item.includedEntranceFee) {
+                console.log(`${field} ${index} entrance fee data:`, item.includedEntranceFee);
+              }
+            });
           }
         }
       }
