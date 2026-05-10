@@ -132,7 +132,17 @@ const GuestInfoForm = ({
       pkg.includedAdultEntranceFee || pkg.includedChildEntranceFee
     );
     
-    return hasPackageWithEntranceFees;
+    // Check if any selected room includes entrance fees
+    const hasRoomWithEntranceFees = selectedRooms.some(room => 
+      room.includedEntranceFee?.enabled
+    );
+    
+    // Check if any selected cottage includes entrance fees
+    const hasCottageWithEntranceFees = selectedCottages.some(cottage => 
+      cottage.includedEntranceFee?.enabled
+    );
+    
+    return hasPackageWithEntranceFees || hasRoomWithEntranceFees || hasCottageWithEntranceFees;
   };
 
   // Calculate entrance fee total based on adults, children, and their ages
