@@ -1,13 +1,13 @@
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DetailsSection from "./DetailsSection";
 import GuestsSection from "./GuestsSection";
 import TypeSection from "./TypeSection";
 import FacilitiesSection from "./FacilitiesSection";
-import FreshRoomsSection from "./FreshRoomsSection";
-import FreshCottagesSection from "./FreshCottagesSection";
+import FreshRoomsSection, { RoomFilesRef } from "./FreshRoomsSection";
+import FreshCottagesSection, { CottageFilesRef } from "./FreshCottagesSection";
 import AmenitiesSection from "./AmenitiesSection";
-import FreshPackagesSection from "./FreshPackagesSection";
+import FreshPackagesSection, { PackageFilesRef } from "./FreshPackagesSection";
 import ContactSection from "./ContactSection";
 import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
@@ -193,6 +193,11 @@ type Props = {
 const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isManualSubmit, setIsManualSubmit] = useState(false);
+  
+  // Refs for accommodation sections to access their file maps
+  const roomsSectionRef = useRef<RoomFilesRef>(null);
+  const cottagesSectionRef = useRef<CottageFilesRef>(null);
+  const packagesSectionRef = useRef<PackageFilesRef>(null);
 
   const steps = [
     {
@@ -728,9 +733,269 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     // Reset manual submit flag
     setIsManualSubmit(false);
 
-    // Send processed data to parent component which will convert to FormData
-    // The backend expects FormData with multipart/form-data for image uploads
-    onSave(processedData);
+    // Check if there are new image files to upload (main hotel or accommodations)
+    const hasNewImageFiles = formDataJson.imageFiles &&
+                           (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) &&
+                           formDataJson.imageFiles.length > 0;
+
+    // Check if there are accommodation image files
+    const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
+    const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
+    const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
+    const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
+
+    console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
+    console.log('hasNewImageFiles:', hasNewImageFiles);
+    console.log('hasAccommodationFiles:', hasAccommodationFiles);
+    console.log('imageFiles:', formDataJson.imageFiles);
+    console.log('roomFiles count:', roomFiles.size);
+    console.log('cottageFiles count:', cottageFiles.size);
+    console.log('packageFiles count:', packageFiles.size);
+
+    // If there are new image files (main hotel or accommodations), construct FormData
+    if (hasNewImageFiles || hasAccommodationFiles) {
+      console.log('Constructing FormData with image files');
+      const formData = new FormData();
+      
+      // Add hotelId if available (for edit mode)
+      if (hotel?._id) {
+        formData.append('hotelId', hotel._id);
+      }
+      
+      // Add all string fields
+      formData.append('name', processedData.name);
+      formData.append('city', processedData.city);
+      formData.append('country', processedData.country);
+      formData.append('description', processedData.description);
+      formData.append('dayRate', String(processedData.dayRate));
+      formData.append('nightRate', String(processedData.nightRate));
+      formData.append('hasDayRate', String(processedData.hasDayRate));
+      formData.append('hasNightRate', String(processedData.hasNightRate));
+      formData.append('dayRateCheckInTime', processedData.dayRateCheckInTime);
+      formData.append('dayRateCheckOutTime', processedData.dayRateCheckOutTime);
+      formData.append('nightRateCheckInTime', processedData.nightRateCheckInTime);
+      formData.append('nightRateCheckOutTime', processedData.nightRateCheckOutTime);
+      formData.append('hasNightRateTimeRestrictions', String(processedData.hasNightRateTimeRestrictions));
+      formData.append('starRating', String(processedData.starRating));
+      formData.append('isFeatured', String(processedData.isFeatured));
+      formData.append('downPaymentPercentage', String(processedData.downPaymentPercentage));
+      
+      if (processedData.gcashNumber) {
+        formData.append('gcashNumber', processedData.gcashNumber);
+      }
+      
+      // Add arrays
+      processedData.type.forEach((type, index) => {
+        formData.append(`type[${index}]`, type);
+      });
+      
+      processedData.facilities.forEach((facility, index) => {
+        formData.append(`facilities[${index}]`, facility);
+      });
+      
+      // Add imageUrls (existing images)
+      processedData.imageUrls.forEach((url, index) => {
+        formData.append(`imageUrls[${index}]`, url);
+      });
+      
+      // Add imageFiles (new images)
+      if (formDataJson.imageFiles) {
+        Array.from(formDataJson.imageFiles).forEach((file: File) => {
+          formData.append('imageFiles', file);
+        });
+      }
+
+      // Add accommodation image files (rooms, cottages, packages)
+      console.log('=== ACCOMMODATION IMAGE FILES DEBUG ===');
+      
+      // Collect room image files
+      const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
+      console.log('Room files:', roomFiles);
+      roomFiles.forEach((file, key) => {
+        console.log(`Appending room file: ${key}`, file.name);
+        formData.append(`roomFiles[${key}]`, file);
+      });
+
+      // Collect cottage image files
+      const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
+      console.log('Cottage files:', cottageFiles);
+      cottageFiles.forEach((file, key) => {
+        console.log(`Appending cottage file: ${key}`, file.name);
+        formData.append(`cottageFiles[${key}]`, file);
+      });
+
+      // Collect package image files
+      const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
+      console.log('Package files:', packageFiles);
+      packageFiles.forEach((file, key) => {
+        console.log(`Appending package file: ${key}`, file.name);
+        formData.append(`packageFiles[${key}]`, file);
+      });
+      
+      // Add contact information
+      if (processedData.contact) {
+        formData.append('contact.phone', processedData.contact.phone);
+        formData.append('contact.email', processedData.contact.email);
+        formData.append('contact.website', processedData.contact.website);
+        formData.append('contact.facebook', processedData.contact.facebook || '');
+        formData.append('contact.instagram', processedData.contact.instagram || '');
+        formData.append('contact.tiktok', processedData.contact.tiktok || '');
+      }
+      
+      // Add policies
+      if (processedData.policies) {
+        formData.append('policies.checkInTime', processedData.policies.checkInTime);
+        formData.append('policies.checkOutTime', processedData.policies.checkOutTime);
+        formData.append('policies.dayCheckInTime', processedData.policies.dayCheckInTime);
+        formData.append('policies.dayCheckOutTime', processedData.policies.dayCheckOutTime);
+        formData.append('policies.nightCheckInTime', processedData.policies.nightCheckInTime);
+        formData.append('policies.nightCheckOutTime', processedData.policies.nightCheckOutTime);
+        
+        if (processedData.policies.resortPolicies) {
+          processedData.policies.resortPolicies.forEach((policy, index) => {
+            formData.append(`policies.resortPolicies[${index}][id]`, policy.id);
+            formData.append(`policies.resortPolicies[${index}][title]`, policy.title);
+            formData.append(`policies.resortPolicies[${index}][description]`, policy.description);
+            formData.append(`policies.resortPolicies[${index}][isConfirmed]`, String(policy.isConfirmed || false));
+            if (policy._id) {
+              formData.append(`policies.resortPolicies[${index}][_id]`, policy._id);
+            }
+          });
+        }
+      }
+      
+      // Add rooms
+      if (processedData.rooms) {
+        processedData.rooms.forEach((room, index) => {
+          formData.append(`rooms[${index}][id]`, room.id);
+          formData.append(`rooms[${index}][name]`, room.name);
+          formData.append(`rooms[${index}][type]`, room.type);
+          formData.append(`rooms[${index}][pricePerNight]`, String(room.pricePerNight));
+          formData.append(`rooms[${index}][minOccupancy]`, String(room.minOccupancy));
+          formData.append(`rooms[${index}][maxOccupancy]`, String(room.maxOccupancy));
+          formData.append(`rooms[${index}][units]`, String(room.units));
+          formData.append(`rooms[${index}][description]`, room.description || '');
+          
+          if (room.includedEntranceFee) {
+            formData.append(`rooms[${index}][includedEntranceFee][enabled]`, String(room.includedEntranceFee.enabled));
+            formData.append(`rooms[${index}][includedEntranceFee][adultCount]`, String(room.includedEntranceFee.adultCount));
+            formData.append(`rooms[${index}][includedEntranceFee][childCount]`, String(room.includedEntranceFee.childCount));
+          }
+          
+          if (room.amenities) {
+            room.amenities.forEach((amenity, amenityIndex) => {
+              formData.append(`rooms[${index}][amenities][${amenityIndex}]`, amenity);
+            });
+          }
+        });
+      }
+      
+      // Add cottages
+      if (processedData.cottages) {
+        processedData.cottages.forEach((cottage, index) => {
+          formData.append(`cottages[${index}][id]`, cottage.id);
+          formData.append(`cottages[${index}][name]`, cottage.name);
+          formData.append(`cottages[${index}][type]`, cottage.type);
+          formData.append(`cottages[${index}][pricePerNight]`, String(cottage.pricePerNight));
+          formData.append(`cottages[${index}][dayRate]`, String(cottage.dayRate));
+          formData.append(`cottages[${index}][nightRate]`, String(cottage.nightRate));
+          formData.append(`cottages[${index}][hasDayRate]`, String(cottage.hasDayRate));
+          formData.append(`cottages[${index}][hasNightRate]`, String(cottage.hasNightRate));
+          formData.append(`cottages[${index}][minOccupancy]`, String(cottage.minOccupancy));
+          formData.append(`cottages[${index}][maxOccupancy]`, String(cottage.maxOccupancy));
+          formData.append(`cottages[${index}][units]`, String(cottage.units));
+          formData.append(`cottages[${index}][description]`, cottage.description || '');
+          
+          if (cottage.includedEntranceFee) {
+            formData.append(`cottages[${index}][includedEntranceFee][enabled]`, String(cottage.includedEntranceFee.enabled));
+            formData.append(`cottages[${index}][includedEntranceFee][adultCount]`, String(cottage.includedEntranceFee.adultCount));
+            formData.append(`cottages[${index}][includedEntranceFee][childCount]`, String(cottage.includedEntranceFee.childCount));
+          }
+          
+          if (cottage.amenities) {
+            cottage.amenities.forEach((amenity, amenityIndex) => {
+              formData.append(`cottages[${index}][amenities][${amenityIndex}]`, amenity);
+            });
+          }
+        });
+      }
+      
+      // Add amenities
+      if (processedData.amenities) {
+        processedData.amenities.forEach((amenity, index) => {
+          formData.append(`amenities[${index}][id]`, amenity.id);
+          formData.append(`amenities[${index}][name]`, amenity.name);
+          formData.append(`amenities[${index}][price]`, String(amenity.price));
+          formData.append(`amenities[${index}][units]`, String(amenity.units));
+          formData.append(`amenities[${index}][description]`, amenity.description || '');
+          formData.append(`amenities[${index}][imageUrl]`, amenity.imageUrl || '');
+          formData.append(`amenities[${index}][isConfirmed]`, String(amenity.isConfirmed || false));
+        });
+      }
+      
+      // Add packages
+      if (processedData.packages) {
+        processedData.packages.forEach((pkg, index) => {
+          formData.append(`packages[${index}][id]`, pkg.id);
+          formData.append(`packages[${index}][name]`, pkg.name);
+          formData.append(`packages[${index}][description]`, pkg.description || '');
+          formData.append(`packages[${index}][price]`, String(pkg.price));
+          formData.append(`packages[${index}][imageUrl]`, pkg.imageUrl || '');
+          formData.append(`packages[${index}][includedAdultEntranceFee]`, String(pkg.includedAdultEntranceFee));
+          formData.append(`packages[${index}][includedChildEntranceFee]`, String(pkg.includedChildEntranceFee));
+          formData.append(`packages[${index}][isConfirmed]`, String(pkg.isConfirmed || false));
+          
+          if (pkg.includedCottages) {
+            pkg.includedCottages.forEach((cottageId, cottageIndex) => {
+              formData.append(`packages[${index}][includedCottages][${cottageIndex}]`, cottageId);
+            });
+          }
+          
+          if (pkg.includedRooms) {
+            pkg.includedRooms.forEach((roomId, roomIndex) => {
+              formData.append(`packages[${index}][includedRooms][${roomIndex}]`, roomId);
+            });
+          }
+          
+          if (pkg.includedAmenities) {
+            pkg.includedAmenities.forEach((amenityId, amenityIndex) => {
+              formData.append(`packages[${index}][includedAmenities][${amenityIndex}]`, amenityId);
+            });
+          }
+        });
+      }
+      
+      // Add child entrance fees
+      if (processedData.childEntranceFee) {
+        processedData.childEntranceFee.forEach((fee, index) => {
+          formData.append(`childEntranceFee[${index}][id]`, fee.id);
+          formData.append(`childEntranceFee[${index}][minAge]`, String(fee.minAge));
+          formData.append(`childEntranceFee[${index}][maxAge]`, String(fee.maxAge));
+          formData.append(`childEntranceFee[${index}][dayRate]`, String(fee.dayRate));
+          formData.append(`childEntranceFee[${index}][nightRate]`, String(fee.nightRate));
+          formData.append(`childEntranceFee[${index}][pricingModel]`, fee.pricingModel);
+          if (fee.groupQuantity) {
+            formData.append(`childEntranceFee[${index}][groupQuantity]`, String(fee.groupQuantity));
+          }
+          formData.append(`childEntranceFee[${index}][isConfirmed]`, String(fee.isConfirmed || false));
+        });
+      }
+      
+      // Add discounts
+      if (processedData.discounts) {
+        formData.append('discounts.seniorCitizenEnabled', String(processedData.discounts.seniorCitizenEnabled));
+        formData.append('discounts.seniorCitizenPercentage', String(processedData.discounts.seniorCitizenPercentage));
+        formData.append('discounts.pwdEnabled', String(processedData.discounts.pwdEnabled));
+        formData.append('discounts.pwdPercentage', String(processedData.discounts.pwdPercentage));
+      }
+      
+      console.log('FormData constructed successfully');
+      onSave(formData as any);
+    } else {
+      // No new image files, send as JSON for backward compatibility
+      console.log('Sending data as JSON (no new images)');
+      onSave(processedData);
+    }
   };
 
   const onSubmit = handleSubmit(handleSave);
@@ -762,13 +1027,13 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         case "FacilitiesSection":
           return <FacilitiesSection key={sectionName} />;
         case "FreshRoomsSection":
-          return <FreshRoomsSection key={sectionName} />;
+          return <FreshRoomsSection key={sectionName} ref={roomsSectionRef} />;
         case "FreshCottagesSection":
-          return <FreshCottagesSection key={sectionName} />;
+          return <FreshCottagesSection key={sectionName} ref={cottagesSectionRef} />;
         case "AmenitiesSection":
           return <AmenitiesSection key={sectionName} />;
         case "FreshPackagesSection":
-          return <FreshPackagesSection key={sectionName} />;
+          return <FreshPackagesSection key={sectionName} ref={packagesSectionRef} />;
         case "ContactSection":
           return <ContactSection key={sectionName} />;
         case "PoliciesSection":

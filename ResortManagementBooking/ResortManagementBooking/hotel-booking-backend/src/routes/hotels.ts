@@ -251,6 +251,8 @@ router.post(
     const hotelId = req.params.hotelId;
 
     try {
+      console.log("Payment intent request:", { hotelId, numberOfNights, downPaymentAmount });
+
       // Check if Stripe is configured
       if (!process.env.STRIPE_API_KEY) {
         console.error("Stripe API key not configured");
@@ -260,11 +262,23 @@ router.post(
       // Use lean() for faster query - only fetch needed fields including rooms
       const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities rooms.includedEntranceFee cottages.includedEntranceFee').lean();
       if (!hotel) {
+        console.error("Hotel not found:", hotelId);
         return res.status(400).json({ message: "Hotel not found" });
       }
 
+      console.log("Hotel data found:", { 
+        hotelId: hotel._id, 
+        name: hotel.name, 
+        nightRate: hotel.nightRate, 
+        dayRate: hotel.dayRate,
+        hasNightRate: hotel.hasNightRate,
+        hasDayRate: hotel.hasDayRate
+      });
+
       // Use downPaymentAmount from frontend instead of calculating totalCost
       const paymentAmount = downPaymentAmount || (hotel.hasNightRate ? hotel.nightRate : hotel.dayRate);
+      
+      console.log("Payment amount calculated:", { downPaymentAmount, paymentAmount });
 
       // Handle zero payment amount case
       if (paymentAmount <= 0) {

@@ -1,0 +1,32 @@
+{
+  "name": "@glan-getaway/shared",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    "./types": "./types/index.ts",
+    "./auth": "./auth/index.ts",
+    "./auth/api-client": "./auth/api-client.ts",
+    "./hooks/use-toast": "./hooks/use-toast.ts",
+    "./lib/utils": "./lib/utils.ts",
+    "./ui/button": "./ui/button.tsx",
+    "./ui/input": "./ui/input.tsx",
+    "./ui/label": "./ui/label.tsx",
+    "./ui/card": "./ui/card.tsx",
+    "./ui/separator": "./ui/separator.tsx",
+    "./ui/badge": "./ui/badge.tsx",
+    "./ui/dropdown-menu": "./ui/dropdown-menu.tsx",
+    "./ui/dialog": "./ui/dialog.tsx",
+    "./ui/sheet": "./ui/sheet.tsx",
+    "./ui/checkbox": "./ui/checkbox.tsx",
+    "./ui/select": "./ui/select.tsx",
+    "./ui/toaster": "./ui/toaster.tsx"
+  },
+  "dependencies": {
+    "axios": "^1.15.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "js-cookie": "^3.0.5",
+    "tailwind-merge": "^3.5.0"
+  }
+}

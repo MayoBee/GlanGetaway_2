@@ -1,8 +1,12 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Package, Check, X, Home, Bed, Sparkles } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import ImageUpload from "../../components/ImageUpload";
+
+export interface PackageFilesRef {
+  getPackageFiles: () => Map<string, File>;
+}
 
 interface PackageItemState {
   rooms: Map<string, { checked: boolean; units: number }>;
@@ -36,7 +40,7 @@ interface PackageItemState {
   }>;
 }
 
-const FreshPackagesSection = () => {
+const FreshPackagesSection = forwardRef<PackageFilesRef>((props, ref) => {
   const { control } = useFormContext<HotelFormData>();
   const rooms = useWatch({ control, name: "rooms" });
   const cottages = useWatch({ control, name: "cottages" });
@@ -50,11 +54,17 @@ const FreshPackagesSection = () => {
   });
   const [confirmedPackages, setConfirmedPackages] = useState<Set<string>>(new Set());
   const [packageStates, setPackageStates] = useState<Map<string, PackageItemState>>(new Map());
+  const [packageFiles, setPackageFiles] = useState<Map<string, File>>(new Map());
   const isInitializingRef = useRef(false);
   const confirmedPackagesRef = useRef<Set<string>>(new Set());
   const [showCustomRoomModal, setShowCustomRoomModal] = useState<string | null>(null);
   const [showCustomCottageModal, setShowCustomCottageModal] = useState<string | null>(null);
   const [showCustomAmenityModal, setShowCustomAmenityModal] = useState<string | null>(null);
+
+  // Expose getPackageFiles method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getPackageFiles: () => packageFiles
+  }));
 
   const addPackage = () => {
     const newPackageId = `package_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -576,11 +586,44 @@ const FreshPackagesSection = () => {
                     <ImageUpload
                       value={packages?.[index]?.imageUrl || ""}
                       onChange={(url: string) => {
+                        console.log(`=== PACKAGE IMAGE CHANGE DEBUG ===`);
+                        console.log(`Package ${index} imageUrl changed to:`, url);
                         if (packages) {
                           const updatedPackages = [...packages];
                           updatedPackages[index] = { ...updatedPackages[index], imageUrl: url };
                           // Update using the update method from useFieldArray
                           update(index, updatedPackages[index]);
+                          console.log(`Package ${index} imageUrl updated in form`);
+                          
+                          // If url is empty, also remove the file from packageFiles map
+                          if (url === "") {
+                            const newPackageFiles = new Map(packageFiles);
+                            newPackageFiles.delete(`package_${index}`);
+                            setPackageFiles(newPackageFiles);
+                            console.log(`Package ${index} file removed from packageFiles map`);
+                          }
+                        }
+                      }}
+                      onFileChange={(file: File) => {
+                        console.log(`=== PACKAGE FILE CHANGE DEBUG ===`);
+                        console.log(`Package ${index} file received:`, file.name, file.size);
+                        // Store the file for upload
+                        const newPackageFiles = new Map(packageFiles);
+                        newPackageFiles.set(`package_${index}`, file);
+                        setPackageFiles(newPackageFiles);
+                        console.log(`Package ${index} file stored in packageFiles map`);
+                        
+                        // Also update the imageUrl with a temporary preview
+                        if (packages) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            const dataUrl = e.target?.result as string;
+                            const updatedPackages = [...packages];
+                            updatedPackages[index] = { ...updatedPackages[index], imageUrl: dataUrl };
+                            update(index, updatedPackages[index]);
+                            console.log(`Package ${index} data URL set in form`);
+                          };
+                          reader.readAsDataURL(file);
                         }
                       }}
                       label="Package Image"
@@ -1268,7 +1311,9 @@ const FreshPackagesSection = () => {
       )}
     </div>
   );
-};
+});
+
+FreshPackagesSection.displayName = 'FreshPackagesSection';
 
 export default FreshPackagesSection;
 
