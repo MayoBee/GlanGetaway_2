@@ -89,7 +89,7 @@ const EditHotel = () => {
           });
         } else if (typeof obj === 'object') {
           Object.entries(obj).forEach(([key, value]) => {
-            const newPrefix = prefix ? `${prefix}.${key}` : key;
+            const newPrefix = prefix ? `${prefix}[${key}]` : key;
             appendToFormData(value, newPrefix);
           });
         } else {
