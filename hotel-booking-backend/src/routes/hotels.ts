@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import User from "../models/user";
-import { BookingType, HotelSearchResponse } from "../../../shared/types";
+import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
@@ -101,12 +101,12 @@ router.post(
     const hotelId = req.params.hotelId;
 
     // Use lean() for faster query - only fetch needed fields
-    const hotel = await Hotel.findById(hotelId).select('pricePerNight name').lean();
+    const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name').lean();
     if (!hotel) {
       return res.status(400).json({ message: "Hotel not found" });
     }
 
-    const totalCost = numberOfNights > 0 ? hotel.pricePerNight * numberOfNights : hotel.pricePerNight;
+    const totalCost = numberOfNights > 0 ? hotel.nightRate * numberOfNights : hotel.nightRate;
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCost * 100,
