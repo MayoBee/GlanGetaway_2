@@ -729,16 +729,16 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     setIsManualSubmit(false);
 
     // Check if there are new image files to upload
-    const hasImageFiles = formDataJson.imageFiles && 
-                         (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) && 
-                         formDataJson.imageFiles.length > 0;
+    const hasNewImageFiles = formDataJson.imageFiles && 
+                           (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) && 
+                           formDataJson.imageFiles.length > 0;
 
     console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
-    console.log('hasImageFiles:', hasImageFiles);
+    console.log('hasNewImageFiles:', hasNewImageFiles);
     console.log('imageFiles:', formDataJson.imageFiles);
 
     // If there are new image files, construct FormData
-    if (hasImageFiles) {
+    if (hasNewImageFiles) {
       console.log('Constructing FormData with image files');
       const formData = new FormData();
       
