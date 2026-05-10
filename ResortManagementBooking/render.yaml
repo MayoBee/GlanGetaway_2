@@ -1,0 +1,40 @@
+services:
+  # Backend API Service
+  - type: web
+    name: glan-getaway-backend
+    runtime: node
+    plan: free
+    repo: https://github.com/MayoBee/GlanGetaway_2.git
+    rootDir: ResortManagementBooking/hotel-booking-backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: MONGODB_CONNECTION_STRING
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: COOKIE_SECURE
+        value: true
+      - key: COOKIE_SAME_SITE
+        value: none

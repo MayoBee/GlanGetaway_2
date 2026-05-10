@@ -1,0 +1,13 @@
+{
+  "id": "example-plugin",
+  "name": "Example Plugin",
+  "version": "1.0.0",
+  "description": "Example plugin demonstrating the plugin architecture",
+  "author": "Booking System Team",
+  "main": "index.js",
+  "dependencies": [],
+  "hooks": [
+    "booking:afterCreate",
+    "booking:cancel"
+  ]
+}

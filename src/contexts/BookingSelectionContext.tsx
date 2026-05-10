@@ -213,6 +213,15 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     setCalculatedTotals(result);
   }, [calculateTotal]);
 
+  // Separate effect to ensure recalculation when basePrice changes
+  useEffect(() => {
+    if (basePrice > 0) {
+      console.log("BookingSelectionContext: basePrice changed to", basePrice, "recalculating total");
+      const result = calculateTotal();
+      setCalculatedTotals(result);
+    }
+  }, [basePrice]);
+
   const accommodationTotal = 
     selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
     selectedCottages.reduce((sum, cottage) => {
