@@ -586,11 +586,22 @@ const FreshPackagesSection = forwardRef<PackageFilesRef>((props, ref) => {
                     <ImageUpload
                       value={packages?.[index]?.imageUrl || ""}
                       onChange={(url: string) => {
+                        console.log(`=== PACKAGE IMAGE CHANGE DEBUG ===`);
+                        console.log(`Package ${index} imageUrl changed to:`, url);
                         if (packages) {
                           const updatedPackages = [...packages];
                           updatedPackages[index] = { ...updatedPackages[index], imageUrl: url };
                           // Update using the update method from useFieldArray
                           update(index, updatedPackages[index]);
+                          console.log(`Package ${index} imageUrl updated in form`);
+                          
+                          // If url is empty, also remove the file from packageFiles map
+                          if (url === "") {
+                            const newPackageFiles = new Map(packageFiles);
+                            newPackageFiles.delete(`package_${index}`);
+                            setPackageFiles(newPackageFiles);
+                            console.log(`Package ${index} file removed from packageFiles map`);
+                          }
                         }
                       }}
                       onFileChange={(file: File) => {

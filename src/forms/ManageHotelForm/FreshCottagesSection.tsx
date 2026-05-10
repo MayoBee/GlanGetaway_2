@@ -140,11 +140,22 @@ const FreshCottagesSection = forwardRef<CottageFilesRef>((props, ref) => {
                   <ImageUpload
                     value={cottages?.[index]?.imageUrl || ""}
                     onChange={(url: string) => {
+                      console.log(`=== COTTAGE IMAGE CHANGE DEBUG ===`);
+                      console.log(`Cottage ${index} imageUrl changed to:`, url);
                       if (cottages) {
                         const updatedCottages = [...cottages];
                         updatedCottages[index] = { ...updatedCottages[index], imageUrl: url };
                         // Update using the update method from useFieldArray
                         update(index, updatedCottages[index]);
+                        console.log(`Cottage ${index} imageUrl updated in form`);
+                        
+                        // If url is empty, also remove the file from cottageFiles map
+                        if (url === "") {
+                          const newCottageFiles = new Map(cottageFiles);
+                          newCottageFiles.delete(`cottage_${index}`);
+                          setCottageFiles(newCottageFiles);
+                          console.log(`Cottage ${index} file removed from cottageFiles map`);
+                        }
                       }
                     }}
                     onFileChange={(file: File) => {

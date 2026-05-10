@@ -137,13 +137,21 @@ const FreshRoomsSection = forwardRef<RoomFilesRef>((props, ref) => {
                     value={rooms?.[index]?.imageUrl || ""}
                     onChange={(url: string) => {
                       console.log(`=== ROOM IMAGE CHANGE DEBUG ===`);
-                      console.log(`Room ${index} image URL changed to:`, url.substring(0, 50) + "...");
+                      console.log(`Room ${index} imageUrl changed to:`, url);
                       if (rooms) {
                         const updatedRooms = [...rooms];
                         updatedRooms[index] = { ...updatedRooms[index], imageUrl: url };
                         // Update using the update method from useFieldArray
                         update(index, updatedRooms[index]);
-                        console.log(`Room ${index} updated in form`);
+                        console.log(`Room ${index} imageUrl updated in form`);
+                        
+                        // If url is empty, also remove the file from roomFiles map
+                        if (url === "") {
+                          const newRoomFiles = new Map(roomFiles);
+                          newRoomFiles.delete(`room_${index}`);
+                          setRoomFiles(newRoomFiles);
+                          console.log(`Room ${index} file removed from roomFiles map`);
+                        }
                       }
                     }}
                     onFileChange={(file: File) => {
