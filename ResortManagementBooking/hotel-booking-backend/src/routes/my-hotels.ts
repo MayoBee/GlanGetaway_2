@@ -1251,6 +1251,7 @@ router.put(
           imageUrl: req.body[`cottages[${updateCottageIndex}][imageUrl]`] || "",
         });
         updateCottageIndex++;
+      }
       if (cottages.length > 0) {
         updateData.cottages = cottages;
       }
