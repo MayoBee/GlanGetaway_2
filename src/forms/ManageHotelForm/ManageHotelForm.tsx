@@ -499,17 +499,33 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     }
     
     // Contact information validation
+    console.log('=== CONTACT VALIDATION DEBUG ===');
+    console.log('formDataJson.contact:', formDataJson.contact);
+    console.log('formDataJson.contact.phone:', formDataJson.contact?.phone);
+    console.log('formDataJson.contact.email:', formDataJson.contact?.email);
+    
     if (formDataJson.contact) {
       if (!formDataJson.contact.phone || formDataJson.contact.phone.trim() === '') {
+        console.log('Phone validation failed - empty or missing');
         validationErrors.push('Contact phone number is required');
       } else if (!/^[\d\s\-+()]+$/.test(formDataJson.contact.phone) || formDataJson.contact.phone.replace(/\D/g, '').length < 7) {
+        console.log('Phone validation failed - format issue');
         validationErrors.push('Please enter a valid phone number (at least 7 digits)');
+      } else {
+        console.log('Phone validation passed');
       }
+      
       if (!formDataJson.contact.email || formDataJson.contact.email.trim() === '') {
+        console.log('Email validation failed - empty or missing');
         validationErrors.push('Contact email is required');
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formDataJson.contact.email)) {
+        console.log('Email validation failed - format issue');
         validationErrors.push('Please enter a valid email address');
+      } else {
+        console.log('Email validation passed');
       }
+    } else {
+      console.log('Contact object is missing');
     }
     
     // Facilities validation
