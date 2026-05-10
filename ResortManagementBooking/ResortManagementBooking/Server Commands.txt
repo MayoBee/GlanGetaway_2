@@ -1,0 +1,67 @@
+# Steps to Run the Resort Booking Servers
+
+## Quick Start Commands
+
+### 1. Open Terminal 1 (Backend)
+```bash
+cd "d:\Coding practice\Websites\Booking-website\ResortManagementBooking\ResortManagementBooking\hotel-booking-backend"
+npm run dev
+```
+
+### 2. Open Terminal 2 (Frontend)
+```bash
+cd "d:\Coding practice\Websites\Booking-website\ResortManagementBooking\ResortManagementBooking\hotel-booking-frontend"
+npm run dev
+```
+
+## Access Points
+- **Frontend**: http://localhost:5174 (or 5175 if 5174 is busy)
+- **Backend API**: http://localhost:7002
+- **Database**: MongoDB (auto-connects)
+
+## Troubleshooting Steps
+
+### If Backend Fails to Start:
+1. **Check for port conflicts**:
+   ```bash
+   netstat -ano | findstr :7002
+   ```
+2. **Kill conflicting process**:
+   ```bash
+   taskkill /PID [PROCESS_ID] /F
+   ```
+3. **Restart backend**
+
+### If Frontend Fails to Start:
+1. **Try different port** (Vite auto-handles this)
+2. **Clear cache**:
+   ```bash
+   npm run build -- --clearCache
+   ```
+
+### Common Issues:
+- **Backend port 7002 conflict**: Kill process and restart
+- **Frontend port 5174 busy**: Vite will auto-switch to 5175
+- **Database connection**: Should auto-connect to MongoDB
+
+## Server Status Indicators
+
+### Backend Success:
+```
+✅ MongoDB connected successfully
+📦 Database: hotel-booking
+🚀 Server running on port 7002
+```
+
+### Frontend Success:
+```
+➜  Local:   http://localhost:5174/
+VITE v7.1.1  ready in XXXX ms
+```
+
+## Environment Requirements
+- Node.js installed
+- MongoDB running locally or connection string in .env
+- All dependencies installed (`npm install` in both directories)
+
+Save these steps for future reference!

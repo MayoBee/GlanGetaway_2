@@ -718,6 +718,12 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('Rooms being sent:', processedData.rooms);
     console.log('Cottages being sent:', processedData.cottages);
     console.log('Packages being sent:', processedData.packages);
+    // Debug package imageUrls specifically
+    if (processedData.packages) {
+      processedData.packages.forEach((pkg, index) => {
+        console.log(`Package ${index} imageUrl:`, pkg.imageUrl);
+      });
+    }
 
     // Debug final includedEntranceFee data being sent
     console.log('=== FINAL INCLUDED ENTRANCE FEE DATA BEING SENT ===');

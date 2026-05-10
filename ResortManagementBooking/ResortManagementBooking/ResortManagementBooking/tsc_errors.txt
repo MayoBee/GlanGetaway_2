@@ -1,0 +1,86 @@
+src/components/AdvancedSearch.tsx(54,10): error TS6133: 'isLoadingPlaces' is declared but its value is never read.
+src/components/AdvancedSearch.tsx(54,27): error TS6133: 'setIsLoadingPlaces' is declared but its value is never read.
+src/components/AdvancedSearch.tsx(55,9): error TS6133: 'hasFetchedRef' is declared but its value is never read.
+src/components/AmenitySlotBooking.tsx(30,3): error TS6133: 'hotelId' is declared but its value is never read.
+src/components/DiscountConfig.tsx(23,1): error TS6192: All imports in import declaration are unused.
+src/components/FreshAccommodationDisplay.tsx(2,1): error TS6192: All imports in import declaration are unused.
+src/components/FreshAccommodationDisplay.tsx(3,28): error TS6133: 'DollarSign' is declared but its value is never read.
+src/components/FreshAccommodationDisplay.tsx(7,6): error TS6196: 'Props' is declared but never used.
+src/components/FreshAccommodationDisplay.tsx(124,28): error TS7006: Parameter 'pkg' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(167,52): error TS7006: Parameter 'roomId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(168,55): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(184,55): error TS7006: Parameter 'cottageId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(185,61): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(201,56): error TS7006: Parameter 'amenityId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(202,69): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(261,72): error TS7006: Parameter 'cottageId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(262,61): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(275,66): error TS7006: Parameter 'roomId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(276,55): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(285,74): error TS7006: Parameter 'amenityId' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(286,69): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(320,25): error TS7006: Parameter 'room' implicitly has an 'any' type.
+src/components/FreshAccommodationDisplay.tsx(527,21): error TS6133: 'totalPrice' is declared but its value is never read.
+src/components/GuestDiscountInput.tsx(9,1): error TS6133: 'Button' is declared but its value is never read.
+src/components/GuestDiscountInput.tsx(27,3): error TS6133: 'validateDiscountInput' is declared but its value is never read.
+src/components/GuestVerificationLayer.tsx(103,9): error TS6133: 'clearFileFromMemory' is declared but its value is never read.
+src/components/Header.tsx(5,1): error TS6133: 'Building2' is declared but its value is never read.
+src/components/Hero.tsx(1,10): error TS6133: 'Search' is declared but its value is never read.
+src/components/Hero.tsx(1,43): error TS6133: 'Star' is declared but its value is never read.
+src/components/HousekeepingMobileView.tsx(55,13): error TS6133: 'token' is declared but its value is never read.
+src/components/IDVerificationWidget.tsx(17,3): error TS6133: 'hotelId' is declared but its value is never read.
+src/components/IDVerificationWidget.tsx(18,3): error TS6133: 'guestName' is declared but its value is never read.
+src/components/IDVerificationWidget.tsx(19,3): error TS6133: 'guestEmail' is declared but its value is never read.
+src/components/MobileNavLinks.tsx(6,3): error TS6133: 'Building2' is declared but its value is never read.
+src/components/NewAccommodationDisplay.tsx(2,28): error TS6133: 'DollarSign' is declared but its value is never read.
+src/components/NewAccommodationDisplay.tsx(18,5): error TS6133: 'selectedPackages' is declared but its value is never read.
+src/components/PaymentVerificationCard.tsx(2,54): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/components/ReportButton.tsx(2,31): error TS6133: 'MessageSquare' is declared but its value is never read.
+src/components/SmartPaymentWidget.tsx(25,3): error TS6133: 'guestName' is declared but its value is never read.
+src/components/SmartPaymentWidget.tsx(26,3): error TS6133: 'guestEmail' is declared but its value is never read.
+src/components/SmartPaymentWidget.tsx(27,3): error TS6133: 'guestPhone' is declared but its value is never read.
+src/components/SocialShareButtons.tsx(9,43): error TS6133: 'resortDescription' is declared but its value is never read.
+src/components/UsernameMenu.tsx(12,24): error TS6133: 'Building2' is declared but its value is never read.
+src/components/UsernameMenu.tsx(28,9): error TS6133: 'isLoggedIn' is declared but its value is never read.
+src/forms/BookingForm/BookingForm.tsx(15,20): error TS6133: 'useEffect' is declared but its value is never read.
+src/forms/BookingForm/BookingForm.tsx(134,9): error TS6133: 'hotel' is declared but its value is never read.
+src/forms/BookingForm/BookingForm.tsx(283,16): error TS2345: Argument of type '{ paymentIntentId: string; phone: string; specialRequests: string; isPwdBooking: boolean; isSeniorCitizenBooking: boolean; discountInfo: DiscountInfo | null; totalCost: number; ... 14 more ...; selectedPackages?: { ...; }[] | undefined; }' is not assignable to parameter of type 'BookingFormData'.
+  Types of property 'discountInfo' are incompatible.
+    Type 'DiscountInfo | null' is not assignable to type '{ type: "pwd" | "senior_citizen" | null; percentage: number; amount: number; } | undefined'.
+      Type 'null' is not assignable to type '{ type: "pwd" | "senior_citizen" | null; percentage: number; amount: number; } | undefined'.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(8,1): error TS6133: 'Input' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(17,33): error TS6133: 'Baby' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(44,3): error TS6133: 'pricePerNight' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(45,3): error TS6133: 'initialRateType' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(71,5): error TS6133: 'clearSelections' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(73,5): error TS6133: 'setRateType' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(197,9): error TS6133: 'hasDayRate' is declared but its value is never read.
+src/forms/GuestInfoForm/GuestInfoForm.tsx(199,9): error TS6133: 'hasNightRate' is declared but its value is never read.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(279,49): error TS7006: Parameter 'amenity' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(286,45): error TS7006: Parameter 'room' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(293,48): error TS7006: Parameter 'cottage' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(325,41): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(326,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(327,49): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/forms/ManageHotelForm/ManageHotelForm.tsx(339,34): error TS2339: Property '_id' does not exist on type 'HotelFormData'.
+src/pages/AddHotel.tsx(145,21): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'HotelFormData'.
+  No index signature with a parameter of type 'string' was found on type 'HotelFormData'.
+src/pages/AddHotel.tsx(149,50): error TS6133: 'index' is declared but its value is never read.
+src/pages/Admin/ResortApproval.tsx(11,19): error TS6133: 'Eye' is declared but its value is never read.
+src/pages/AdminManagement.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/AdminManagement.tsx(1,27): error TS6133: 'useEffect' is declared but its value is never read.
+src/pages/AdminManagement.tsx(17,3): error TS6133: 'XCircle' is declared but its value is never read.
+src/pages/AdminManagement.tsx(39,1): error TS6133: 'Separator' is declared but its value is never read.
+src/pages/EditBooking.tsx(4,1): error TS6192: All imports in import declaration are unused.
+src/pages/EditBooking.tsx(4,40): error TS2307: Cannot find module '../../shared/types' or its corresponding type declarations.
+src/pages/EditBooking.tsx(8,10): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/EditBooking.tsx(8,20): error TS6133: 'Users' is declared but its value is never read.
+src/pages/EditBooking.tsx(8,27): error TS6133: 'Phone' is declared but its value is never read.
+src/pages/EditBooking.tsx(8,34): error TS6133: 'Mail' is declared but its value is never read.
+src/pages/EditHotel.tsx(328,13): error TS2322: Type 'unknown[]' is not assignable to type 'File[]'.
+  Type 'unknown' is not assignable to type 'File'.
+src/pages/MyBookings.tsx(220,33): error TS2339: Property 'isPwdBooking' does not exist on type 'BookingType'.
+src/pages/MyBookings.tsx(221,43): error TS2339: Property 'isSeniorCitizenBooking' does not exist on type 'BookingType'.
+src/pages/MyHotels.tsx(5,10): error TS6133: 'BiHotel' is declared but its value is never read.
+src/pages/Register.tsx(61,23): error TS6133: 'data' is declared but its value is never read.
+src/pages/SignIn.tsx(3,1): error TS6133: 'useMutationWithLoading' is declared but its value is never read.

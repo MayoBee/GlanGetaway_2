@@ -145,21 +145,23 @@ const GuestInfoForm = ({
     }
 
     let total = 0;
-    const rate = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
+    const rate = selectedRateType === 'day' ? hotel.dayRate : hotel.nightRate;
 
-    // Adult entrance fees
-    if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
-      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-        // Per group pricing - one charge covers groupQuantity people
-        const groupsNeeded = Math.ceil(adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
-        total += groupsNeeded * hotel.adultEntranceFee[rate];
-      } else {
-        // Per head pricing
-        total += adultCount * hotel.adultEntranceFee[rate];
-      }
+    console.log("=== CALCULATE ENTRANCE FEE DEBUG ===");
+    console.log("Hotel data:", hotel);
+    console.log("Selected rate type:", selectedRateType);
+    console.log("Rate value:", rate);
+    console.log("Adult count:", adultCount);
+    console.log("Child count:", childCount);
+    console.log("Child ages:", childAges);
+
+    // Adult entrance fees - use hotel.dayRate or hotel.nightRate directly
+    if (rate && rate > 0) {
+      total += adultCount * rate;
+      console.log("Adult entrance fees:", adultCount * rate);
     }
 
-    // Child entrance fees
+    // Child entrance fees - use hotel.childEntranceFee array if available
     if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0) {
       childAges.forEach((age) => {
         // Find the appropriate age group for this child
@@ -169,43 +171,36 @@ const GuestInfoForm = ({
         
         if (ageGroup) {
           // Child falls within a defined age group
-          if (ageGroup[rate] > 0) {
+          const childRate = ageGroup[rate] || 0;
+          if (childRate > 0) {
             if (ageGroup.pricingModel === 'per_group') {
               // Per group pricing - one charge covers groupQuantity people
               const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
-              total += groupsNeeded * ageGroup[rate];
+              total += groupsNeeded * childRate;
+              console.log("Child (per group) entrance fees:", groupsNeeded * childRate);
             } else {
               // Per head pricing
-              total += ageGroup[rate];
+              total += childRate;
+              console.log("Child (per head) entrance fees:", childRate);
             }
           }
-          // If ageGroup[rate] is 0, it means free entrance for this age group
+          // If childRate is 0, it means free entrance for this age group
         } else {
           // Child does not fall within any defined age group - charge adult rate
-          if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
-            if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-              // Per group pricing - one charge covers groupQuantity people
-              const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
-              total += groupsNeeded * hotel.adultEntranceFee[rate];
-            } else {
-              // Per head pricing
-              total += hotel.adultEntranceFee[rate];
-            }
+          if (rate > 0) {
+            total += rate;
+            console.log("Child (fallback to adult rate) entrance fees:", rate);
           }
         }
       });
-    } else if (childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+    } else if (childCount > 0 && rate > 0) {
       // No child age groups defined but there are children - charge all children adult rates
-      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
-        // Per group pricing - one charge covers groupQuantity people
-        const groupsNeeded = Math.ceil(childCount / (hotel.adultEntranceFee.groupQuantity || 1));
-        total += groupsNeeded * hotel.adultEntranceFee[rate];
-      } else {
-        // Per head pricing
-        total += childCount * hotel.adultEntranceFee[rate];
-      }
+      total += childCount * rate;
+      console.log("Children (no age groups) entrance fees:", childCount * rate);
     }
 
+    console.log("Total entrance fees:", total);
+    console.log("=== END DEBUG ===");
     return total;
   };
 

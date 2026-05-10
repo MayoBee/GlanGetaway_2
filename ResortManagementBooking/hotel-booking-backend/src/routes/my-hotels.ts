@@ -295,6 +295,7 @@ router.post(
         name: string;
         description: string;
         price: number;
+        imageUrl?: string;
         includedCottages: string[];
         includedRooms: string[];
         includedAmenities: string[];
@@ -331,6 +332,7 @@ router.post(
           name: req.body[`packages[${createPackageIndex}][name]`],
           description: req.body[`packages[${createPackageIndex}][description]`],
           price: parseFloat(req.body[`packages[${createPackageIndex}][price]`]) || 0,
+          imageUrl: req.body[`packages[${createPackageIndex}][imageUrl]`] || '',
           includedCottages,
           includedRooms,
           includedAmenities,
@@ -666,6 +668,10 @@ router.put(
                 if (processedItem.price !== undefined) {
                   processedItem.price = Number(processedItem.price) || 0;
                 }
+                // Preserve imageUrl field (including empty string to remove image)
+                if (processedItem.imageUrl !== undefined) {
+                  processedItem.imageUrl = processedItem.imageUrl;
+                }
                 if (processedItem.includedAdultEntranceFee !== undefined) {
                   processedItem.includedAdultEntranceFee = processedItem.includedAdultEntranceFee === true || processedItem.includedAdultEntranceFee === 'true';
                 }
@@ -850,7 +856,12 @@ router.put(
 router.put(
   "/:hotelId",
   verifyToken,
-  upload.array("imageFiles"),
+  upload.fields([
+    { name: "imageFiles", maxCount: 10 },
+    { name: "roomFiles", maxCount: 20 },
+    { name: "cottageFiles", maxCount: 20 },
+    { name: "packageFiles", maxCount: 20 },
+  ]),
   async (req: Request, res: Response) => {
     try {
       console.log("=== PUT /api/my-hotels/:hotelId called ===");
@@ -860,8 +871,12 @@ router.put(
       console.log("Request body:", req.body);
       console.log("Hotel ID:", req.params.hotelId);
       console.log("User ID:", req.userId);
-      console.log("Files:", (req as any).files);
-      console.log("Files length:", (req as any).files?.length);
+      const uploadedFiles = (req as any).files;
+      console.log("Uploaded files:", uploadedFiles);
+      console.log("Image files:", uploadedFiles?.imageFiles);
+      console.log("Room files:", uploadedFiles?.roomFiles);
+      console.log("Cottage files:", uploadedFiles?.cottageFiles);
+      console.log("Package files:", uploadedFiles?.packageFiles);
       console.log("gcashNumber received in FormData PUT:", req.body.gcashNumber);
       console.log("downPaymentPercentage received in FormData PUT:", req.body.downPaymentPercentage);
       
@@ -899,7 +914,8 @@ router.put(
         console.log(`Package ${debugPackageIndex}:`, {
           id: req.body[`packages[${debugPackageIndex}][id]`],
           name: req.body[`packages[${debugPackageIndex}][name]`],
-          price: req.body[`packages[${debugPackageIndex}][price]`]
+          price: req.body[`packages[${debugPackageIndex}][price]`],
+          imageUrl: req.body[`packages[${debugPackageIndex}][imageUrl]`]
         });
         debugPackageIndex++;
       }
@@ -1111,6 +1127,7 @@ router.put(
         includedCottages: string[];
         includedRooms: string[];
         includedAmenities: string[];
+        imageUrl: string;
       }> = [];
       let createPackageIndex = 0;
       while (req.body[`packages[${createPackageIndex}][id]`]) {
@@ -1147,6 +1164,7 @@ router.put(
           includedCottages,
           includedRooms,
           includedAmenities,
+          imageUrl: req.body[`packages[${createPackageIndex}][imageUrl]`] || "",
         });
         createPackageIndex++;
       }
@@ -1164,6 +1182,7 @@ router.put(
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
+        imageUrl: string;
       }> = [];
       let createRoomIndex = 0;
       while (req.body[`rooms[${createRoomIndex}][id]`]) {
@@ -1183,6 +1202,7 @@ router.put(
           maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
           description: req.body[`rooms[${createRoomIndex}][description]`] || "",
           amenities: roomAmenities,
+          imageUrl: req.body[`rooms[${createRoomIndex}][imageUrl]`] || "",
         });
         createRoomIndex++;
       }
@@ -1204,6 +1224,7 @@ router.put(
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
+        imageUrl: string;
       }> = [];
       let updateCottageIndex = 0;
       while (req.body[`cottages[${updateCottageIndex}][id]`]) {
@@ -1227,6 +1248,7 @@ router.put(
           maxOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][maxOccupancy]`]) || 1,
           description: req.body[`cottages[${updateCottageIndex}][description]`] || "",
           amenities: cottageAmenities,
+          imageUrl: req.body[`cottages[${updateCottageIndex}][imageUrl]`] || "",
         });
         updateCottageIndex++;
       }
@@ -1236,12 +1258,18 @@ router.put(
 
       // Update the hotel
       // Handle image uploads if any
-      const files = (req as any).files as any[];
+      const uploadedFiles = (req as any).files;
+      const imageFiles = uploadedFiles?.imageFiles as any[] || [];
+      const roomFiles = uploadedFiles?.roomFiles as any[] || [];
+      const cottageFiles = uploadedFiles?.cottageFiles as any[] || [];
+      const packageFiles = uploadedFiles?.packageFiles as any[] || [];
+      
       let finalImageUrls: string[] = [];
       
-      if (files && files.length > 0) {
+      // Handle main hotel image uploads
+      if (imageFiles && imageFiles.length > 0) {
         // Upload new images using the new image service
-        const newImageUrls = await imageService.saveImages(files);
+        const newImageUrls = await imageService.saveImages(imageFiles);
         
         // Get existing image URLs from request body
         const existingImageUrls = req.body.imageUrls
@@ -1265,6 +1293,111 @@ router.put(
         updateData.imageUrls = finalImageUrls;
       }
       // If no files and no imageUrls provided, don't update imageUrls field (keep existing)
+      
+      // Handle accommodation image uploads
+      console.log("=== ACCOMMODATION IMAGE UPLOAD DEBUG ===");
+      console.log("Room files:", roomFiles);
+      console.log("Cottage files:", cottageFiles);
+      console.log("Package files:", packageFiles);
+      
+      // Process room image files
+      if (roomFiles && roomFiles.length > 0) {
+        console.log("Processing room image files...");
+        const roomImageUrls = await imageService.saveImages(roomFiles);
+        console.log("Room image URLs:", roomImageUrls);
+        
+        // Update rooms with new image URLs based on their index
+        const updatedRooms = rooms.map((room, index) => {
+          const roomFileKey = `roomFiles[${index}]`;
+          const roomFileIndex = roomFiles.findIndex((file: any) => file.fieldname === roomFileKey);
+          if (roomFileIndex !== -1 && roomImageUrls[roomFileIndex]) {
+            return { ...room, imageUrl: roomImageUrls[roomFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`rooms[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...room, imageUrl: "" };
+          }
+          return room;
+        });
+        updateData.rooms = updatedRooms;
+      } else {
+        // No new room files, but check if imageUrl was cleared in form data
+        const updatedRooms = rooms.map((room, index) => {
+          const formImageUrl = req.body[`rooms[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...room, imageUrl: "" };
+          }
+          return room;
+        });
+        updateData.rooms = updatedRooms;
+      }
+      
+      // Process cottage image files
+      if (cottageFiles && cottageFiles.length > 0) {
+        console.log("Processing cottage image files...");
+        const cottageImageUrls = await imageService.saveImages(cottageFiles);
+        console.log("Cottage image URLs:", cottageImageUrls);
+        
+        // Update cottages with new image URLs based on their index
+        const updatedCottages = cottages.map((cottage, index) => {
+          const cottageFileKey = `cottageFiles[${index}]`;
+          const cottageFileIndex = cottageFiles.findIndex((file: any) => file.fieldname === cottageFileKey);
+          if (cottageFileIndex !== -1 && cottageImageUrls[cottageFileIndex]) {
+            return { ...cottage, imageUrl: cottageImageUrls[cottageFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`cottages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...cottage, imageUrl: "" };
+          }
+          return cottage;
+        });
+        updateData.cottages = updatedCottages;
+      } else {
+        // No new cottage files, but check if imageUrl was cleared in form data
+        const updatedCottages = cottages.map((cottage, index) => {
+          const formImageUrl = req.body[`cottages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...cottage, imageUrl: "" };
+          }
+          return cottage;
+        });
+        updateData.cottages = updatedCottages;
+      }
+      
+      // Process package image files
+      if (packageFiles && packageFiles.length > 0) {
+        console.log("Processing package image files...");
+        const packageImageUrls = await imageService.saveImages(packageFiles);
+        console.log("Package image URLs:", packageImageUrls);
+        
+        // Update packages with new image URLs based on their index
+        const updatedPackages = packages.map((pkg, index) => {
+          const packageFileKey = `packageFiles[${index}]`;
+          const packageFileIndex = packageFiles.findIndex((file: any) => file.fieldname === packageFileKey);
+          if (packageFileIndex !== -1 && packageImageUrls[packageFileIndex]) {
+            return { ...pkg, imageUrl: packageImageUrls[packageFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`packages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...pkg, imageUrl: "" };
+          }
+          return pkg;
+        });
+        updateData.packages = updatedPackages;
+      } else {
+        // No new package files, but check if imageUrl was cleared in form data
+        const updatedPackages = packages.map((pkg, index) => {
+          const formImageUrl = req.body[`packages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...pkg, imageUrl: "" };
+          }
+          return pkg;
+        });
+        updateData.packages = updatedPackages;
+      }
       
       // Debug: Log the full updateData before updating
       console.log("=== FINAL UPDATE DATA ===");

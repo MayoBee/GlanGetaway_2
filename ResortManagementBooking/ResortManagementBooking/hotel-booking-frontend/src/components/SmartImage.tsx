@@ -51,93 +51,65 @@ const SmartImage: React.FC<SmartImageProps> = ({
   // Process image sources with enhanced validation
   const processImageSources = useCallback((sources: string | string[] | undefined): string[] => {
     let sourcesArray: string[] = [];
-
+    
     if (sources) {
       sourcesArray = Array.isArray(sources) ? sources : [sources];
     }
-
-    // Filter out invalid sources early
-    sourcesArray = sourcesArray.filter(source => {
-      const isValid = isValidImageUrl(source);
-      if (!isValid) {
-        logImageEvent('EMPTY_SOURCE', { message: 'Empty or invalid source encountered', source });
-      }
-      return isValid;
-    });
-
-    // Add fallback image as last resort if provided and we have no valid sources
-    if (sourcesArray.length === 0 && fallbackImageUrl) {
+    
+    // Add fallback image as last resort if provided
+    if (fallbackImageUrl && !sourcesArray.includes(fallbackImageUrl)) {
       sourcesArray.push(fallbackImageUrl);
     }
-
+    
     const apiBaseUrl = getApiBaseUrl();
-
+    
     const processedSources = sourcesArray.map((source, index) => {
-      if (!source || source.trim() === '') {
-        return null;
+      if (!isValidImageUrl(source)) {
+        logImageEvent('EMPTY_SOURCE', { index, message: 'Empty or invalid source encountered', source });
+        return null; // Return null instead of empty string to filter it out
       }
-
+      
       try {
         // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
         const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
-
+        
         if (isAbsoluteUrl) {
           const url = new URL(source);
-
-          // Fix URL issues for render.com and other deployment environments
-          if (url.hostname.includes('render.com') || url.hostname.includes('localhost')) {
-            // For render.com URLs, ensure they're using HTTPS and correct format
-            if (url.hostname.includes('render.com') && !url.protocol.includes('https')) {
-              url.protocol = 'https:';
-              const fixedUrl = url.toString();
-              logImageEvent('URL_FIXED', {
-                original: source,
-                fixed: fixedUrl,
-                reason: 'HTTPS protocol fix for render.com'
-              });
-              return fixedUrl;
-            }
-
-            // For localhost URLs, use API base URL
-            if (url.hostname === 'localhost') {
-              const apiUrl = new URL(apiBaseUrl);
-              url.port = apiUrl.port;
-              url.hostname = apiUrl.hostname;
-              url.protocol = apiUrl.protocol;
-              const fixedUrl = url.toString();
-              logImageEvent('URL_FIXED', {
-                original: source,
-                fixed: fixedUrl,
-                apiBaseUrl
-              });
-              return fixedUrl;
-            }
+          
+          // Fix port issues by using current API base URL for localhost absolute URLs
+          if (url.hostname === 'localhost') {
+            // Construct new URL with correct port from API base URL
+            const apiUrl = new URL(apiBaseUrl);
+            url.port = apiUrl.port;
+            url.hostname = apiUrl.hostname;
+            url.protocol = apiUrl.protocol;
+            const fixedUrl = url.toString();
+            logImageEvent('URL_FIXED', { 
+              original: source, 
+              fixed: fixedUrl,
+              apiBaseUrl 
+            });
+            return fixedUrl;
           }
         }
-
+        
         return source;
       } catch (e) {
-        logImageEvent('INVALID_URL', {
-          source,
-          index,
-          error: e instanceof Error ? e.message : 'Unknown error'
+        logImageEvent('INVALID_URL', { 
+          source, 
+          index, 
+          error: e instanceof Error ? e.message : 'Unknown error' 
         });
-        return null;
+        return null; // Return null instead of empty string to filter it out
       }
-    }).filter((source): source is string => source !== null && source.trim() !== '');
-
-    // If still no valid sources, add fallback
-    if (processedSources.length === 0 && fallbackImageUrl) {
-      processedSources.push(fallbackImageUrl);
-      logImageEvent('USING_FALLBACK_ONLY', { fallbackImageUrl });
-    }
-
-    logImageEvent('SOURCES_PROCESSED', {
+    }).filter((source): source is string => source !== null);
+    
+    logImageEvent('SOURCES_PROCESSED', { 
       originalCount: sourcesArray.length,
       validCount: processedSources.length,
-      sources: processedSources
+      sources: processedSources 
     });
-
+    
     return processedSources;
   }, [logImageEvent, fallbackImageUrl]);
 
@@ -194,9 +166,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
           attemptCount,
           timeout: maxLoadTime
         });
-        // Create a proper error event for the image
-        const errorEvent = new Event('error');
-        testImg.dispatchEvent(errorEvent);
+        testImg.onerror(new Error('Load timeout'));
       }, maxLoadTime);
 
       testImg.onload = () => {
@@ -221,24 +191,16 @@ const SmartImage: React.FC<SmartImageProps> = ({
           error: error || 'Unknown image loading error'
         });
         
-        // Check for specific error types that shouldn't be retried
+        // For connection refused errors, don't retry and move to next source immediately
         const isConnectionRefused = error && (
           error.toString().toLowerCase().includes('err_connection_refused')
         );
-        const isNotFoundError = error && (
-          error.toString().toLowerCase().includes('404') ||
-          error.toString().toLowerCase().includes('not found')
-        );
         
-        // For 404 errors and connection refused, don't retry and move to next source immediately
-        if ((isNotFoundError || isConnectionRefused) && sourceIndex < sources.length - 1) {
-          logImageEvent('SKIPPING_RETRY', {
-            source,
-            reason: isNotFoundError ? '404 Not Found' : 'Connection Refused'
-          });
+        if (isConnectionRefused && sourceIndex < sources.length - 1) {
+          // Skip to next source immediately for connection refused
           tryNextSource(sourceIndex + 1, 0);
-        } else if (attemptCount < maxRetries && !isNotFoundError && !isConnectionRefused) {
-          // Retry logic for other types of errors (but not for 404 or connection refused)
+        } else if (attemptCount < maxRetries && !isConnectionRefused) {
+          // Retry logic for other types of errors
           setTimeout(() => {
             tryNextSource(sourceIndex, attemptCount + 1);
           }, retryDelay * (attemptCount + 1)); // Exponential backoff

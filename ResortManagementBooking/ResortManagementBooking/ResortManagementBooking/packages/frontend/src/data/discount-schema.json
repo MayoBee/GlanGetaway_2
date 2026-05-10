@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Resort Discount Configuration",
+  "description": "Schema for storing resort-specific discount rules for beach resort booking website",
+  "type": "object",
+  "properties": {
+    "hotelId": {
+      "type": "string",
+      "description": "Unique identifier for the hotel/resort",
+      "pattern": "^[0-9a-fA-F]{24}$"
+    },
+    "standardDiscounts": {
+      "type": "object",
+      "properties": {
+        "seniorCitizen": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable or disable senior citizen discount",
+              "default": true
+            },
+            "percentage": {
+              "type": "number",
+              "description": "Discount percentage for senior citizens",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 20
+            },
+            "requiredDocuments": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of required documents for verification",
+              "examples": [
+                ["Senior Citizen ID", "Valid Government ID"]
+              ]
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of the discount policy"
+            }
+          },
+          "required": ["enabled", "percentage"]
+        },
+        "pwd": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable or disable PWD discount",
+              "default": true
+            },
+            "percentage": {
+              "type": "number",
+              "description": "Discount percentage for PWD guests",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 20
+            },
+            "requiredDocuments": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of required documents for verification",
+              "examples": [
+                ["PWD ID", "Valid Government ID"]
+              ]
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of the discount policy"
+            }
+          },
+          "required": ["enabled", "percentage"]
+        }
+      }
+    },
+    "customDiscounts": {
+      "type": "array",
+      "description": "Custom discount categories with promo codes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the custom discount"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the discount category",
+            "examples": [
+              "Sports Club Member",
+              "Government Employee",
+              "Corporate Partner",
+              "Returning Guest"
+            ]
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Discount percentage",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "promoCode": {
+            "type": "string",
+            "description": "Unique promo code for the discount",
+            "pattern": "^[A-Z0-9-]+$",
+            "examples": [
+              "PROMO-SPORT25",
+              "PROMO-GOV10",
+              "PROMO-CORP15"
+            ]
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "description": "Whether the discount is currently active",
+            "default": true
+          },
+          "maxUses": {
+            "type": "number",
+            "description": "Maximum number of times this promo code can be used (null = unlimited)",
+            "minimum": 1,
+            "default": null
+          },
+          "usedCount": {
+            "type": "number",
+            "description": "Number of times the promo code has been used",
+            "minimum": 0,
+            "default": 0
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start date of validity (null = valid immediately)"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End date of validity (null = never expires)"
+          },
+          "minBookingValue": {
+            "type": "number",
+            "description": "Minimum booking value required to use this promo",
+            "minimum": 0,
+            "default": 0
+          },
+          "applicableRoomTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Room types this promo applies to (empty = all room types)",
+            "default": []
+          }
+        },
+        "required": ["id", "name", "percentage", "promoCode", "isEnabled"]
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "allowStackDiscounts": {
+          "type": "boolean",
+          "description": "Whether multiple discounts can be combined",
+          "default": false
+        },
+        "maxDiscountPercentage": {
+          "type": "number",
+          "description": "Maximum total discount percentage allowed",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 50
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "createdBy": {
+          "type": "string",
+          "description": "User ID of who created the discount configuration"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the configuration was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the configuration was last updated"
+        }
+      }
+    }
+  },
+  "required": ["hotelId", "standardDiscounts", "customDiscounts", "settings"],
+  "additionalProperties": false,
+
+  "example": {
+    "hotelId": "507f1f77bcf86cd799439011",
+    "standardDiscounts": {
+      "seniorCitizen": {
+        "enabled": true,
+        "percentage": 20,
+        "requiredDocuments": ["Senior Citizen ID", "Valid Government ID"],
+        "description": "20% discount for senior citizens aged 60 and above"
+      },
+      "pwd": {
+        "enabled": true,
+        "percentage": 20,
+        "requiredDocuments": ["PWD ID", "Valid Government ID"],
+        "description": "20% discount for persons with disabilities"
+      }
+    },
+    "customDiscounts": [
+      {
+        "id": "disc_001",
+        "name": "Sports Club Member",
+        "percentage": 15,
+        "promoCode": "PROMO-SPORT25",
+        "isEnabled": true,
+        "maxUses": 100,
+        "usedCount": 23,
+        "validFrom": "2026-01-01T00:00:00Z",
+        "validUntil": "2026-12-31T23:59:59Z",
+        "minBookingValue": 5000,
+        "applicableRoomTypes": ["Deluxe Room", "Suite"]
+      },
+      {
+        "id": "disc_002",
+        "name": "Government Employee",
+        "percentage": 10,
+        "promoCode": "PROMO-GOV10",
+        "isEnabled": true,
+        "maxUses": null,
+        "usedCount": 5,
+        "validFrom": "2026-01-01T00:00:00Z",
+        "validUntil": null,
+        "minBookingValue": 0,
+        "applicableRoomTypes": []
+      }
+    ],
+    "settings": {
+      "allowStackDiscounts": false,
+      "maxDiscountPercentage": 50
+    },
+    "metadata": {
+      "createdBy": "user_001",
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-03-14T00:00:00Z"
+    }
+  }
+}

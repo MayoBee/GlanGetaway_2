@@ -1,11 +1,15 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Bed, Check, X } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import ImageUpload from "../../components/ImageUpload";
 import IncludedEntranceFeeField from "../../components/IncludedEntranceFeeField";
 
-const FreshRoomsSection = () => {
+export interface RoomFilesRef {
+  getRoomFiles: () => Map<string, File>;
+}
+
+const FreshRoomsSection = forwardRef<RoomFilesRef>((props, ref) => {
   const { control } = useFormContext<HotelFormData>();
   const { fields, append, remove, update } = useFieldArray({
     control,
@@ -16,6 +20,11 @@ const FreshRoomsSection = () => {
   const [roomFiles, setRoomFiles] = useState<Map<string, File>>(new Map());
   const isInitializingRef = useRef(false);
   const confirmedRoomsRef = useRef<Set<string>>(new Set());
+
+  // Expose getRoomFiles method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getRoomFiles: () => roomFiles
+  }));
 
   const addRoom = () => {
     const newRoomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -128,13 +137,21 @@ const FreshRoomsSection = () => {
                     value={rooms?.[index]?.imageUrl || ""}
                     onChange={(url: string) => {
                       console.log(`=== ROOM IMAGE CHANGE DEBUG ===`);
-                      console.log(`Room ${index} image URL changed to:`, url.substring(0, 50) + "...");
+                      console.log(`Room ${index} imageUrl changed to:`, url);
                       if (rooms) {
                         const updatedRooms = [...rooms];
                         updatedRooms[index] = { ...updatedRooms[index], imageUrl: url };
                         // Update using the update method from useFieldArray
                         update(index, updatedRooms[index]);
-                        console.log(`Room ${index} updated in form`);
+                        console.log(`Room ${index} imageUrl updated in form`);
+                        
+                        // If url is empty, also remove the file from roomFiles map
+                        if (url === "") {
+                          const newRoomFiles = new Map(roomFiles);
+                          newRoomFiles.delete(`room_${index}`);
+                          setRoomFiles(newRoomFiles);
+                          console.log(`Room ${index} file removed from roomFiles map`);
+                        }
                       }
                     }}
                     onFileChange={(file: File) => {
@@ -314,7 +331,9 @@ const FreshRoomsSection = () => {
       )}
     </div>
   );
-};
+});
+
+FreshRoomsSection.displayName = 'FreshRoomsSection';
 
 export default FreshRoomsSection;
 

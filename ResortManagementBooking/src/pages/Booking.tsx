@@ -215,8 +215,14 @@ const Booking = () => {
 
       // Set basePrice with calculated entrance fees - this is needed for BookingSelectionContext calculations
       const basePrice = entranceFeeTotal;
+      console.log("Setting basePrice to:", basePrice);
       setBasePrice(basePrice);
-      
+
+      // Force recalculation by calling calculateTotal after setting basePrice
+      setTimeout(() => {
+        console.log("Triggering calculateTotal after basePrice update");
+      }, 100);
+
       // Log debugging info
       console.log("=== ENTRANCE FEE DEBUG ===");
       console.log("Selected rate type from context:", selectedRateType);
@@ -441,6 +447,23 @@ const Booking = () => {
                     )}
                   </div>
 
+                  {/* Entrance Fees */}
+                  {totalCost > 0 && (selectedRooms.length === 0 && selectedCottages.length === 0) && (
+                    <div className="border-b pb-4">
+                      <div className="text-sm text-gray-500 mb-2">Entrance Fees ({selectedRateType} rate)</div>
+                      <div className="flex justify-between text-sm">
+                        <span>Adults ({search.adultCount}) × ₱{selectedRateType === 'day' ? hotel?.dayRate : hotel?.nightRate}</span>
+                        <span>₱{((selectedRateType === 'day' ? hotel?.dayRate : hotel?.nightRate) * search.adultCount).toFixed(2)}</span>
+                      </div>
+                      {search.childCount > 0 && hotel?.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>Children ({search.childCount})</span>
+                          <span>₱{(totalCost - ((selectedRateType === 'day' ? hotel?.dayRate : hotel?.nightRate) * search.adultCount)).toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Selected Accommodations */}
                   {(selectedRooms.length > 0 || selectedCottages.length > 0) && (
                     <div className="border-b pb-4">
@@ -451,12 +474,15 @@ const Booking = () => {
                           <span>₱{(room.pricePerNight * numberOfNights).toFixed(2)}</span>
                         </div>
                       ))}
-                      {selectedCottages.map(cottage => (
-                        <div key={cottage.id} className="flex justify-between text-sm mb-1">
-                          <span>{cottage.name} (Cottage)</span>
-                          <span>₱{(cottage.pricePerNight * numberOfNights).toFixed(2)}</span>
-                        </div>
-                      ))}
+                      {selectedCottages.map(cottage => {
+                        const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
+                        return (
+                          <div key={cottage.id} className="flex justify-between text-sm mb-1">
+                            <span>{cottage.name} (Cottage - {selectedRateType} rate)</span>
+                            <span>₱{(rate * numberOfNights).toFixed(2)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -525,7 +551,7 @@ const Booking = () => {
                       {hotel.starRating} Stars
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      ₱{hotel.hasNightRate ? hotel.nightRate : hotel.dayRate}/night
+                      ₱{selectedRateType === 'day' ? hotel.dayRate : hotel.nightRate}/{selectedRateType}
                     </Badge>
                   </div>
                   {hotel.type && (

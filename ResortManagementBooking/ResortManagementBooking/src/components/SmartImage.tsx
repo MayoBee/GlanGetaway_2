@@ -13,6 +13,7 @@ interface SmartImageProps {
   onLoad?: () => void;
   maxRetries?: number;
   retryDelay?: number;
+  maxLoadTime?: number;
   fallbackImageUrl?: string;
   key?: string; // Add key prop for React re-rendering
 }
@@ -27,8 +28,9 @@ const SmartImage: React.FC<SmartImageProps> = ({
   showLoading = true,
   onError,
   onLoad,
-  maxRetries = 3,
-  retryDelay = 1000,
+  maxRetries = 1,
+  retryDelay = 500,
+  maxLoadTime = 5000,
   fallbackImageUrl = DEFAULT_FALLBACK_IMAGE,
   key: propKey
 }) => {
@@ -175,8 +177,20 @@ const SmartImage: React.FC<SmartImageProps> = ({
 
       // Create test image to verify it loads
       const testImg = new Image();
-      
+
+      // Set a timeout to prevent hanging
+      const loadTimeout = setTimeout(() => {
+        logImageEvent('LOAD_TIMEOUT', {
+          source,
+          sourceIndex,
+          attemptCount,
+          timeout: maxLoadTime
+        });
+        testImg.onerror(new Error('Load timeout'));
+      }, maxLoadTime);
+
       testImg.onload = () => {
+        clearTimeout(loadTimeout);
         logImageEvent('LOAD_SUCCESS', { 
           source, 
           sourceIndex, 
@@ -189,6 +203,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
       };
       
       testImg.onerror = (error) => {
+        clearTimeout(loadTimeout);
         logImageEvent('LOAD_ERROR', { 
           source, 
           sourceIndex, 
@@ -229,7 +244,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     };
 
     tryNextSource();
-  }, [src, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
+  }, [src, maxRetries, retryDelay, maxLoadTime, logImageEvent, processImageSources, onError, onLoad]);
 
   const handleRetry = () => {
     logImageEvent('MANUAL_RETRY', { 
