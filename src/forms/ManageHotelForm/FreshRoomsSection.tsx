@@ -1,11 +1,15 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Bed, Check, X } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import ImageUpload from "../../components/ImageUpload";
 import IncludedEntranceFeeField from "../../components/IncludedEntranceFeeField";
 
-const FreshRoomsSection = () => {
+export interface RoomFilesRef {
+  getRoomFiles: () => Map<string, File>;
+}
+
+const FreshRoomsSection = forwardRef<RoomFilesRef>((props, ref) => {
   const { control } = useFormContext<HotelFormData>();
   const { fields, append, remove, update } = useFieldArray({
     control,
@@ -16,6 +20,11 @@ const FreshRoomsSection = () => {
   const [roomFiles, setRoomFiles] = useState<Map<string, File>>(new Map());
   const isInitializingRef = useRef(false);
   const confirmedRoomsRef = useRef<Set<string>>(new Set());
+
+  // Expose getRoomFiles method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getRoomFiles: () => roomFiles
+  }));
 
   const addRoom = () => {
     const newRoomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -314,7 +323,9 @@ const FreshRoomsSection = () => {
       )}
     </div>
   );
-};
+});
+
+FreshRoomsSection.displayName = 'FreshRoomsSection';
 
 export default FreshRoomsSection;
 

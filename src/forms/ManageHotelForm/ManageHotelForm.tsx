@@ -1,13 +1,13 @@
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DetailsSection from "./DetailsSection";
 import GuestsSection from "./GuestsSection";
 import TypeSection from "./TypeSection";
 import FacilitiesSection from "./FacilitiesSection";
-import FreshRoomsSection from "./FreshRoomsSection";
-import FreshCottagesSection from "./FreshCottagesSection";
+import FreshRoomsSection, { RoomFilesRef } from "./FreshRoomsSection";
+import FreshCottagesSection, { CottageFilesRef } from "./FreshCottagesSection";
 import AmenitiesSection from "./AmenitiesSection";
-import FreshPackagesSection from "./FreshPackagesSection";
+import FreshPackagesSection, { PackageFilesRef } from "./FreshPackagesSection";
 import ContactSection from "./ContactSection";
 import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
@@ -193,6 +193,11 @@ type Props = {
 const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isManualSubmit, setIsManualSubmit] = useState(false);
+  
+  // Refs for accommodation sections to access their file maps
+  const roomsSectionRef = useRef<RoomFilesRef>(null);
+  const cottagesSectionRef = useRef<CottageFilesRef>(null);
+  const packagesSectionRef = useRef<PackageFilesRef>(null);
 
   const steps = [
     {
@@ -728,17 +733,27 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     // Reset manual submit flag
     setIsManualSubmit(false);
 
-    // Check if there are new image files to upload
-    const hasNewImageFiles = formDataJson.imageFiles && 
-                           (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) && 
+    // Check if there are new image files to upload (main hotel or accommodations)
+    const hasNewImageFiles = formDataJson.imageFiles &&
+                           (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) &&
                            formDataJson.imageFiles.length > 0;
+
+    // Check if there are accommodation image files
+    const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
+    const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
+    const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
+    const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
 
     console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
     console.log('hasNewImageFiles:', hasNewImageFiles);
+    console.log('hasAccommodationFiles:', hasAccommodationFiles);
     console.log('imageFiles:', formDataJson.imageFiles);
+    console.log('roomFiles count:', roomFiles.size);
+    console.log('cottageFiles count:', cottageFiles.size);
+    console.log('packageFiles count:', packageFiles.size);
 
-    // If there are new image files, construct FormData
-    if (hasNewImageFiles) {
+    // If there are new image files (main hotel or accommodations), construct FormData
+    if (hasNewImageFiles || hasAccommodationFiles) {
       console.log('Constructing FormData with image files');
       const formData = new FormData();
       
@@ -789,6 +804,33 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           formData.append('imageFiles', file);
         });
       }
+
+      // Add accommodation image files (rooms, cottages, packages)
+      console.log('=== ACCOMMODATION IMAGE FILES DEBUG ===');
+      
+      // Collect room image files
+      const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
+      console.log('Room files:', roomFiles);
+      roomFiles.forEach((file, key) => {
+        console.log(`Appending room file: ${key}`, file.name);
+        formData.append(`roomFiles[${key}]`, file);
+      });
+
+      // Collect cottage image files
+      const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
+      console.log('Cottage files:', cottageFiles);
+      cottageFiles.forEach((file, key) => {
+        console.log(`Appending cottage file: ${key}`, file.name);
+        formData.append(`cottageFiles[${key}]`, file);
+      });
+
+      // Collect package image files
+      const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
+      console.log('Package files:', packageFiles);
+      packageFiles.forEach((file, key) => {
+        console.log(`Appending package file: ${key}`, file.name);
+        formData.append(`packageFiles[${key}]`, file);
+      });
       
       // Add contact information
       if (processedData.contact) {
@@ -985,13 +1027,13 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         case "FacilitiesSection":
           return <FacilitiesSection key={sectionName} />;
         case "FreshRoomsSection":
-          return <FreshRoomsSection key={sectionName} />;
+          return <FreshRoomsSection key={sectionName} ref={roomsSectionRef} />;
         case "FreshCottagesSection":
-          return <FreshCottagesSection key={sectionName} />;
+          return <FreshCottagesSection key={sectionName} ref={cottagesSectionRef} />;
         case "AmenitiesSection":
           return <AmenitiesSection key={sectionName} />;
         case "FreshPackagesSection":
-          return <FreshPackagesSection key={sectionName} />;
+          return <FreshPackagesSection key={sectionName} ref={packagesSectionRef} />;
         case "ContactSection":
           return <ContactSection key={sectionName} />;
         case "PoliciesSection":

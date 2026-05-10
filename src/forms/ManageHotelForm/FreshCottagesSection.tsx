@@ -1,11 +1,15 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Home, Check, X } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import ImageUpload from "../../components/ImageUpload";
 import IncludedEntranceFeeField from "../../components/IncludedEntranceFeeField";
 
-const FreshCottagesSection = () => {
+export interface CottageFilesRef {
+  getCottageFiles: () => Map<string, File>;
+}
+
+const FreshCottagesSection = forwardRef<CottageFilesRef>((props, ref) => {
   const { control } = useFormContext<HotelFormData>();
   const { fields, append, remove, update } = useFieldArray({
     control,
@@ -13,8 +17,14 @@ const FreshCottagesSection = () => {
   });
   const cottages = useWatch({ control, name: "cottages" });
   const [confirmedCottages, setConfirmedCottages] = useState<Set<string>>(new Set());
+  const [cottageFiles, setCottageFiles] = useState<Map<string, File>>(new Map());
   const isInitializingRef = useRef(false);
   const confirmedCottagesRef = useRef<Set<string>>(new Set());
+
+  // Expose getCottageFiles method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getCottageFiles: () => cottageFiles
+  }));
 
   const addCottage = () => {
     const newCottageId = `cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -135,6 +145,28 @@ const FreshCottagesSection = () => {
                         updatedCottages[index] = { ...updatedCottages[index], imageUrl: url };
                         // Update using the update method from useFieldArray
                         update(index, updatedCottages[index]);
+                      }
+                    }}
+                    onFileChange={(file: File) => {
+                      console.log(`=== COTTAGE FILE CHANGE DEBUG ===`);
+                      console.log(`Cottage ${index} file received:`, file.name, file.size);
+                      // Store the file for upload
+                      const newCottageFiles = new Map(cottageFiles);
+                      newCottageFiles.set(`cottage_${index}`, file);
+                      setCottageFiles(newCottageFiles);
+                      console.log(`Cottage ${index} file stored in cottageFiles map`);
+                      
+                      // Also update the imageUrl with a temporary preview
+                      if (cottages) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const dataUrl = e.target?.result as string;
+                          const updatedCottages = [...cottages];
+                          updatedCottages[index] = { ...updatedCottages[index], imageUrl: dataUrl };
+                          update(index, updatedCottages[index]);
+                          console.log(`Cottage ${index} data URL set in form`);
+                        };
+                        reader.readAsDataURL(file);
                       }
                     }}
                     label="Cottage Image"
@@ -336,7 +368,9 @@ const FreshCottagesSection = () => {
       )}
     </div>
   );
-};
+});
+
+FreshCottagesSection.displayName = 'FreshCottagesSection';
 
 export default FreshCottagesSection;
 
