@@ -1064,7 +1064,10 @@ router.put(
         id: string;
         name: string;
         price: number;
+        units: number;
         description?: string;
+        imageUrl?: string;
+        isConfirmed?: boolean;
       }> = [];
       let amenityIndex = 0;
       while (req.body[`amenities[${amenityIndex}][id]`]) {
@@ -1072,7 +1075,10 @@ router.put(
           id: req.body[`amenities[${amenityIndex}][id]`],
           name: req.body[`amenities[${amenityIndex}][name]`],
           price: parseFloat(req.body[`amenities[${amenityIndex}][price]`]) || 0,
+          units: parseInt(req.body[`amenities[${amenityIndex}][units]`]) || 1, // Ensure units field is parsed
           description: req.body[`amenities[${amenityIndex}][description]`] || "",
+          imageUrl: req.body[`amenities[${amenityIndex}][imageUrl]`] || "",
+          isConfirmed: req.body[`amenities[${amenityIndex}][isConfirmed]`] === "true" || req.body[`amenities[${amenityIndex}][isConfirmed]`] === true,
         });
         amenityIndex++;
       }
@@ -1128,6 +1134,9 @@ router.put(
         includedRooms: string[];
         includedAmenities: string[];
         imageUrl: string;
+        includedAdultEntranceFee: boolean;
+        includedChildEntranceFee: boolean;
+        isConfirmed?: boolean;
       }> = [];
       let createPackageIndex = 0;
       while (req.body[`packages[${createPackageIndex}][id]`]) {
@@ -1165,6 +1174,9 @@ router.put(
           includedRooms,
           includedAmenities,
           imageUrl: req.body[`packages[${createPackageIndex}][imageUrl]`] || "",
+          includedAdultEntranceFee: req.body[`packages[${createPackageIndex}][includedAdultEntranceFee]`] === "true" || req.body[`packages[${createPackageIndex}][includedAdultEntranceFee]`] === true,
+          includedChildEntranceFee: req.body[`packages[${createPackageIndex}][includedChildEntranceFee]`] === "true" || req.body[`packages[${createPackageIndex}][includedChildEntranceFee]`] === true,
+          isConfirmed: req.body[`packages[${createPackageIndex}][isConfirmed]`] === "true" || req.body[`packages[${createPackageIndex}][isConfirmed]`] === true,
         });
         createPackageIndex++;
       }
@@ -1180,9 +1192,15 @@ router.put(
         pricePerNight: number;
         minOccupancy: number;
         maxOccupancy: number;
+        units: number;
         description?: string;
         amenities?: string[];
         imageUrl: string;
+        includedEntranceFee?: {
+          enabled: boolean;
+          adultCount: number;
+          childCount: number;
+        };
       }> = [];
       let createRoomIndex = 0;
       while (req.body[`rooms[${createRoomIndex}][id]`]) {
@@ -1193,6 +1211,16 @@ router.put(
           roomAmenityIndex++;
         }
         
+        // Parse includedEntranceFee if present
+        let includedEntranceFee;
+        if (req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`]) {
+          includedEntranceFee = {
+            enabled: req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === "true" || req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === true,
+            adultCount: parseInt(req.body[`rooms[${createRoomIndex}][includedEntranceFee][adultCount]`]) || 0,
+            childCount: parseInt(req.body[`rooms[${createRoomIndex}][includedEntranceFee][childCount]`]) || 0,
+          };
+        }
+        
         rooms.push({
           id: req.body[`rooms[${createRoomIndex}][id]`],
           name: req.body[`rooms[${createRoomIndex}][name]`],
@@ -1200,9 +1228,11 @@ router.put(
           pricePerNight: parseFloat(req.body[`rooms[${createRoomIndex}][pricePerNight]`]) || 0,
           minOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
+          units: parseInt(req.body[`rooms[${createRoomIndex}][units]`]) || 1, // Ensure units field is parsed
           description: req.body[`rooms[${createRoomIndex}][description]`] || "",
           amenities: roomAmenities,
           imageUrl: req.body[`rooms[${createRoomIndex}][imageUrl]`] || "",
+          includedEntranceFee,
         });
         createRoomIndex++;
       }
@@ -1222,9 +1252,15 @@ router.put(
         hasNightRate: boolean;
         minOccupancy: number;
         maxOccupancy: number;
+        units: number;
         description?: string;
         amenities?: string[];
         imageUrl: string;
+        includedEntranceFee?: {
+          enabled: boolean;
+          adultCount: number;
+          childCount: number;
+        };
       }> = [];
       let updateCottageIndex = 0;
       while (req.body[`cottages[${updateCottageIndex}][id]`]) {
@@ -1233,6 +1269,16 @@ router.put(
         while (req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]) {
           cottageAmenities.push(req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]);
           cottageAmenityIndex++;
+        }
+        
+        // Parse includedEntranceFee if present
+        let includedEntranceFee;
+        if (req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`]) {
+          includedEntranceFee = {
+            enabled: req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`] === "true" || req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`] === true,
+            adultCount: parseInt(req.body[`cottages[${updateCottageIndex}][includedEntranceFee][adultCount]`]) || 0,
+            childCount: parseInt(req.body[`cottages[${updateCottageIndex}][includedEntranceFee][childCount]`]) || 0,
+          };
         }
         
         cottages.push({
@@ -1246,9 +1292,11 @@ router.put(
           hasNightRate: req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === true,
           minOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][maxOccupancy]`]) || 1,
+          units: parseInt(req.body[`cottages[${updateCottageIndex}][units]`]) || 1, // Ensure units field is parsed
           description: req.body[`cottages[${updateCottageIndex}][description]`] || "",
           amenities: cottageAmenities,
           imageUrl: req.body[`cottages[${updateCottageIndex}][imageUrl]`] || "",
+          includedEntranceFee,
         });
         updateCottageIndex++;
       }
@@ -1399,9 +1447,49 @@ router.put(
         updateData.packages = updatedPackages;
       }
       
-      // Debug: Log the full updateData before updating
-      console.log("=== FINAL UPDATE DATA ===");
+      // Debug: Log full updateData before updating
+      console.log("=== FINAL UPDATE DATA DEBUG ===");
       console.log("updateData.policies:", JSON.stringify(updateData.policies, null, 2));
+      console.log("=== ACCOMMODATION DATA BEFORE SAVE ===");
+      console.log("Rooms count:", updateData.rooms?.length || 0);
+      console.log("Cottages count:", updateData.cottages?.length || 0);
+      console.log("Amenities count:", updateData.amenities?.length || 0);
+      console.log("Packages count:", updateData.packages?.length || 0);
+      
+      // Log each accommodation type details
+      if (updateData.rooms) {
+        updateData.rooms.forEach((room, index) => {
+          console.log(`Room ${index}:`, {
+            id: room.id,
+            name: room.name,
+            units: room.units,
+            pricePerNight: room.pricePerNight
+          });
+        });
+      }
+      
+      if (updateData.cottages) {
+        updateData.cottages.forEach((cottage, index) => {
+          console.log(`Cottage ${index}:`, {
+            id: cottage.id,
+            name: cottage.name,
+            units: cottage.units,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate
+          });
+        });
+      }
+      
+      if (updateData.amenities) {
+        updateData.amenities.forEach((amenity, index) => {
+          console.log(`Amenity ${index}:`, {
+            id: amenity.id,
+            name: amenity.name,
+            units: amenity.units,
+            price: amenity.price
+          });
+        });
+      }
       
       // Add payment fields to updateData
       updateData.gcashNumber = req.body.gcashNumber || "";
@@ -1415,6 +1503,13 @@ router.put(
         updateData,
         { new: true }
       );
+      
+      // Debug: Log what was actually saved
+      console.log("=== AFTER SAVE DEBUG ===");
+      console.log("Saved rooms count:", updatedHotel.rooms?.length || 0);
+      console.log("Saved cottages count:", updatedHotel.cottages?.length || 0);
+      console.log("Saved amenities count:", updatedHotel.amenities?.length || 0);
+      console.log("Saved packages count:", updatedHotel.packages?.length || 0);
 
       if (!updatedHotel) {
         return res.status(404).json({ message: "Hotel not found" });

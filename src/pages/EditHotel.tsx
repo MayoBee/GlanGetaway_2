@@ -73,9 +73,68 @@ const EditHotel = () => {
       console.log("Received JSON data, converting to FormData");
       formData = new FormData();
 
-      // Helper to recursively append nested objects/arrays to FormData
+      // Helper to properly append accommodation arrays to FormData
+      const appendAccommodationArray = (accommodations: any[], arrayName: string) => {
+        if (!Array.isArray(accommodations)) return;
+        
+        accommodations.forEach((item, index) => {
+          // Ensure all required fields are present
+          const accommodationItem = {
+            id: item.id || '',
+            name: item.name || '',
+            type: item.type || '',
+            description: item.description || '',
+            imageUrl: item.imageUrl || '',
+            units: item.units || 1, // Ensure units field is preserved
+            ...item
+          };
+
+          // Append each field individually to match backend parsing expectations
+          Object.entries(accommodationItem).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              const fieldName = `${arrayName}[${index}][${key}]`;
+              
+              // Handle nested objects like includedEntranceFee
+              if (typeof value === 'object' && !Array.isArray(value)) {
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                  if (subValue !== undefined && subValue !== null) {
+                    formData.append(`${fieldName}[${subKey}]`, String(subValue));
+                  }
+                });
+              } else if (Array.isArray(value)) {
+                // Handle arrays like amenities
+                value.forEach((arrayItem, arrayIndex) => {
+                  formData.append(`${fieldName}[${arrayIndex}]`, String(arrayItem));
+                });
+              } else {
+                formData.append(fieldName, String(value));
+              }
+            }
+          });
+        });
+      };
+
+      // Helper to recursively append other objects/arrays to FormData
       const appendToFormData = (obj: any, prefix = '') => {
         if (obj === null || obj === undefined) return;
+
+        // Special handling for accommodation arrays
+        if (prefix === 'rooms') {
+          appendAccommodationArray(obj, 'rooms');
+          return;
+        }
+        if (prefix === 'cottages') {
+          appendAccommodationArray(obj, 'cottages');
+          return;
+        }
+        if (prefix === 'amenities') {
+          appendAccommodationArray(obj, 'amenities');
+          return;
+        }
+        if (prefix === 'packages') {
+          appendAccommodationArray(obj, 'packages');
+          return;
+        }
 
         if (Array.isArray(obj)) {
           obj.forEach((item, index) => {
@@ -97,15 +156,30 @@ const EditHotel = () => {
         }
       };
 
+      // Debug log the accommodation data before conversion
+      console.log("=== ACCOMMODATION DATA BEFORE CONVERSION ===");
+      console.log("Rooms:", hotelFormData.rooms);
+      console.log("Cottages:", hotelFormData.cottages);
+      console.log("Amenities:", hotelFormData.amenities);
+      console.log("Packages:", hotelFormData.packages);
+
       appendToFormData(hotelFormData);
     }
 
-    // Ensure hotelId is set in the FormData
+    // Ensure hotelId is set in FormData
     formData.append('hotelId', hotelId || '');
     formData.append('_id', hotelId || '');
 
     console.log("FormData keys:", Array.from(formData.keys()));
     console.log("FormData has imageFiles:", formData.has('imageFiles'));
+
+    // Debug FormData accommodation fields
+    console.log("=== FORMDATA ACCOMMODATION FIELDS DEBUG ===");
+    for (let [key, value] of formData.entries()) {
+      if (key.includes('rooms[') || key.includes('cottages[') || key.includes('amenities[') || key.includes('packages[')) {
+        console.log(`${key}:`, value);
+      }
+    }
 
     mutate(formData);
   };
