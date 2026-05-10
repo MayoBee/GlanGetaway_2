@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { v2 as cloudinary } from 'cloudinary';
 
 interface UploadedFile {
   originalname: string;
@@ -33,12 +34,47 @@ class ImageService {
       this.uploadDir = path.join(__dirname, '..', '..', 'uploads');
     }
 
-
-
     this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+
+    // Configure Cloudinary if available
+    this.configureCloudinary();
 
     // Ensure upload directory exists
     this.ensureUploadDir();
+  }
+
+  private configureCloudinary(): void {
+    const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+    const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    const isCloudinaryConfigured =
+      cloudinaryCloudName &&
+      cloudinaryApiKey &&
+      cloudinaryApiSecret &&
+      !cloudinaryCloudName.includes('your-') &&
+      !cloudinaryApiKey.includes('your-') &&
+      !cloudinaryApiSecret.includes('your-');
+
+    if (isCloudinaryConfigured) {
+      cloudinary.config({
+        cloud_name: cloudinaryCloudName,
+        api_key: cloudinaryApiKey,
+        api_secret: cloudinaryApiSecret,
+      });
+      console.log('☁️  Cloudinary configured successfully');
+    } else {
+      console.log('☁️  Cloudinary not configured - using local storage');
+    }
+  }
+
+  private isCloudinaryAvailable(): boolean {
+    return !!(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET &&
+      !process.env.CLOUDINARY_CLOUD_NAME.includes('your-')
+    );
   }
 
   private ensureUploadDir(): void {
@@ -55,6 +91,7 @@ class ImageService {
     console.log('📸 Starting image upload process...');
     console.log('📁 Upload directory:', this.uploadDir);
     console.log('🔗 Base URL:', this.baseUrl);
+    console.log('☁️  Cloudinary available:', this.isCloudinaryAvailable());
     
     const imageUrls: string[] = [];
     
@@ -69,18 +106,34 @@ class ImageService {
           continue;
         }
 
-        const uniqueName = `${crypto.randomUUID()}${ext}`;
-        const filePath = path.join(this.uploadDir, uniqueName);
+        let imageUrl: string;
+
+        if (this.isCloudinaryAvailable()) {
+          // Use Cloudinary for persistent storage
+          try {
+            const result = await cloudinary.uploader.upload(
+              `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+              {
+                folder: 'glan-getaway',
+                public_id: `${crypto.randomUUID()}`,
+                resource_type: 'auto',
+                format: ext.replace('.', ''),
+              }
+            );
+            
+            imageUrl = result.secure_url;
+            console.log('☁️  Image uploaded to Cloudinary:', imageUrl);
+          } catch (cloudinaryError) {
+            console.error('❌ Cloudinary upload failed, falling back to local:', cloudinaryError);
+            // Fallback to local storage
+            imageUrl = await this.saveImageLocally(file, ext);
+          }
+        } else {
+          // Use local storage
+          imageUrl = await this.saveImageLocally(file, ext);
+        }
         
-        // Write file to disk
-        fs.writeFileSync(filePath, file.buffer);
-        
-        // Generate URL
-        const imageUrl = `${this.baseUrl}/uploads/${uniqueName}`;
         imageUrls.push(imageUrl);
-        
-        console.log('✅ Image saved:', uniqueName);
-        console.log('🔗 Generated URL:', imageUrl);
         
       } catch (error) {
         console.error('❌ Error saving image:', error);
@@ -90,6 +143,22 @@ class ImageService {
     
     console.log('📊 Total images processed:', imageUrls.length);
     return imageUrls;
+  }
+
+  private async saveImageLocally(file: UploadedFile, ext: string): Promise<string> {
+    const uniqueName = `${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(this.uploadDir, uniqueName);
+    
+    // Write file to disk
+    fs.writeFileSync(filePath, new Uint8Array(file.buffer));
+    
+    // Generate URL
+    const imageUrl = `${this.baseUrl}/uploads/${uniqueName}`;
+    
+    console.log('✅ Image saved locally:', uniqueName);
+    console.log('🔗 Generated URL:', imageUrl);
+    
+    return imageUrl;
   }
 
   /**
