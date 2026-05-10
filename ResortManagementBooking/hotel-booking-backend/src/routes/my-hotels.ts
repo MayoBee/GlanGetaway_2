@@ -1082,8 +1082,14 @@ router.put(
         });
         amenityIndex++;
       }
+      // Only update amenities if they exist in FormData, otherwise preserve existing ones
       if (amenities.length > 0) {
         updateData.amenities = amenities;
+      } else if (existingHotel.amenities && existingHotel.amenities.length > 0) {
+        // Preserve existing amenities if no amenity data in FormData (partial update)
+        updateData.amenities = existingHotel.amenities;
+        console.log("=== PRESERVING EXISTING AMENITIES ===");
+        console.log("Preserved amenities count:", existingHotel.amenities.length);
       }
 
       // Handle discounts from FormData
@@ -1180,8 +1186,14 @@ router.put(
         });
         createPackageIndex++;
       }
+      // Only update packages if they exist in FormData, otherwise preserve existing ones
       if (packages.length > 0) {
         updateData.packages = packages;
+      } else if (existingHotel.packages && existingHotel.packages.length > 0) {
+        // Preserve existing packages if no package data in FormData (partial update)
+        updateData.packages = existingHotel.packages;
+        console.log("=== PRESERVING EXISTING PACKAGES ===");
+        console.log("Preserved packages count:", existingHotel.packages.length);
       }
 
       // Parse rooms from FormData
@@ -1236,8 +1248,14 @@ router.put(
         });
         createRoomIndex++;
       }
+      // Only update rooms if they exist in FormData, otherwise preserve existing ones
       if (rooms.length > 0) {
         updateData.rooms = rooms;
+      } else if (existingHotel.rooms && existingHotel.rooms.length > 0) {
+        // Preserve existing rooms if no room data in FormData (partial update)
+        updateData.rooms = existingHotel.rooms;
+        console.log("=== PRESERVING EXISTING ROOMS ===");
+        console.log("Preserved rooms count:", existingHotel.rooms.length);
       }
 
       // Parse cottages from FormData
@@ -1300,8 +1318,14 @@ router.put(
         });
         updateCottageIndex++;
       }
+      // Only update cottages if they exist in FormData, otherwise preserve existing ones
       if (cottages.length > 0) {
         updateData.cottages = cottages;
+      } else if (existingHotel.cottages && existingHotel.cottages.length > 0) {
+        // Preserve existing cottages if no cottage data in FormData (partial update)
+        updateData.cottages = existingHotel.cottages;
+        console.log("=== PRESERVING EXISTING COTTAGES ===");
+        console.log("Preserved cottages count:", existingHotel.cottages.length);
       }
 
       // Update hotel
@@ -1355,7 +1379,9 @@ router.put(
         console.log("Room image URLs:", roomImageUrls);
         
         // Update rooms with new image URLs based on their index
-        const updatedRooms = rooms.map((room, index) => {
+        // Use updateData.rooms which contains either parsed rooms or preserved existing rooms
+        const currentRooms = updateData.rooms || [];
+        const updatedRooms = currentRooms.map((room, index) => {
           const roomFileKey = `roomFiles[${index}]`;
           const roomFileIndex = roomFiles.findIndex((file: any) => file.fieldname === roomFileKey);
           if (roomFileIndex !== -1 && roomImageUrls[roomFileIndex]) {
@@ -1371,7 +1397,9 @@ router.put(
         updateData.rooms = updatedRooms;
       } else {
         // No new room files, but check if imageUrl was cleared in form data
-        const updatedRooms = rooms.map((room, index) => {
+        // Use updateData.rooms which contains either parsed rooms or preserved existing rooms
+        const currentRooms = updateData.rooms || [];
+        const updatedRooms = currentRooms.map((room, index) => {
           const formImageUrl = req.body[`rooms[${index}][imageUrl]`];
           if (formImageUrl === "" || formImageUrl === null) {
             return { ...room, imageUrl: "" };
@@ -1388,7 +1416,9 @@ router.put(
         console.log("Cottage image URLs:", cottageImageUrls);
         
         // Update cottages with new image URLs based on their index
-        const updatedCottages = cottages.map((cottage, index) => {
+        // Use updateData.cottages which contains either parsed cottages or preserved existing cottages
+        const currentCottages = updateData.cottages || [];
+        const updatedCottages = currentCottages.map((cottage, index) => {
           const cottageFileKey = `cottageFiles[${index}]`;
           const cottageFileIndex = cottageFiles.findIndex((file: any) => file.fieldname === cottageFileKey);
           if (cottageFileIndex !== -1 && cottageImageUrls[cottageFileIndex]) {
@@ -1404,7 +1434,9 @@ router.put(
         updateData.cottages = updatedCottages;
       } else {
         // No new cottage files, but check if imageUrl was cleared in form data
-        const updatedCottages = cottages.map((cottage, index) => {
+        // Use updateData.cottages which contains either parsed cottages or preserved existing cottages
+        const currentCottages = updateData.cottages || [];
+        const updatedCottages = currentCottages.map((cottage, index) => {
           const formImageUrl = req.body[`cottages[${index}][imageUrl]`];
           if (formImageUrl === "" || formImageUrl === null) {
             return { ...cottage, imageUrl: "" };
@@ -1421,7 +1453,9 @@ router.put(
         console.log("Package image URLs:", packageImageUrls);
         
         // Update packages with new image URLs based on their index
-        const updatedPackages = packages.map((pkg, index) => {
+        // Use updateData.packages which contains either parsed packages or preserved existing packages
+        const currentPackages = updateData.packages || [];
+        const updatedPackages = currentPackages.map((pkg, index) => {
           const packageFileKey = `packageFiles[${index}]`;
           const packageFileIndex = packageFiles.findIndex((file: any) => file.fieldname === packageFileKey);
           if (packageFileIndex !== -1 && packageImageUrls[packageFileIndex]) {
@@ -1437,7 +1471,9 @@ router.put(
         updateData.packages = updatedPackages;
       } else {
         // No new package files, but check if imageUrl was cleared in form data
-        const updatedPackages = packages.map((pkg, index) => {
+        // Use updateData.packages which contains either parsed packages or preserved existing packages
+        const currentPackages = updateData.packages || [];
+        const updatedPackages = currentPackages.map((pkg, index) => {
           const formImageUrl = req.body[`packages[${index}][imageUrl]`];
           if (formImageUrl === "" || formImageUrl === null) {
             return { ...pkg, imageUrl: "" };
