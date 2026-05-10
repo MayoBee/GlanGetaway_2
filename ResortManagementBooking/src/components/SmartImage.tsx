@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
-import { getApiBaseUrl } from '../../../shared/auth/api-client';
-import { isValidImageUrl } from '../../../shared/utils/imageUtils';
+import { getApiBaseUrl } from '../shared/auth/api-client';
+import { isValidImageUrl } from '../shared/utils/imageUtils';
 
 interface SmartImageProps {
   src?: string | string[];
@@ -10,11 +10,11 @@ interface SmartImageProps {
   fallbackText?: string;
   showLoading?: boolean;
   onError?: (error: Error) => void;
-   onLoad?: () => void;
-   maxRetries?: number;
-   retryDelay?: number;
-   maxLoadTime?: number;
-   fallbackImageUrl?: string;
+  onLoad?: () => void;
+  maxRetries?: number;
+  retryDelay?: number;
+  fallbackImageUrl?: string;
+  key?: string; // Add key prop for React re-rendering
 }
 
 const DEFAULT_FALLBACK_IMAGE = '/placeholder-resort.jpg';
@@ -25,12 +25,12 @@ const SmartImage: React.FC<SmartImageProps> = ({
   className = '',
   fallbackText = 'No Image Available',
   showLoading = true,
-   onError,
-   onLoad,
-   maxRetries = 1,
-   retryDelay = 500,
-   maxLoadTime = 5000,
-   fallbackImageUrl = DEFAULT_FALLBACK_IMAGE
+  onError,
+  onLoad,
+  maxRetries = 3,
+  retryDelay = 1000,
+  fallbackImageUrl = DEFAULT_FALLBACK_IMAGE,
+  key: propKey
 }) => {
   const [currentSrc, setCurrentSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -51,93 +51,77 @@ const SmartImage: React.FC<SmartImageProps> = ({
   // Process image sources with enhanced validation
   const processImageSources = useCallback((sources: string | string[] | undefined): string[] => {
     let sourcesArray: string[] = [];
-
+    
     if (sources) {
       sourcesArray = Array.isArray(sources) ? sources : [sources];
     }
-
-    // Filter out invalid sources early
-    sourcesArray = sourcesArray.filter(source => {
-      const isValid = isValidImageUrl(source);
-      if (!isValid) {
-        logImageEvent('EMPTY_SOURCE', { message: 'Empty or invalid source encountered', source });
-      }
-      return isValid;
-    });
-
-    // Add fallback image as last resort if provided and we have no valid sources
+    
+    // Filter out empty, null, undefined, and whitespace-only strings
+    sourcesArray = sourcesArray.filter(source => 
+      source && typeof source === 'string' && source.trim() !== ''
+    );
+    
+    // Add fallback image as last resort if provided and no valid sources found
     if (sourcesArray.length === 0 && fallbackImageUrl) {
       sourcesArray.push(fallbackImageUrl);
     }
-
+    
     const apiBaseUrl = getApiBaseUrl();
-
+    
     const processedSources = sourcesArray.map((source, index) => {
+      // Skip empty or invalid sources early
       if (!source || source.trim() === '') {
+        logImageEvent('EMPTY_SOURCE', { index, message: 'Empty or invalid source encountered', source });
         return null;
       }
-
+      
+      // Use isValidImageUrl for validation
+      if (!isValidImageUrl(source)) {
+        logImageEvent('INVALID_IMAGE_URL', { index, message: 'Invalid image URL format', source });
+        return null;
+      }
+      
       try {
         // Only process absolute URLs (with protocol). Skip relative paths, data URLs, blob URLs.
         const isAbsoluteUrl = source.startsWith('http://') || source.startsWith('https://') || source.startsWith('//');
-
+        
         if (isAbsoluteUrl) {
           const url = new URL(source);
-
-          // Fix URL issues for render.com and other deployment environments
-          if (url.hostname.includes('render.com') || url.hostname.includes('localhost')) {
-            // For render.com URLs, ensure they're using HTTPS and correct format
-            if (url.hostname.includes('render.com') && !url.protocol.includes('https')) {
-              url.protocol = 'https:';
-              const fixedUrl = url.toString();
-              logImageEvent('URL_FIXED', {
-                original: source,
-                fixed: fixedUrl,
-                reason: 'HTTPS protocol fix for render.com'
-              });
-              return fixedUrl;
-            }
-
-            // For localhost URLs, use API base URL
-            if (url.hostname === 'localhost') {
-              const apiUrl = new URL(apiBaseUrl);
-              url.port = apiUrl.port;
-              url.hostname = apiUrl.hostname;
-              url.protocol = apiUrl.protocol;
-              const fixedUrl = url.toString();
-              logImageEvent('URL_FIXED', {
-                original: source,
-                fixed: fixedUrl,
-                apiBaseUrl
-              });
-              return fixedUrl;
-            }
+          
+          // Fix port issues by using current API base URL for localhost absolute URLs
+          if (url.hostname === 'localhost') {
+            // Construct new URL with correct port from API base URL
+            const apiUrl = new URL(apiBaseUrl);
+            url.port = apiUrl.port;
+            url.hostname = apiUrl.hostname;
+            url.protocol = apiUrl.protocol;
+            const fixedUrl = url.toString();
+            logImageEvent('URL_FIXED', { 
+              original: source, 
+              fixed: fixedUrl,
+              apiBaseUrl 
+            });
+            return fixedUrl;
           }
         }
-
+        
         return source;
       } catch (e) {
-        logImageEvent('INVALID_URL', {
-          source,
-          index,
-          error: e instanceof Error ? e.message : 'Unknown error'
+        logImageEvent('INVALID_URL', { 
+          source, 
+          index, 
+          error: e instanceof Error ? e.message : 'Unknown error' 
         });
         return null;
       }
-    }).filter((source): source is string => source !== null && source.trim() !== '');
-
-    // If still no valid sources, add fallback
-    if (processedSources.length === 0 && fallbackImageUrl) {
-      processedSources.push(fallbackImageUrl);
-      logImageEvent('USING_FALLBACK_ONLY', { fallbackImageUrl });
-    }
-
-    logImageEvent('SOURCES_PROCESSED', {
+    }).filter((source): source is string => source !== null);
+    
+    logImageEvent('SOURCES_PROCESSED', { 
       originalCount: sourcesArray.length,
       validCount: processedSources.length,
-      sources: processedSources
+      sources: processedSources 
     });
-
+    
     return processedSources;
   }, [logImageEvent, fallbackImageUrl]);
 
@@ -172,6 +156,12 @@ const SmartImage: React.FC<SmartImageProps> = ({
       }
 
       const source = sources[sourceIndex];
+      if (!source || source.trim() === '') {
+        logImageEvent('EMPTY_SOURCE_IN_LIST', { sourceIndex, source });
+        tryNextSource(sourceIndex + 1, 0);
+        return;
+      }
+
       setCurrentSrc(source);
       setIsLoading(true);
       setHasError(false);
@@ -185,22 +175,8 @@ const SmartImage: React.FC<SmartImageProps> = ({
 
       // Create test image to verify it loads
       const testImg = new Image();
-
-      // Set a timeout to prevent hanging
-      const loadTimeout = setTimeout(() => {
-        logImageEvent('LOAD_TIMEOUT', {
-          source,
-          sourceIndex,
-          attemptCount,
-          timeout: maxLoadTime
-        });
-        // Create a proper error event for the image
-        const errorEvent = new Event('error');
-        testImg.dispatchEvent(errorEvent);
-      }, maxLoadTime);
-
+      
       testImg.onload = () => {
-        clearTimeout(loadTimeout);
         logImageEvent('LOAD_SUCCESS', { 
           source, 
           sourceIndex, 
@@ -213,32 +189,23 @@ const SmartImage: React.FC<SmartImageProps> = ({
       };
       
       testImg.onerror = (error) => {
-        clearTimeout(loadTimeout);
-        logImageEvent('LOAD_ERROR', {
-          source,
-          sourceIndex,
+        logImageEvent('LOAD_ERROR', { 
+          source, 
+          sourceIndex, 
           attemptCount,
-          error: error || 'Unknown image loading error'
+          error: error || 'Unknown image loading error' 
         });
         
-        // Check for specific error types that shouldn't be retried
+        // For connection refused errors, don't retry and move to next source immediately
         const isConnectionRefused = error && (
           error.toString().toLowerCase().includes('err_connection_refused')
         );
-        const isNotFoundError = error && (
-          error.toString().toLowerCase().includes('404') ||
-          error.toString().toLowerCase().includes('not found')
-        );
         
-        // For 404 errors and connection refused, don't retry and move to next source immediately
-        if ((isNotFoundError || isConnectionRefused) && sourceIndex < sources.length - 1) {
-          logImageEvent('SKIPPING_RETRY', {
-            source,
-            reason: isNotFoundError ? '404 Not Found' : 'Connection Refused'
-          });
+        if (isConnectionRefused && sourceIndex < sources.length - 1) {
+          // Skip to next source immediately for connection refused
           tryNextSource(sourceIndex + 1, 0);
-        } else if (attemptCount < maxRetries && !isNotFoundError && !isConnectionRefused) {
-          // Retry logic for other types of errors (but not for 404 or connection refused)
+        } else if (attemptCount < maxRetries && !isConnectionRefused) {
+          // Retry logic for other types of errors
           setTimeout(() => {
             tryNextSource(sourceIndex, attemptCount + 1);
           }, retryDelay * (attemptCount + 1)); // Exponential backoff
@@ -262,7 +229,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     };
 
     tryNextSource();
-  }, [src, retryCount, maxRetries, retryDelay, maxLoadTime, logImageEvent, processImageSources, onError, onLoad]);
+  }, [src, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
 
   const handleRetry = () => {
     logImageEvent('MANUAL_RETRY', { 
@@ -314,6 +281,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
 
   return (
     <img
+      key={propKey || currentSrc}
       src={currentSrc}
       alt={alt}
       className={className}

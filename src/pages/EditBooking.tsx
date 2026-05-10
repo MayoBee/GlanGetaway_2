@@ -66,9 +66,19 @@ const EditBooking = () => {
     const checkOut = new Date(formData.checkOut);
     const nights = Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
     
+    // Check if entrance fees are included in the booking's packages
+    const hasEntranceFeesIncluded = booking?.packages?.some((pkg: any) => 
+      pkg.includedAdultEntranceFee || pkg.includedChildEntranceFee
+    ) || false;
+    
     // Calculate entrance fees (using night rate as default for existing bookings)
     let entranceFeeTotal = 0;
     const rateType = 'nightRate'; // Default to night rate for existing bookings
+    
+    // If entrance fees are already included in booking, don't charge them
+    if (hasEntranceFeesIncluded) {
+      entranceFeeTotal = 0;
+    } else {
     
     // Adult entrance fees
     if (hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
@@ -91,6 +101,7 @@ const EditBooking = () => {
           entranceFeeTotal += formData.childCount * hotel.adultEntranceFee[rateType];
         }
       }
+    }
     }
 
     let totalPrice = entranceFeeTotal;

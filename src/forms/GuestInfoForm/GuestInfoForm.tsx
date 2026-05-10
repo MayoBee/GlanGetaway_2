@@ -68,6 +68,7 @@ const GuestInfoForm = ({
     selectedRooms, 
     selectedCottages, 
     selectedAmenities,
+    selectedPackages,
     clearSelections,
     selectedRateType,
     setRateType
@@ -124,9 +125,24 @@ const GuestInfoForm = ({
     };
   };
 
+  // Check if entrance fees are already included in selected accommodations
+  const areEntranceFeesIncluded = () => {
+    // Check if any selected package includes entrance fees
+    const hasPackageWithEntranceFees = selectedPackages.some(pkg => 
+      pkg.includedAdultEntranceFee || pkg.includedChildEntranceFee
+    );
+    
+    return hasPackageWithEntranceFees;
+  };
+
   // Calculate entrance fee total based on adults, children, and their ages
   const calculateEntranceFeeTotal = () => {
     if (!hotel) return 0;
+    
+    // If entrance fees are already included in selected accommodations, don't charge them
+    if (areEntranceFeesIncluded()) {
+      return 0;
+    }
 
     let total = 0;
     const rate = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
@@ -232,8 +248,16 @@ const GuestInfoForm = ({
     const entranceFeeTotal = calculateEntranceFeeTotal();
     const basePrice = entranceFeeTotal;
     setBasePrice(basePrice);
+    
+    // Debug logging for entrance fee calculation
+    console.log("=== ENTRANCE FEE DEBUG (GuestInfoForm) ===");
+    console.log("Selected packages:", selectedPackages);
+    console.log("Are entrance fees included?", areEntranceFeesIncluded());
+    console.log("Calculated entrance fee total:", entranceFeeTotal);
+    console.log("Base price being set:", basePrice);
+    console.log("=== END DEBUG ===");
     setNumberOfNights(nights);
-  }, [checkIn, checkOut, adultCount, childCount, childAges, selectedRateType, hotel, setBasePrice, setNumberOfNights]);
+  }, [checkIn, checkOut, adultCount, childCount, childAges, selectedRateType, hotel, setBasePrice, setNumberOfNights, selectedPackages]);
 
   // Update child ages when child count changes
   useEffect(() => {

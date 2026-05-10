@@ -1,7 +1,6 @@
 import { HotelType } from "../../../shared/types";
 import { Bed, Home, Users, Plus, Minus, Package, Check, Ticket } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
-import SmartImage from "./SmartImage";
 
 type Props = {
   hotel: HotelType;
@@ -160,11 +159,10 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Package Image */}
                     {pkg.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <SmartImage
+                        <img
                           src={pkg.imageUrl}
                           alt={pkg.name}
                           className="w-full h-full object-cover"
-                          fallbackText="Package Image"
                         />
                       </div>
                     )}
@@ -368,11 +366,10 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Room Image */}
                     {room.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <SmartImage
+                        <img
                           src={room.imageUrl}
                           alt={room.name}
                           className="w-full h-full object-cover"
-                          fallbackText="Room Image"
                         />
                       </div>
                     )}
@@ -586,11 +583,10 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                     {/* Cottage Image */}
                     {cottage.imageUrl && (
                       <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                        <SmartImage
+                        <img
                           src={cottage.imageUrl}
                           alt={cottage.name}
                           className="w-full h-full object-cover"
-                          fallbackText="Cottage Image"
                         />
                       </div>
                     )}
