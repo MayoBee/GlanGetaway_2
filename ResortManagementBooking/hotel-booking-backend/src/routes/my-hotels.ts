@@ -865,6 +865,22 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       console.log("=== PUT /api/my-hotels/:hotelId called ===");
+      console.log("=== BACKEND VERSION CHECK ===");
+      console.log("Entrance fee parsing code should be active");
+      
+      // Check for entrance fee data in FormData immediately
+      console.log("=== ENTRANCE FEE FORMDATA CHECK ===");
+      const bodyKeys = Object.keys(req.body);
+      const entranceFeeKeys = bodyKeys.filter(key => key.includes('includedEntranceFee'));
+      console.log("Entrance fee keys found:", entranceFeeKeys);
+      
+      if (entranceFeeKeys.length > 0) {
+        entranceFeeKeys.forEach(key => {
+          console.log(`${key}:`, req.body[key]);
+        });
+      } else {
+        console.log("No entrance fee keys found in FormData");
+      }
       console.log("Request body keys:", Object.keys(req.body));
       console.log("Request body sample:", req.body);
       console.log("=== BACKEND UPDATE DEBUG ===");
