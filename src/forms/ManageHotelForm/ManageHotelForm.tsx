@@ -780,17 +780,21 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
     const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
 
+    // Check if there's accommodation data that needs FormData serialization
+    const hasAccommodationData = processedData.rooms || processedData.cottages || processedData.packages;
+
     console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
     console.log('hasNewImageFiles:', hasNewImageFiles);
     console.log('hasAccommodationFiles:', hasAccommodationFiles);
+    console.log('hasAccommodationData:', hasAccommodationData);
     console.log('imageFiles:', formDataJson.imageFiles);
     console.log('roomFiles count:', roomFiles.size);
     console.log('cottageFiles count:', cottageFiles.size);
     console.log('packageFiles count:', packageFiles.size);
 
-    // If there are new image files (main hotel or accommodations), construct FormData
-    if (hasNewImageFiles || hasAccommodationFiles) {
-      console.log('Constructing FormData with image files');
+    // If there are new image files (main hotel or accommodations) OR accommodation data, construct FormData
+    if (hasNewImageFiles || hasAccommodationFiles || hasAccommodationData) {
+      console.log('Constructing FormData with accommodation data');
       const formData = new FormData();
       
       // Add hotelId if available (for edit mode)
