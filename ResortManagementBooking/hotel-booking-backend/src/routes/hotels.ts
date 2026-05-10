@@ -100,9 +100,9 @@ router.post(
     const { numberOfNights } = req.body;
     const hotelId = req.params.hotelId;
 
-    // Use lean() for faster query - only fetch needed fields
-    // Exclude nested arrays to avoid path collision with includedEntranceFee
-    const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name -rooms -cottages -amenities -packages -childEntranceFee').lean();
+    // Use lean() for faster query - exclude nested arrays to avoid path collision with includedEntranceFee
+    // Using only exclusion to avoid "Cannot do exclusion on field rooms in inclusion projection" error
+    const hotel = await Hotel.findById(hotelId).select('-rooms -cottages -amenities -packages -childEntranceFee').lean();
     if (!hotel) {
       return res.status(400).json({ message: "Hotel not found" });
     }
