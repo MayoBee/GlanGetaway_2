@@ -949,15 +949,28 @@ router.put(
         lastUpdated: new Date(),
       };
 
-      // Handle contact information
-      updateData.contact = {
-        phone: req.body["contact.phone"] || "",
-        email: req.body["contact.email"] || "",
-        website: req.body["contact.website"] || "",
-        facebook: req.body["contact.facebook"] || "",
-        instagram: req.body["contact.instagram"] || "",
-        tiktok: req.body["contact.tiktok"] || "",
-      };
+      // Handle contact information - preserve existing if not provided
+      const hasContactData = req.body["contact.phone"] || req.body["contact.email"] || 
+                           req.body["contact.website"] || req.body["contact.facebook"] || 
+                           req.body["contact.instagram"] || req.body["contact.tiktok"];
+      
+      if (hasContactData) {
+        updateData.contact = {
+          phone: req.body["contact.phone"] || existingHotel.contact?.phone || "",
+          email: req.body["contact.email"] || existingHotel.contact?.email || "",
+          website: req.body["contact.website"] || existingHotel.contact?.website || "",
+          facebook: req.body["contact.facebook"] || existingHotel.contact?.facebook || "",
+          instagram: req.body["contact.instagram"] || existingHotel.contact?.instagram || "",
+          tiktok: req.body["contact.tiktok"] || existingHotel.contact?.tiktok || "",
+        };
+        console.log("=== CONTACT UPDATE DEBUG ===");
+        console.log("New contact data:", updateData.contact);
+      } else if (existingHotel.contact) {
+        // Preserve existing contact information if no contact data in FormData
+        updateData.contact = existingHotel.contact;
+        console.log("=== PRESERVING EXISTING CONTACT ===");
+        console.log("Preserved contact:", existingHotel.contact);
+      }
 
       // Handle policies - log what we receive
       console.log("=== POLICIES PARSING START ===");
@@ -1225,12 +1238,24 @@ router.put(
         
         // Parse includedEntranceFee if present
         let includedEntranceFee;
-        if (req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`]) {
+        const enabledKey = `rooms[${createRoomIndex}][includedEntranceFee][enabled]`;
+        const adultKey = `rooms[${createRoomIndex}][includedEntranceFee][adultCount]`;
+        const childKey = `rooms[${createRoomIndex}][includedEntranceFee][childCount]`;
+        
+        console.log(`=== ROOM ${createRoomIndex} ENTRANCE FEE PARSING ===`);
+        console.log(`enabledKey: ${enabledKey}, value:`, req.body[enabledKey]);
+        console.log(`adultKey: ${adultKey}, value:`, req.body[adultKey]);
+        console.log(`childKey: ${childKey}, value:`, req.body[childKey]);
+        
+        if (req.body[enabledKey]) {
           includedEntranceFee = {
-            enabled: req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === "true" || req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === true,
-            adultCount: parseInt(req.body[`rooms[${createRoomIndex}][includedEntranceFee][adultCount]`]) || 0,
-            childCount: parseInt(req.body[`rooms[${createRoomIndex}][includedEntranceFee][childCount]`]) || 0,
+            enabled: req.body[enabledKey] === "true" || req.body[enabledKey] === true,
+            adultCount: parseInt(req.body[adultKey]) || 0,
+            childCount: parseInt(req.body[childKey]) || 0,
           };
+          console.log(`Parsed includedEntranceFee for room ${createRoomIndex}:`, includedEntranceFee);
+        } else {
+          console.log(`No entrance fee data found for room ${createRoomIndex}`);
         }
         
         rooms.push({
@@ -1335,25 +1360,18 @@ router.put(
       const roomFiles = uploadedFilesData?.roomFiles as any[] || [];
       const cottageFiles = uploadedFilesData?.cottageFiles as any[] || [];
       const packageFiles = uploadedFilesData?.packageFiles as any[] || [];
-      
       let finalImageUrls: string[] = [];
       
       // Handle main hotel image uploads
       if (imageFiles && imageFiles.length > 0) {
-        // Upload new images using the new image service
+        // Upload new images using new image service - REPLACE existing images
         const newImageUrls = await imageService.saveImages(imageFiles);
+        console.log("=== IMAGE UPLOAD DEBUG ===");
+        console.log("New image URLs:", newImageUrls);
+        console.log("Replacing existing images with new ones");
         
-        // Get existing image URLs from request body
-        const existingImageUrls = req.body.imageUrls
-          ? Array.isArray(req.body.imageUrls)
-            ? req.body.imageUrls
-            : [req.body.imageUrls]
-          : [];
-        
-        // Combine existing and new images
-        finalImageUrls = [...existingImageUrls, ...newImageUrls];
-        
-        // Update the hotel with all image URLs
+        // Replace existing images with new ones (don't combine)
+        finalImageUrls = newImageUrls;
         updateData.imageUrls = finalImageUrls;
       } else if (req.body.imageUrls && (Array.isArray(req.body.imageUrls) ? req.body.imageUrls.length > 0 : req.body.imageUrls)) {
         // No new files, but imageUrls provided in request - update with provided URLs
@@ -1361,10 +1379,16 @@ router.put(
           ? req.body.imageUrls
           : [req.body.imageUrls];
         
-        // Update the hotel with all image URLs
+        console.log("=== IMAGE URL UPDATE DEBUG ===");
+        console.log("Using provided image URLs:", finalImageUrls);
         updateData.imageUrls = finalImageUrls;
+      } else {
+        // No new files and no imageUrls provided - preserve existing images
+        finalImageUrls = existingHotel.imageUrls || [];
+        updateData.imageUrls = finalImageUrls;
+        console.log("=== PRESERVING EXISTING IMAGES ===");
+        console.log("Preserved image URLs:", finalImageUrls);
       }
-      // If no files and no imageUrls provided, don't update imageUrls field (keep existing)
       
       // Handle accommodation image uploads
       console.log("=== ACCOMMODATION IMAGE UPLOAD DEBUG ===");

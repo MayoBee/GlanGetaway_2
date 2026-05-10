@@ -736,6 +736,20 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       });
     });
 
+    // Debug FormData entrance fee appending
+    if (hasNewImageFiles || hasAccommodationFiles) {
+      console.log('=== FORM DATA ENTRANCE FEE DEBUG ===');
+      processedData.rooms?.forEach((room, index) => {
+        if (room.includedEntranceFee) {
+          console.log(`Appending room ${index} entrance fee:`, {
+            enabled: room.includedEntranceFee.enabled,
+            adultCount: room.includedEntranceFee.adultCount,
+            childCount: room.includedEntranceFee.childCount
+          });
+        }
+      });
+    }
+
     // Reset manual submit flag
     setIsManualSubmit(false);
 
