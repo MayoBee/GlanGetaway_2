@@ -1203,6 +1203,10 @@ router.put(
       }
 
       // Parse rooms from FormData
+      console.log("=== FORM DATA ROOM PARSING START ===");
+      console.log("Checking for rooms[0][id]:", req.body[`rooms[0][id]`]);
+      console.log("All room-related keys:", Object.keys(req.body).filter(key => key.includes('rooms[')));
+      
       const rooms: Array<{
         id: string;
         name: string;
