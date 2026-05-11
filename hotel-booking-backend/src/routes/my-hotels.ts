@@ -1212,6 +1212,7 @@ router.put(
       }
 
       // Parse rooms from FormData
+      console.log("=== ROOM PARSING PROMINENT DEBUG START ===");
       console.log("=== FORM DATA ROOM PARSING START ===");
       console.log("Checking for rooms[0][id]:", req.body[`rooms[0][id]`]);
       console.log("All room-related keys:", Object.keys(req.body).filter(key => key.includes('rooms[')));
@@ -1233,7 +1234,9 @@ router.put(
         };
       }> = [];
       let createRoomIndex = 0;
+      console.log("=== STARTING ROOM PARSING LOOP ===");
       while (req.body[`rooms[${createRoomIndex}][id]`]) {
+        console.log(`=== PARSING ROOM ${createRoomIndex} ===`);
         const roomAmenities: string[] = [];
         let roomAmenityIndex = 0;
         while (req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]) {
