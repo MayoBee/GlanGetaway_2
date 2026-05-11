@@ -1,0 +1,1704 @@
+import express, { Request, Response } from "express";
+import multer from "multer";
+import imageService from "../services/imageService";
+import { v2 as cloudinary } from "cloudinary";
+import Hotel from "../models/hotel";
+import Booking from "../models/booking";
+import verifyToken from "../middleware/auth";
+import { body } from "express-validator";
+import { HotelType } from "../types";
+import path from "path";
+import fs from "fs";
+import crypto from "crypto";
+
+// FORCE DEPLOY CHECK - IF YOU SEE THIS IN LOGS, DEPLOYMENT WORKED
+console.log("BACKEND LOADED - FORCE DEPLOY CHECK - TIMESTAMP:", new Date().toISOString());
+
+// Check if Cloudinary is properly configured
+const isCloudinaryConfigured = () => {
+  return !!(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME !== "your-cloudinary-cloud-name" &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_KEY !== "your-cloudinary-api-key" &&
+    process.env.CLOUDINARY_API_SECRET &&
+    process.env.CLOUDINARY_API_SECRET !== "your-cloudinary-api-secret"
+  );
+};
+
+// Local storage configuration for fallback
+const localUploadDir = path.join(__dirname, "..", "..", "uploads");
+
+// Ensure upload directory exists
+if (!fs.existsSync(localUploadDir)) {
+  fs.mkdirSync(localUploadDir, { recursive: true });
+}
+
+const localStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, localUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${crypto.randomUUID()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
+
+const localUpload = multer({
+  storage: localStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
+
+const router = express.Router();
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
+
+router.post(
+  "/",
+  verifyToken,
+  [
+    body("name").notEmpty().withMessage("Name is required"),
+    body("city").notEmpty().withMessage("City is required"),
+    body("country").notEmpty().withMessage("Country is required"),
+    body("description").notEmpty().withMessage("Description is required"),
+    body("type")
+      .notEmpty()
+      .isArray({ min: 1 })
+      .withMessage("Select at least one hotel type"),
+    body("dayRate")
+      .optional()
+      .isNumeric()
+      .withMessage("Day rate must be a number"),
+    body("nightRate")
+      .optional()
+      .isNumeric()
+      .withMessage("Night rate must be a number"),
+    body("hasDayRate")
+      .optional()
+      .isBoolean()
+      .withMessage("Has day rate must be a boolean"),
+    body("hasNightRate")
+      .optional()
+      .isBoolean()
+      .withMessage("Has night rate must be a boolean"),
+    body("starRating")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("Star rating is required and must be a number"),
+    body("facilities")
+      .notEmpty()
+      .isArray()
+      .withMessage("Facilities are required"),
+    body("gcashNumber")
+      .optional()
+      .matches(/^09\d{9}$/)
+      .withMessage("GCash number must be 11 digits starting with 09 (e.g., 09XXXXXXXXX)"),
+    body("downPaymentPercentage")
+      .optional()
+      .isInt({ min: 10, max: 100 })
+      .withMessage("Down payment percentage must be between 10 and 100"),
+  ],
+  upload.array("imageFiles", 6),
+  async (req: Request, res: Response) => {
+    console.log("=== POST /api/my-hotels called ===");
+    console.log("Request body:", req.body);
+    console.log("Files:", req.files);
+    console.log("gcashNumber received:", req.body.gcashNumber);
+    console.log("downPaymentPercentage received:", req.body.downPaymentPercentage);
+    
+    try {
+      const imageFiles = (req as any).files as any[];
+      console.log("Image files count:", imageFiles?.length);
+      
+      const newHotel: any = req.body;
+      console.log("newHotel before parse:", newHotel);
+
+      // Ensure type is always an array
+      if (typeof newHotel.type === "string") {
+        newHotel.type = [newHotel.type];
+      }
+
+      // Parse JSON string fields that might come from frontend
+      const jsonFields = ['adultEntranceFee', 'childEntranceFee', 'rooms', 'cottages', 'amenities', 'packages'];
+      for (const field of jsonFields) {
+        if (newHotel[field] && typeof newHotel[field] === 'string') {
+          try {
+            newHotel[field] = JSON.parse(newHotel[field]);
+          } catch (parseError) {
+            console.log(`Failed to parse ${field} as JSON, keeping as is:`, newHotel[field]);
+          }
+        }
+      }
+
+      // Fix empty string values in parsed arrays (required fields)
+      if (Array.isArray(newHotel.cottages)) {
+        newHotel.cottages = newHotel.cottages.map((c: any) => ({
+          ...c,
+          type: c.type || 'Standard',
+        }));
+      }
+      if (Array.isArray(newHotel.rooms)) {
+        newHotel.rooms = newHotel.rooms.map((r: any) => ({
+          ...r,
+          type: r.type || 'Standard',
+        }));
+      }
+
+      // Clear problematic array fields that might be serialized as strings
+      // These will be properly parsed below (or use already parsed JSON)
+      if (!newHotel.rooms || !Array.isArray(newHotel.rooms)) delete newHotel.rooms;
+      if (!newHotel.cottages || !Array.isArray(newHotel.cottages)) delete newHotel.cottages;
+      if (!newHotel.amenities || !Array.isArray(newHotel.amenities)) delete newHotel.amenities;
+      if (!newHotel.packages || !Array.isArray(newHotel.packages)) delete newHotel.packages;
+
+      // Handle nested objects from FormData
+      newHotel.contact = {
+        phone: req.body["contact.phone"] || "",
+        email: req.body["contact.email"] || "",
+        website: req.body["contact.website"] || "",
+        facebook: req.body["contact.facebook"] || "",
+        instagram: req.body["contact.instagram"] || "",
+        tiktok: req.body["contact.tiktok"] || "",
+      };
+
+      newHotel.policies = {
+        checkInTime: req.body["policies.checkInTime"] || "",
+        checkOutTime: req.body["policies.checkOutTime"] || "",
+        dayCheckInTime: req.body["policies.dayCheckInTime"] || "",
+        dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
+        nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
+        nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
+        resortPolicies: [],
+      };
+
+      // Parse resort policies from FormData
+      const resortPolicies: Array<{
+        id: string;
+        title: string;
+        description: string;
+        isConfirmed?: boolean;
+      }> = [];
+      let policyIndex = 0;
+      
+      // Try multiple key formats
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+             req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+             req.body[`resortPolicies[${policyIndex}][id]`]) {
+        
+        const policyId = req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+                        req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+                        req.body[`resortPolicies[${policyIndex}][id]`];
+        
+        if (!policyId) break;
+        
+        resortPolicies.push({
+          id: policyId,
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || 
+                 req.body[`policies.resortPolicies.${policyIndex}.title`] ||
+                 req.body[`resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || 
+                      req.body[`policies.resortPolicies.${policyIndex}.description`] ||
+                      req.body[`resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || 
+                       req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === "true" ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === true,
+        });
+        policyIndex++;
+      }
+      
+      // Try JSON parsing as fallback
+      if (resortPolicies.length === 0) {
+        const policiesJson = req.body["policies.resortPolicies"];
+        if (policiesJson) {
+          try {
+            const parsed = JSON.parse(policiesJson);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log("Found resortPolicies as JSON string in POST:", parsed);
+              newHotel.policies.resortPolicies = parsed;
+            }
+          } catch (e) {
+            console.log("Failed to parse policies.resortPolicies JSON in POST:", e);
+          }
+        }
+      } else if (resortPolicies.length > 0) {
+        newHotel.policies.resortPolicies = resortPolicies;
+      }
+
+      // Parse amenities from FormData
+      const amenities: Array<{
+        id: string;
+        name: string;
+        price: number;
+        description?: string;
+      }> = [];
+      let amenityIndex = 0;
+      while (req.body[`amenities[${amenityIndex}][id]`]) {
+        amenities.push({
+          id: req.body[`amenities[${amenityIndex}][id]`],
+          name: req.body[`amenities[${amenityIndex}][name]`],
+          price: parseFloat(req.body[`amenities[${amenityIndex}][price]`]) || 0,
+          description: req.body[`amenities[${amenityIndex}][description]`] || "",
+        });
+        amenityIndex++;
+      }
+      if (amenities.length > 0) {
+        newHotel.amenities = amenities;
+      }
+
+      // Handle discounts from FormData
+      newHotel.discounts = {
+        seniorCitizenEnabled: req.body["discounts.seniorCitizenEnabled"] === "true" || req.body["discounts.seniorCitizenEnabled"] === true,
+        seniorCitizenPercentage: parseFloat(req.body["discounts.seniorCitizenPercentage"]) || 20,
+        pwdEnabled: req.body["discounts.pwdEnabled"] === "true" || req.body["discounts.pwdEnabled"] === true,
+        pwdPercentage: parseFloat(req.body["discounts.pwdPercentage"]) || 20,
+        customDiscounts: []
+      };
+
+      // Parse custom discounts from FormData
+      const customDiscounts: Array<{
+        id: string;
+        name: string;
+        percentage: number;
+        promoCode: string;
+        isEnabled: boolean;
+        maxUses?: number;
+        validUntil?: string;
+      }> = [];
+      let discountIndex = 0;
+      while (req.body[`discounts.customDiscounts[${discountIndex}][id]`]) {
+        const maxUsesVal = req.body[`discounts.customDiscounts[${discountIndex}][maxUses]`];
+        const validUntilVal = req.body[`discounts.customDiscounts[${discountIndex}][validUntil]`];
+        customDiscounts.push({
+          id: req.body[`discounts.customDiscounts[${discountIndex}][id]`],
+          name: req.body[`discounts.customDiscounts[${discountIndex}][name]`],
+          percentage: parseFloat(req.body[`discounts.customDiscounts[${discountIndex}][percentage]`]) || 0,
+          promoCode: req.body[`discounts.customDiscounts[${discountIndex}][promoCode]`],
+          isEnabled: req.body[`discounts.customDiscounts[${discountIndex}][isEnabled]`] === "true" || req.body[`discounts.customDiscounts[${discountIndex}][isEnabled]`] === true,
+          maxUses: maxUsesVal ? parseInt(maxUsesVal) : undefined,
+          validUntil: validUntilVal || undefined,
+        });
+        discountIndex++;
+      }
+      if (customDiscounts.length > 0) {
+        newHotel.discounts!.customDiscounts = customDiscounts;
+      }
+
+      // Parse packages from FormData
+      const packages: Array<{
+        id: string;
+        name: string;
+        description: string;
+        price: number;
+        imageUrl?: string;
+        includedCottages: string[];
+        includedRooms: string[];
+        includedAmenities: string[];
+      }> = [];
+      let createPackageIndex = 0;
+      while (req.body[`packages[${createPackageIndex}][id]`]) {
+        const includedCottages: string[] = [];
+        const includedRooms: string[] = [];
+        const includedAmenities: string[] = [];
+        
+        // Parse included cottages
+        let packageCottageIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]);
+          packageCottageIndex++;
+        }
+        
+        // Parse included rooms
+        let packageRoomIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]);
+          packageRoomIndex++;
+        }
+        
+        // Parse included amenities
+        let amenityIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]);
+          amenityIndex++;
+        }
+        
+        packages.push({
+          id: req.body[`packages[${createPackageIndex}][id]`],
+          name: req.body[`packages[${createPackageIndex}][name]`],
+          description: req.body[`packages[${createPackageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${createPackageIndex}][price]`]) || 0,
+          imageUrl: req.body[`packages[${createPackageIndex}][imageUrl]`] || '',
+          includedCottages,
+          includedRooms,
+          includedAmenities,
+        });
+        createPackageIndex++;
+      }
+      if (packages.length > 0) {
+        newHotel.packages = packages;
+      }
+
+      // Parse rooms from FormData
+      const rooms: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        minOccupancy: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let createRoomIndex = 0;
+      while (req.body[`rooms[${createRoomIndex}][id]`]) {
+        const roomAmenities: string[] = [];
+        let roomAmenityIndex = 0;
+        while (req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]);
+          roomAmenityIndex++;
+        }
+        
+        rooms.push({
+          id: req.body[`rooms[${createRoomIndex}][id]`],
+          name: req.body[`rooms[${createRoomIndex}][name]`],
+          type: req.body[`rooms[${createRoomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${createRoomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`rooms[${createRoomIndex}][description]`] || "",
+          amenities: roomAmenities,
+        });
+        createRoomIndex++;
+      }
+      if (rooms.length > 0) {
+        newHotel.rooms = rooms;
+      }
+
+      // Parse cottages from FormData
+      const cottages: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        dayRate: number;
+        nightRate: number;
+        hasDayRate: boolean;
+        hasNightRate: boolean;
+        minOccupancy: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let createCottageIndex = 0;
+      while (req.body[`cottages[${createCottageIndex}][id]`]) {
+        const cottageAmenities: string[] = [];
+        let cottageAmenityIndex = 0;
+        while (req.body[`cottages[${createCottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${createCottageIndex}][amenities][${cottageAmenityIndex}]`]);
+          cottageAmenityIndex++;
+        }
+        
+        cottages.push({
+          id: req.body[`cottages[${createCottageIndex}][id]`],
+          name: req.body[`cottages[${createCottageIndex}][name]`],
+          type: req.body[`cottages[${createCottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${createCottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${createCottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${createCottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${createCottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${createCottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${createCottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${createCottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${createCottageIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`cottages[${createCottageIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`cottages[${createCottageIndex}][description]`] || "",
+          amenities: cottageAmenities,
+        });
+        createCottageIndex++;
+      }
+      if (cottages.length > 0) {
+        newHotel.cottages = cottages;
+      }
+
+      // Handle image uploads only if files are provided
+      let imageUrls: string[] = [];
+      if (imageFiles && imageFiles.length > 0) {
+        try {
+          imageUrls = await imageService.saveImages(imageFiles);
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          // Continue without images if upload fails
+          imageUrls = [];
+        }
+      }
+
+      newHotel.imageUrls = imageUrls;
+      newHotel.lastUpdated = new Date();
+      newHotel.userId = req.userId;
+      
+      // Set the new pricing fields
+      newHotel.dayRate = Number(req.body.dayRate) || 0;
+      newHotel.nightRate = Number(req.body.nightRate) || 0;
+      newHotel.hasDayRate = req.body.hasDayRate === "true" || req.body.hasDayRate === true;
+      newHotel.hasNightRate = req.body.hasNightRate === "true" || req.body.hasNightRate === true;
+
+      // Parse entrance fees - use already parsed JSON or fallback to FormData
+      if (!newHotel.adultEntranceFee || typeof newHotel.adultEntranceFee !== 'object') {
+        newHotel.adultEntranceFee = {
+          dayRate: Number(req.body["adultEntranceFee.dayRate"]) || 0,
+          nightRate: Number(req.body["adultEntranceFee.nightRate"]) || 0,
+          pricingModel: req.body["adultEntranceFee.pricingModel"] || "per_head",
+          groupQuantity: Number(req.body["adultEntranceFee.groupQuantity"]) || 1,
+        };
+      }
+
+      // Parse child entrance fees - use already parsed JSON or fallback to FormData
+      if (!newHotel.childEntranceFee || !Array.isArray(newHotel.childEntranceFee)) {
+        const childEntranceFees: Array<{
+          id: string;
+          minAge: number;
+          maxAge: number;
+          dayRate: number;
+          nightRate: number;
+          pricingModel: "per_head" | "per_group";
+          groupQuantity?: number;
+          isConfirmed?: boolean;
+        }> = [];
+        let childFeeIndex = 0;
+        while (req.body[`childEntranceFee[${childFeeIndex}][id]`]) {
+          childEntranceFees.push({
+            id: req.body[`childEntranceFee[${childFeeIndex}][id]`],
+            minAge: Number(req.body[`childEntranceFee[${childFeeIndex}][minAge]`]) || 0,
+            maxAge: Number(req.body[`childEntranceFee[${childFeeIndex}][maxAge]`]) || 0,
+            dayRate: Number(req.body[`childEntranceFee[${childFeeIndex}][dayRate]`]) || 0,
+            nightRate: Number(req.body[`childEntranceFee[${childFeeIndex}][nightRate]`]) || 0,
+            pricingModel: req.body[`childEntranceFee[${childFeeIndex}][pricingModel]`] || "per_head",
+            groupQuantity: req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`] ? Number(req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`]) : undefined,
+            isConfirmed: req.body[`childEntranceFee[${childFeeIndex}][isConfirmed]`] === "true" || req.body[`childEntranceFee[${childFeeIndex}][isConfirmed]`] === true,
+          });
+          childFeeIndex++;
+        }
+        if (childEntranceFees.length > 0) {
+          newHotel.childEntranceFee = childEntranceFees;
+        }
+      }
+
+      // Set approval status - resorts need admin approval
+      newHotel.isApproved = false;
+
+      // Handle payment fields
+      newHotel.gcashNumber = req.body.gcashNumber || "";
+      newHotel.downPaymentPercentage = Number(req.body.downPaymentPercentage) || 50;
+      
+      console.log("gcashNumber set to:", newHotel.gcashNumber);
+      console.log("downPaymentPercentage set to:", newHotel.downPaymentPercentage);
+
+      const hotel = new Hotel(newHotel as HotelType);
+      await hotel.save();
+      
+      console.log("Saved hotel gcashNumber:", hotel.gcashNumber);
+      console.log("Saved hotel downPaymentPercentage:", hotel.downPaymentPercentage);
+
+      res.status(201).json({
+        ...hotel.toObject(),
+        message: "Resort submitted for approval. It will be visible to users once approved by an administrator."
+      });
+    } catch (error: any) {
+      console.error("Error creating hotel:", error);
+      
+      // Handle validation errors
+      if (error.errors && Array.isArray(error.errors)) {
+        const validationErrors = error.errors.map((err: any) => ({
+          field: err.path,
+          message: err.msg,
+        }));
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationErrors 
+        });
+      }
+      
+      // Handle other errors
+      res.status(500).json({ 
+        message: "Something went wrong",
+        error: error.message || "Unknown error"
+      });
+    }
+  }
+);
+
+router.get("/", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const hotels = await Hotel.find({ userId: req.userId });
+    res.json(hotels);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching hotels" });
+  }
+});
+
+router.get("/:id", verifyToken, async (req: Request, res: Response) => {
+  const id = req.params.id.toString();
+  try {
+    const hotel = await Hotel.findOne({
+      _id: id,
+      userId: req.userId,
+    });
+    res.json(hotel);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching hotels" });
+  }
+});
+
+// New JSON-based update endpoint for better data handling
+router.put(
+  "/:hotelId/json",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log("=== PUT /api/my-hotels/:hotelId/json called ===");
+      console.log("Request body:", req.body);
+      console.log("Hotel ID:", req.params.hotelId);
+      console.log("User ID:", req.userId);
+      
+      // Debug cottages specifically
+      if (req.body.cottages) {
+        console.log("Cottages being saved:", req.body.cottages);
+        req.body.cottages.forEach((cottage: any, index: number) => {
+          console.log(`Cottage ${index} being saved:`, {
+            id: cottage.id,
+            name: cottage.name,
+            hasDayRate: cottage.hasDayRate,
+            hasNightRate: cottage.hasNightRate,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate
+          });
+        });
+      }
+
+      // First, find the existing hotel
+      const existingHotel = await Hotel.findOne({
+        _id: req.params.hotelId,
+        userId: req.userId,
+      });
+
+      if (!existingHotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Prepare update data with all fields including rooms, cottages, and packages
+      const updateData: any = {
+        ...req.body,
+        lastUpdated: new Date(),
+      };
+
+      // Remove fields that don't exist in HotelType
+      delete updateData.adultCount;
+      delete updateData.childCount;
+
+      // Ensure imageUrls is always present and valid
+      if (!updateData.imageUrls || !Array.isArray(updateData.imageUrls) || updateData.imageUrls.length === 0) {
+        // Keep existing image URLs if none provided
+        updateData.imageUrls = existingHotel.imageUrls || [];
+      }
+
+      // Explicitly handle array fields to ensure they remain as arrays
+      // These fields are sent as proper object arrays from frontend and should not be stringified
+      const arrayFields = ['rooms', 'cottages', 'packages', 'amenities', 'childEntranceFee'];
+      console.log("Processing arrayFields:", arrayFields);
+      for (const field of arrayFields) {
+        if (updateData[field]) {
+          // If it's a string, try to parse it as JSON
+          if (typeof updateData[field] === 'string') {
+            try {
+              updateData[field] = JSON.parse(updateData[field]);
+              console.log(`Parsed ${field} from string to array:`, updateData[field]);
+            } catch (parseError) {
+              console.log(`Failed to parse ${field} as JSON, keeping as is:`, updateData[field]);
+            }
+          }
+          
+          // Now ensure all nested objects have proper types
+          if (Array.isArray(updateData[field])) {
+            updateData[field] = updateData[field].map((item: any) => {
+              const processedItem: any = { ...item };
+              
+              // For rooms: convert pricePerNight, minOccupancy, maxOccupancy to numbers
+              if (field === 'rooms') {
+                if (processedItem.pricePerNight !== undefined) {
+                  processedItem.pricePerNight = Number(processedItem.pricePerNight) || 0;
+                }
+                if (processedItem.minOccupancy !== undefined) {
+                  processedItem.minOccupancy = Number(processedItem.minOccupancy) || 1;
+                }
+                if (processedItem.maxOccupancy !== undefined) {
+                  processedItem.maxOccupancy = Number(processedItem.maxOccupancy) || 1;
+                }
+              }
+              
+              // For cottages: convert pricePerNight, dayRate, nightRate, minOccupancy, maxOccupancy to numbers
+              if (field === 'cottages') {
+                if (processedItem.pricePerNight !== undefined) {
+                  processedItem.pricePerNight = Number(processedItem.pricePerNight) || 0;
+                }
+                if (processedItem.dayRate !== undefined) {
+                  processedItem.dayRate = Number(processedItem.dayRate) || 0;
+                }
+                if (processedItem.nightRate !== undefined) {
+                  processedItem.nightRate = Number(processedItem.nightRate) || 0;
+                }
+                if (processedItem.minOccupancy !== undefined) {
+                  processedItem.minOccupancy = Number(processedItem.minOccupancy) || 1;
+                }
+                if (processedItem.maxOccupancy !== undefined) {
+                  processedItem.maxOccupancy = Number(processedItem.maxOccupancy) || 1;
+                }
+                if (processedItem.hasDayRate !== undefined) {
+                  processedItem.hasDayRate = processedItem.hasDayRate === true || processedItem.hasDayRate === 'true';
+                }
+                if (processedItem.hasNightRate !== undefined) {
+                  processedItem.hasNightRate = processedItem.hasNightRate === true || processedItem.hasNightRate === 'true';
+                }
+              }
+              
+              // For packages: convert price to number and handle boolean fields
+              if (field === 'packages') {
+                if (processedItem.price !== undefined) {
+                  processedItem.price = Number(processedItem.price) || 0;
+                }
+                // Preserve imageUrl field (including empty string to remove image)
+                if (processedItem.imageUrl !== undefined) {
+                  processedItem.imageUrl = processedItem.imageUrl;
+                }
+                if (processedItem.includedAdultEntranceFee !== undefined) {
+                  processedItem.includedAdultEntranceFee = processedItem.includedAdultEntranceFee === true || processedItem.includedAdultEntranceFee === 'true';
+                }
+                if (processedItem.includedChildEntranceFee !== undefined) {
+                  processedItem.includedChildEntranceFee = processedItem.includedChildEntranceFee === true || processedItem.includedChildEntranceFee === 'true';
+                }
+              }
+              
+              // For amenities: convert price to number
+              if (field === 'amenities') {
+                if (processedItem.price !== undefined) {
+                  processedItem.price = Number(processedItem.price) || 0;
+                }
+              }
+              
+              // For childEntranceFee: convert numbers and handle boolean fields
+              if (field === 'childEntranceFee') {
+                if (processedItem.minAge !== undefined) {
+                  processedItem.minAge = Number(processedItem.minAge) || 0;
+                }
+                if (processedItem.maxAge !== undefined) {
+                  processedItem.maxAge = Number(processedItem.maxAge) || 0;
+                }
+                if (processedItem.dayRate !== undefined) {
+                  processedItem.dayRate = Number(processedItem.dayRate) || 0;
+                }
+                if (processedItem.nightRate !== undefined) {
+                  processedItem.nightRate = Number(processedItem.nightRate) || 0;
+                }
+                if (processedItem.groupQuantity !== undefined) {
+                  processedItem.groupQuantity = Number(processedItem.groupQuantity) || 1;
+                }
+                if (processedItem.isConfirmed !== undefined) {
+                  processedItem.isConfirmed = processedItem.isConfirmed === true || processedItem.isConfirmed === 'true';
+                }
+              }
+              
+              return processedItem;
+            });
+          }
+        }
+      }
+
+      // Handle policies specially - it might come as a stringified JSON object
+      if (updateData.policies) {
+        console.log("Processing policies field:", typeof updateData.policies);
+        if (typeof updateData.policies === 'string') {
+          try {
+            updateData.policies = JSON.parse(updateData.policies);
+            console.log("Parsed policies from string:", updateData.policies);
+          } catch (e) {
+            console.log("Failed to parse policies:", e);
+            updateData.policies = {};
+          }
+        }
+        
+        // Now process resortPolicies if it exists
+        if (updateData.policies && updateData.policies.resortPolicies) {
+          if (typeof updateData.policies.resortPolicies === 'string') {
+            try {
+              updateData.policies.resortPolicies = JSON.parse(updateData.policies.resortPolicies);
+              console.log("Parsed resortPolicies from string:", updateData.policies.resortPolicies);
+            } catch (e) {
+              console.log("Failed to parse resortPolicies:", e);
+              updateData.policies.resortPolicies = [];
+            }
+          }
+          if (!Array.isArray(updateData.policies.resortPolicies)) {
+            updateData.policies.resortPolicies = [];
+          }
+          console.log("Final resortPolicies:", updateData.policies.resortPolicies);
+        }
+      }
+
+      // EMERGENCY DEPLOYMENT TRIGGER - 2026-05-11-10:30-AM
+      console.log("� EMERGENCY: BACKEND v2.2 ACTIVE - FormData parsing WORKING");
+      
+      // Parse stringified JSON fields that might come from frontend
+      const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee', 'rooms', 'cottages', 'packages', 'contact', 'policies'];
+      for (const field of stringifiedFields) {
+        if (updateData[field] && typeof updateData[field] === 'string') {
+          try {
+            updateData[field] = JSON.parse(updateData[field]);
+            console.log(`Successfully parsed ${field} from JSON string`);
+          } catch (parseError) {
+            console.log(`Failed to parse ${field} as JSON, keeping as is:`, updateData[field]);
+          }
+        } else if (updateData[field] && typeof updateData[field] === 'object') {
+          console.log(`${field} is already an object, checking for entrance fee data...`);
+          // Handle case where data is already an object (like from FormData with object notation)
+          if (field === 'rooms' || field === 'cottages') {
+            updateData[field].forEach((item: any, index: number) => {
+              if (item.includedEntranceFee) {
+                console.log(`${field} ${index} entrance fee data:`, item.includedEntranceFee);
+              }
+            });
+          }
+        }
+      }
+
+      // Log policies after processing
+      console.log("=== POLICIES AFTER ARRAY PROCESSING ===");
+      console.log("updateData.policies:", updateData.policies);
+      console.log("updateData.policies.resortPolicies:", updateData.policies?.resortPolicies);
+
+      // Convert string numbers to actual numbers
+      if (updateData.dayRate !== undefined) updateData.dayRate = Number(updateData.dayRate);
+      if (updateData.nightRate !== undefined) updateData.nightRate = Number(updateData.nightRate);
+      if (updateData.starRating !== undefined) updateData.starRating = Number(updateData.starRating);
+
+      // Convert boolean strings to actual booleans
+      if (updateData.hasDayRate !== undefined) updateData.hasDayRate = updateData.hasDayRate === "true" || updateData.hasDayRate === true;
+      if (updateData.hasNightRate !== undefined) updateData.hasNightRate = updateData.hasNightRate === "true" || updateData.hasNightRate === true;
+
+      // Validate required fields
+      const requiredFields = ['name', 'city', 'country', 'description', 'type', 'starRating', 'facilities'];
+      for (const field of requiredFields) {
+        if (!updateData[field]) {
+          return res.status(400).json({ message: `${field} is required` });
+        }
+      }
+
+      // Ensure type is always an array
+      if (typeof updateData.type === "string") {
+        updateData.type = [updateData.type];
+      }
+
+      console.log("Final update data:", updateData);
+
+      // Use atomic update with $set to ensure subdocuments are properly updated
+      const updateFields: any = {};
+
+      // Build the $set object with proper paths for subdocuments
+      if (updateData.name !== undefined) updateFields.name = updateData.name;
+      if (updateData.city !== undefined) updateFields.city = updateData.city;
+      if (updateData.country !== undefined) updateFields.country = updateData.country;
+      if (updateData.description !== undefined) updateFields.description = updateData.description;
+      if (updateData.type !== undefined) updateFields.type = updateData.type;
+      if (updateData.dayRate !== undefined) updateFields.dayRate = updateData.dayRate;
+      if (updateData.nightRate !== undefined) updateFields.nightRate = updateData.nightRate;
+      if (updateData.hasDayRate !== undefined) updateFields.hasDayRate = updateData.hasDayRate;
+      if (updateData.hasNightRate !== undefined) updateFields.hasNightRate = updateData.hasNightRate;
+      if (updateData.starRating !== undefined) updateFields.starRating = updateData.starRating;
+      if (updateData.facilities !== undefined) updateFields.facilities = updateData.facilities;
+      if (updateData.imageUrls !== undefined) updateFields.imageUrls = updateData.imageUrls;
+      if (updateData.lastUpdated !== undefined) updateFields.lastUpdated = updateData.lastUpdated;
+
+      // Handle contact
+      if (updateData.contact) {
+        updateFields.contact = updateData.contact;
+      }
+
+      // Handle policies
+      if (updateData.policies) {
+        updateFields.policies = updateData.policies;
+      }
+
+      // Handle discounts
+      if (updateData.discounts) {
+        updateFields.discounts = updateData.discounts;
+      }
+
+      // Replace entire arrays to ensure subdocuments are updated
+      if (updateData.rooms) updateFields.rooms = updateData.rooms;
+      if (updateData.cottages) updateFields.cottages = updateData.cottages;
+      if (updateData.amenities) updateFields.amenities = updateData.amenities;
+      if (updateData.packages) updateFields.packages = updateData.packages;
+
+      // Handle additional fields
+      if (updateData.gcashNumber !== undefined) updateFields.gcashNumber = updateData.gcashNumber;
+      if (updateData.downPaymentPercentage !== undefined) updateFields.downPaymentPercentage = updateData.downPaymentPercentage;
+
+      console.log("=== ATOMIC UPDATE DEBUG ===");
+      console.log("Update fields keys:", Object.keys(updateFields));
+      if (updateData.rooms) {
+        console.log("Rooms to update:", updateData.rooms.map((r: any) => ({ id: r.id, name: r.name, includedEntranceFee: r.includedEntranceFee })));
+      }
+
+      const updatedHotel = await Hotel.findByIdAndUpdate(
+        req.params.hotelId,
+        { $set: updateFields },
+        { new: true, runValidators: true }
+      );
+
+      console.log("=== ATOMIC UPDATE RESULT DEBUG ===");
+      console.log("Updated hotel ID:", updatedHotel?._id);
+      console.log("Updated hotel rooms count:", updatedHotel?.rooms?.length || 0);
+      console.log("Updated hotel cottages count:", updatedHotel?.cottages?.length || 0);
+      console.log("Updated hotel amenities count:", updatedHotel?.amenities?.length || 0);
+      console.log("Updated hotel packages count:", updatedHotel?.packages?.length || 0);
+
+      // Debug includedEntranceFee in updated rooms
+      console.log("=== UPDATED ROOMS ENTRANCE FEE DEBUG ===");
+      if (updatedHotel && updatedHotel.rooms && updatedHotel.rooms.length > 0) {
+        updatedHotel.rooms.forEach((room: any, index: number) => {
+          console.log(`Updated Room ${index} (${room.name}): includedEntranceFee:`, room.includedEntranceFee);
+        });
+      }
+
+      if (!updatedHotel) {
+        console.log("ERROR: Hotel update failed - no document returned");
+        return res.status(500).json({ message: "Failed to update hotel" });
+      }
+
+      res.status(200).json(updatedHotel);
+    } catch (error: any) {
+      console.error("Error updating hotel:", error);
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError') {
+        const validationErrors = Object.values(error.errors).map((err: any) => ({
+          field: err.path,
+          message: err.message,
+        }));
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationErrors 
+        });
+      }
+      
+      res.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+  }
+);
+
+// Fixed TypeScript types for rooms and cottages parsing
+router.put(
+  "/:hotelId",
+  verifyToken,
+  upload.fields([
+    { name: "imageFiles", maxCount: 10 },
+    { name: "roomFiles", maxCount: 20 },
+    { name: "cottageFiles", maxCount: 20 },
+    { name: "packageFiles", maxCount: 20 },
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      console.log("=== PUT /api/my-hotels/:hotelId called - VERSION 5.0 FORCE DEBUG ===");
+      console.log("=== BACKEND VERSION CHECK ===");
+      console.log("Force debug version - if you see this, deployment worked");
+      console.log("Timestamp:", new Date().toISOString());
+      console.log("Process ID:", process.pid);
+      console.log("Node version:", process.version);
+
+      // Check for entrance fee data in FormData immediately
+      console.log("=== ENTRANCE FEE FORMDATA CHECK ===");
+      const bodyKeys = Object.keys(req.body);
+      const entranceFeeKeys = bodyKeys.filter(key => key.includes('includedEntranceFee'));
+      console.log("Entrance fee keys found:", entranceFeeKeys);
+
+      if (entranceFeeKeys.length > 0) {
+        entranceFeeKeys.forEach(key => {
+          console.log(`${key}:`, req.body[key], "type:", typeof req.body[key]);
+        });
+      } else {
+        console.log("No entrance fee keys found in FormData");
+      }
+      console.log("Total request body keys:", bodyKeys.length);
+      console.log("First 10 keys:", bodyKeys.slice(0, 10));
+      console.log("=== BACKEND UPDATE DEBUG ===");
+      console.log("Request body:", req.body);
+      console.log("Hotel ID:", req.params.hotelId);
+      console.log("User ID:", req.userId);
+      const uploadedFiles = (req as any).files;
+      console.log("Uploaded files:", uploadedFiles);
+      console.log("Image files:", uploadedFiles?.imageFiles);
+      console.log("Room files:", uploadedFiles?.roomFiles);
+      console.log("Cottage files:", uploadedFiles?.cottageFiles);
+      console.log("Package files:", uploadedFiles?.packageFiles);
+      console.log("gcashNumber received in FormData PUT:", req.body.gcashNumber);
+      console.log("downPaymentPercentage received in FormData PUT:", req.body.downPaymentPercentage);
+      
+      // Debug rooms data
+      console.log("=== ROOMS DEBUG ===");
+      let debugRoomIndex = 0;
+      while (req.body[`rooms[${debugRoomIndex}][id]`]) {
+        console.log(`Room ${debugRoomIndex}:`, {
+          id: req.body[`rooms[${debugRoomIndex}][id]`],
+          name: req.body[`rooms[${debugRoomIndex}][name]`],
+          pricePerNight: req.body[`rooms[${debugRoomIndex}][pricePerNight]`]
+        });
+        debugRoomIndex++;
+      }
+      console.log(`Total rooms found: ${debugRoomIndex}`);
+      
+      // Debug cottages data
+      console.log("=== COTTAGES DEBUG ===");
+      let debugCottageIndex = 0;
+      while (req.body[`cottages[${debugCottageIndex}][id]`]) {
+        console.log(`Cottage ${debugCottageIndex}:`, {
+          id: req.body[`cottages[${debugCottageIndex}][id]`],
+          name: req.body[`cottages[${debugCottageIndex}][name]`],
+          dayRate: req.body[`cottages[${debugCottageIndex}][dayRate]`],
+          nightRate: req.body[`cottages[${debugCottageIndex}][nightRate]`]
+        });
+        debugCottageIndex++;
+      }
+      console.log(`Total cottages found: ${debugCottageIndex}`);
+      
+      // Debug packages data
+      console.log("=== PACKAGES DEBUG ===");
+      let debugPackageIndex = 0;
+      while (req.body[`packages[${debugPackageIndex}][id]`]) {
+        console.log(`Package ${debugPackageIndex}:`, {
+          id: req.body[`packages[${debugPackageIndex}][id]`],
+          name: req.body[`packages[${debugPackageIndex}][name]`],
+          price: req.body[`packages[${debugPackageIndex}][price]`],
+          imageUrl: req.body[`packages[${debugPackageIndex}][imageUrl]`]
+        });
+        debugPackageIndex++;
+      }
+      console.log(`Total packages found: ${debugPackageIndex}`);
+
+      // First, find the existing hotel
+      const existingHotel = await Hotel.findOne({
+        _id: req.params.hotelId,
+        userId: req.userId,
+      });
+
+      if (!existingHotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Prepare update data
+      const updateData: any = {
+        name: req.body.name,
+        city: req.body.city,
+        country: req.body.country,
+        description: req.body.description,
+        type: Array.isArray(req.body.type) ? req.body.type : [req.body.type],
+        dayRate: Number(req.body.dayRate) || 0,
+        nightRate: Number(req.body.nightRate) || 0,
+        hasDayRate: req.body.hasDayRate === "true" || req.body.hasDayRate === true,
+        hasNightRate: req.body.hasNightRate === "true" || req.body.hasNightRate === true,
+        starRating: Number(req.body.starRating),
+        facilities: Array.isArray(req.body.facilities)
+          ? req.body.facilities
+          : [req.body.facilities],
+        lastUpdated: new Date(),
+      };
+
+      // Handle contact information - preserve existing if not provided
+      const hasContactData = req.body["contact.phone"] || req.body["contact.email"] || 
+                           req.body["contact.website"] || req.body["contact.facebook"] || 
+                           req.body["contact.instagram"] || req.body["contact.tiktok"];
+      
+      if (hasContactData) {
+        updateData.contact = {
+          phone: req.body["contact.phone"] || existingHotel.contact?.phone || "",
+          email: req.body["contact.email"] || existingHotel.contact?.email || "",
+          website: req.body["contact.website"] || existingHotel.contact?.website || "",
+          facebook: req.body["contact.facebook"] || existingHotel.contact?.facebook || "",
+          instagram: req.body["contact.instagram"] || existingHotel.contact?.instagram || "",
+          tiktok: req.body["contact.tiktok"] || existingHotel.contact?.tiktok || "",
+        };
+        console.log("=== CONTACT UPDATE DEBUG ===");
+        console.log("New contact data:", updateData.contact);
+      } else if (existingHotel.contact) {
+        // Preserve existing contact information if no contact data in FormData
+        updateData.contact = existingHotel.contact;
+        console.log("=== PRESERVING EXISTING CONTACT ===");
+        console.log("Preserved contact:", existingHotel.contact);
+      }
+
+      // Handle policies - log what we receive
+      console.log("=== POLICIES PARSING START ===");
+      console.log("req.body policies.checkInTime:", req.body["policies.checkInTime"]);
+      console.log("req.body policies.dayCheckInTime:", req.body["policies.dayCheckInTime"]);
+      console.log("req.body policies.resortPolicies (raw):", req.body["policies.resortPolicies"]);
+      
+      updateData.policies = {
+        checkInTime: req.body["policies.checkInTime"] || "",
+        checkOutTime: req.body["policies.checkOutTime"] || "",
+        dayCheckInTime: req.body["policies.dayCheckInTime"] || "",
+        dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
+        nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
+        nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
+        resortPolicies: [],
+      };
+
+      // Parse resort policies from FormData
+      const resortPolicies: Array<{
+        id: string;
+        title: string;
+        description: string;
+        isConfirmed?: boolean;
+      }> = [];
+      let policyIndex = 0;
+      
+      console.log("=== RESORT POLICIES DEBUG ===");
+      console.log("All req.body keys containing 'policies':", Object.keys(req.body).filter(k => k.includes('policies')));
+      console.log("Checking for resort policies in FormData...");
+      
+      // First, let's try to find any keys that might contain resort policy data
+      const allKeys = Object.keys(req.body);
+      const policyKeys = allKeys.filter(k => k.includes('resortPolicies'));
+      console.log("Keys containing 'resortPolicies':", policyKeys);
+      
+      // Also try to find keys that start with just '[' - for array format
+      const arrayFormatKeys = allKeys.filter(k => k.startsWith('[') || k.match(/^\d+\./));
+      console.log("Keys in array format:", arrayFormatKeys);
+      
+      // Try multiple key formats that might be used
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+             req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+             req.body[`resortPolicies[${policyIndex}][id]`] ||
+             req.body[`resortPolicies.${policyIndex}.id`]) {
+        
+        const policyId = req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+                        req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+                        req.body[`resortPolicies[${policyIndex}][id]`];
+        
+        if (!policyId) break;
+        
+        const policy = {
+          id: policyId,
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || 
+                 req.body[`policies.resortPolicies.${policyIndex}.title`] ||
+                 req.body[`resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || 
+                      req.body[`policies.resortPolicies.${policyIndex}.description`] ||
+                      req.body[`resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || 
+                       req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === "true" ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === true,
+        };
+        
+        console.log(`Found policy ${policyIndex}:`, policy);
+        resortPolicies.push(policy);
+        policyIndex++;
+      }
+      
+      console.log(`Total resort policies found: ${resortPolicies.length}`);
+      
+      if (resortPolicies.length > 0) {
+        updateData.policies.resortPolicies = resortPolicies;
+        console.log("Resort policies added to updateData:", updateData.policies.resortPolicies);
+      } else {
+        console.log("No resort policies found in FormData - will try JSON parsing");
+        
+        // Try parsing resortPolicies from a JSON string field as fallback
+        const policiesJson = req.body["policies.resortPolicies"];
+        console.log("Found policies.resortPolicies in body:", policiesJson);
+        if (policiesJson) {
+          try {
+            const parsed = typeof policiesJson === 'string' ? JSON.parse(policiesJson) : policiesJson;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log("Found resortPolicies as JSON string:", parsed);
+              updateData.policies.resortPolicies = parsed;
+              console.log("Resort policies added to updateData from JSON string:", updateData.policies.resortPolicies);
+            } else {
+              console.log("Parsed policies is not an array or is empty:", parsed);
+            }
+          } catch (e) {
+            console.log("Failed to parse policies.resortPolicies JSON:", e);
+          }
+        } else {
+          console.log("No policies.resortPolicies field found in req.body");
+          // Log all keys to help debug
+          console.log("All req.body keys:", Object.keys(req.body));
+        }
+      }
+
+      // Parse amenities from FormData
+      const amenities: Array<{
+        id: string;
+        name: string;
+        price: number;
+        units: number;
+        description?: string;
+        imageUrl?: string;
+        isConfirmed?: boolean;
+      }> = [];
+      let amenityIndex = 0;
+      while (req.body[`amenities[${amenityIndex}][id]`]) {
+        amenities.push({
+          id: req.body[`amenities[${amenityIndex}][id]`],
+          name: req.body[`amenities[${amenityIndex}][name]`],
+          price: parseFloat(req.body[`amenities[${amenityIndex}][price]`]) || 0,
+          units: parseInt(req.body[`amenities[${amenityIndex}][units]`]) || 1, // Ensure units field is parsed
+          description: req.body[`amenities[${amenityIndex}][description]`] || "",
+          imageUrl: req.body[`amenities[${amenityIndex}][imageUrl]`] || "",
+          isConfirmed: req.body[`amenities[${amenityIndex}][isConfirmed]`] === "true" || req.body[`amenities[${amenityIndex}][isConfirmed]`] === true,
+        });
+        amenityIndex++;
+      }
+      // Only update amenities if they exist in FormData, otherwise preserve existing ones
+      if (amenities.length > 0) {
+        updateData.amenities = amenities;
+      } else if (existingHotel.amenities && existingHotel.amenities.length > 0) {
+        // Preserve existing amenities if no amenity data in FormData (partial update)
+        updateData.amenities = existingHotel.amenities;
+        console.log("=== PRESERVING EXISTING AMENITIES ===");
+        console.log("Preserved amenities count:", existingHotel.amenities.length);
+      }
+
+      // Handle discounts from FormData
+      updateData.discounts = {
+        seniorCitizenEnabled: req.body["discounts.seniorCitizenEnabled"] === "true" || req.body["discounts.seniorCitizenEnabled"] === true,
+        seniorCitizenPercentage: parseFloat(req.body["discounts.seniorCitizenPercentage"]) || 20,
+        pwdEnabled: req.body["discounts.pwdEnabled"] === "true" || req.body["discounts.pwdEnabled"] === true,
+        pwdPercentage: parseFloat(req.body["discounts.pwdPercentage"]) || 20,
+        customDiscounts: []
+      };
+
+      // Parse custom discounts from FormData
+      const customDiscounts: Array<{
+        id: string;
+        name: string;
+        percentage: number;
+        promoCode: string;
+        isEnabled: boolean;
+        maxUses?: number;
+        validUntil?: string;
+      }> = [];
+      let discountIndex = 0;
+      while (req.body[`discounts.customDiscounts[${discountIndex}][id]`]) {
+        const maxUsesVal = req.body[`discounts.customDiscounts[${discountIndex}][maxUses]`];
+        const validUntilVal = req.body[`discounts.customDiscounts[${discountIndex}][validUntil]`];
+        customDiscounts.push({
+          id: req.body[`discounts.customDiscounts[${discountIndex}][id]`],
+          name: req.body[`discounts.customDiscounts[${discountIndex}][name]`],
+          percentage: parseFloat(req.body[`discounts.customDiscounts[${discountIndex}][percentage]`]) || 0,
+          promoCode: req.body[`discounts.customDiscounts[${discountIndex}][promoCode]`],
+          isEnabled: req.body[`discounts.customDiscounts[${discountIndex}][isEnabled]`] === "true" || req.body[`discounts.customDiscounts[${discountIndex}][isEnabled]`] === true,
+          maxUses: maxUsesVal ? parseInt(maxUsesVal) : undefined,
+          validUntil: validUntilVal || undefined,
+        });
+        discountIndex++;
+      }
+      if (customDiscounts.length > 0) {
+        updateData.discounts!.customDiscounts = customDiscounts;
+      }
+
+      // Parse packages from FormData
+      const packages: Array<{
+        id: string;
+        name: string;
+        description: string;
+        price: number;
+        includedCottages: string[];
+        includedRooms: string[];
+        includedAmenities: string[];
+        imageUrl: string;
+        includedAdultEntranceFee: boolean;
+        includedChildEntranceFee: boolean;
+        isConfirmed?: boolean;
+      }> = [];
+      let createPackageIndex = 0;
+      while (req.body[`packages[${createPackageIndex}][id]`]) {
+        const includedCottages: string[] = [];
+        const includedRooms: string[] = [];
+        const includedAmenities: string[] = [];
+        
+        // Parse included cottages
+        let packageCottageIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]);
+          packageCottageIndex++;
+        }
+        
+        // Parse included rooms
+        let packageRoomIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]);
+          packageRoomIndex++;
+        }
+        
+        // Parse included amenities
+        let amenityIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]);
+          amenityIndex++;
+        }
+        
+        packages.push({
+          id: req.body[`packages[${createPackageIndex}][id]`],
+          name: req.body[`packages[${createPackageIndex}][name]`],
+          description: req.body[`packages[${createPackageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${createPackageIndex}][price]`]) || 0,
+          includedCottages,
+          includedRooms,
+          includedAmenities,
+          imageUrl: req.body[`packages[${createPackageIndex}][imageUrl]`] || "",
+          includedAdultEntranceFee: req.body[`packages[${createPackageIndex}][includedAdultEntranceFee]`] === "true" || req.body[`packages[${createPackageIndex}][includedAdultEntranceFee]`] === true,
+          includedChildEntranceFee: req.body[`packages[${createPackageIndex}][includedChildEntranceFee]`] === "true" || req.body[`packages[${createPackageIndex}][includedChildEntranceFee]`] === true,
+          isConfirmed: req.body[`packages[${createPackageIndex}][isConfirmed]`] === "true" || req.body[`packages[${createPackageIndex}][isConfirmed]`] === true,
+        });
+        createPackageIndex++;
+      }
+      // Only update packages if they exist in FormData, otherwise preserve existing ones
+      if (packages.length > 0) {
+        updateData.packages = packages;
+      } else if (existingHotel.packages && existingHotel.packages.length > 0) {
+        // Preserve existing packages if no package data in FormData (partial update)
+        updateData.packages = existingHotel.packages;
+        console.log("=== PRESERVING EXISTING PACKAGES ===");
+        console.log("Preserved packages count:", existingHotel.packages.length);
+      }
+
+      // Parse rooms from FormData
+      const rooms: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        minOccupancy: number;
+        maxOccupancy: number;
+        units: number;
+        description?: string;
+        amenities?: string[];
+        imageUrl: string;
+        includedEntranceFee?: {
+          enabled: boolean;
+          adultCount: number;
+          childCount: number;
+        };
+      }> = [];
+      let createRoomIndex = 0;
+      while (req.body[`rooms[${createRoomIndex}][id]`]) {
+        const roomAmenities: string[] = [];
+        let roomAmenityIndex = 0;
+        while (req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]);
+          roomAmenityIndex++;
+        }
+        
+        // Parse includedEntranceFee if present
+        let includedEntranceFee;
+        const enabledKey = `rooms[${createRoomIndex}][includedEntranceFee][enabled]`;
+        const adultKey = `rooms[${createRoomIndex}][includedEntranceFee][adultCount]`;
+        const childKey = `rooms[${createRoomIndex}][includedEntranceFee][childCount]`;
+        
+        console.log(`=== ROOM ${createRoomIndex} ENTRANCE FEE PARSING ===`);
+        console.log(`enabledKey: ${enabledKey}, value:`, req.body[enabledKey]);
+        console.log(`adultKey: ${adultKey}, value:`, req.body[adultKey]);
+        console.log(`childKey: ${childKey}, value:`, req.body[childKey]);
+        
+        if (req.body[enabledKey]) {
+          includedEntranceFee = {
+            enabled: req.body[enabledKey] === "true" || req.body[enabledKey] === true,
+            adultCount: parseInt(req.body[adultKey]) || 0,
+            childCount: parseInt(req.body[childKey]) || 0,
+          };
+          console.log(`Parsed includedEntranceFee for room ${createRoomIndex}:`, includedEntranceFee);
+        } else {
+          console.log(`No entrance fee data found for room ${createRoomIndex}`);
+        }
+        
+        rooms.push({
+          id: req.body[`rooms[${createRoomIndex}][id]`],
+          name: req.body[`rooms[${createRoomIndex}][name]`],
+          type: req.body[`rooms[${createRoomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${createRoomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
+          units: parseInt(req.body[`rooms[${createRoomIndex}][units]`]) || 1, // Ensure units field is parsed
+          description: req.body[`rooms[${createRoomIndex}][description]`] || "",
+          amenities: roomAmenities,
+          imageUrl: req.body[`rooms[${createRoomIndex}][imageUrl]`] || "",
+          includedEntranceFee,
+        });
+        createRoomIndex++;
+      }
+      // Only update rooms if they exist in FormData, otherwise preserve existing ones
+      if (rooms.length > 0) {
+        updateData.rooms = rooms;
+      } else if (existingHotel.rooms && existingHotel.rooms.length > 0) {
+        // Preserve existing rooms if no room data in FormData (partial update)
+        updateData.rooms = existingHotel.rooms;
+        console.log("=== PRESERVING EXISTING ROOMS ===");
+        console.log("Preserved rooms count:", existingHotel.rooms.length);
+      }
+
+      // Parse cottages from FormData
+      const cottages: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        dayRate: number;
+        nightRate: number;
+        hasDayRate: boolean;
+        hasNightRate: boolean;
+        minOccupancy: number;
+        maxOccupancy: number;
+        units: number;
+        description?: string;
+        amenities?: string[];
+        imageUrl: string;
+        includedEntranceFee?: {
+          enabled: boolean;
+          adultCount: number;
+          childCount: number;
+        };
+      }> = [];
+      let updateCottageIndex = 0;
+      while (req.body[`cottages[${updateCottageIndex}][id]`]) {
+        const cottageAmenities: string[] = [];
+        let cottageAmenityIndex = 0;
+        while (req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]);
+          cottageAmenityIndex++;
+        }
+        
+        // Parse includedEntranceFee if present
+        let includedEntranceFee;
+        if (req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`]) {
+          includedEntranceFee = {
+            enabled: req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`] === "true" || req.body[`cottages[${updateCottageIndex}][includedEntranceFee][enabled]`] === true,
+            adultCount: parseInt(req.body[`cottages[${updateCottageIndex}][includedEntranceFee][adultCount]`]) || 0,
+            childCount: parseInt(req.body[`cottages[${updateCottageIndex}][includedEntranceFee][childCount]`]) || 0,
+          };
+        }
+        
+        cottages.push({
+          id: req.body[`cottages[${updateCottageIndex}][id]`],
+          name: req.body[`cottages[${updateCottageIndex}][name]`],
+          type: req.body[`cottages[${updateCottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${updateCottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${updateCottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${updateCottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${updateCottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${updateCottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][maxOccupancy]`]) || 1,
+          units: parseInt(req.body[`cottages[${updateCottageIndex}][units]`]) || 1, // Ensure units field is parsed
+          description: req.body[`cottages[${updateCottageIndex}][description]`] || "",
+          amenities: cottageAmenities,
+          imageUrl: req.body[`cottages[${updateCottageIndex}][imageUrl]`] || "",
+          includedEntranceFee,
+        });
+        updateCottageIndex++;
+      }
+      // Only update cottages if they exist in FormData, otherwise preserve existing ones
+      if (cottages.length > 0) {
+        updateData.cottages = cottages;
+      } else if (existingHotel.cottages && existingHotel.cottages.length > 0) {
+        // Preserve existing cottages if no cottage data in FormData (partial update)
+        updateData.cottages = existingHotel.cottages;
+        console.log("=== PRESERVING EXISTING COTTAGES ===");
+        console.log("Preserved cottages count:", existingHotel.cottages.length);
+      }
+
+      // Update hotel
+      // Handle image uploads if any
+      const uploadedFilesData = (req as any).files;
+      const imageFiles = uploadedFilesData?.imageFiles as any[] || [];
+      const roomFiles = uploadedFilesData?.roomFiles as any[] || [];
+      const cottageFiles = uploadedFilesData?.cottageFiles as any[] || [];
+      const packageFiles = uploadedFilesData?.packageFiles as any[] || [];
+      let finalImageUrls: string[] = [];
+      
+      // Handle main hotel image uploads
+      if (imageFiles && imageFiles.length > 0) {
+        // Upload new images using new image service - REPLACE existing images
+        const newImageUrls = await imageService.saveImages(imageFiles);
+        console.log("=== IMAGE UPLOAD DEBUG ===");
+        console.log("New image URLs:", newImageUrls);
+        console.log("Replacing existing images with new ones");
+        
+        // Replace existing images with new ones (don't combine)
+        finalImageUrls = newImageUrls;
+        updateData.imageUrls = finalImageUrls;
+      } else if (req.body.imageUrls && (Array.isArray(req.body.imageUrls) ? req.body.imageUrls.length > 0 : req.body.imageUrls)) {
+        // No new files, but imageUrls provided in request - update with provided URLs
+        finalImageUrls = Array.isArray(req.body.imageUrls)
+          ? req.body.imageUrls
+          : [req.body.imageUrls];
+        
+        console.log("=== IMAGE URL UPDATE DEBUG ===");
+        console.log("Using provided image URLs:", finalImageUrls);
+        updateData.imageUrls = finalImageUrls;
+      } else {
+        // No new files and no imageUrls provided - preserve existing images
+        finalImageUrls = existingHotel.imageUrls || [];
+        updateData.imageUrls = finalImageUrls;
+        console.log("=== PRESERVING EXISTING IMAGES ===");
+        console.log("Preserved image URLs:", finalImageUrls);
+      }
+      
+      // Handle accommodation image uploads
+      console.log("=== ACCOMMODATION IMAGE UPLOAD DEBUG ===");
+      console.log("Room files:", roomFiles);
+      console.log("Cottage files:", cottageFiles);
+      console.log("Package files:", packageFiles);
+      
+      // Process room image files
+      if (roomFiles && roomFiles.length > 0) {
+        console.log("Processing room image files...");
+        const roomImageUrls = await imageService.saveImages(roomFiles);
+        console.log("Room image URLs:", roomImageUrls);
+        
+        // Update rooms with new image URLs based on their index
+        // Use updateData.rooms which contains either parsed rooms or preserved existing rooms
+        const currentRooms = updateData.rooms || [];
+        const updatedRooms = currentRooms.map((room, index) => {
+          const roomFileKey = `roomFiles[${index}]`;
+          const roomFileIndex = roomFiles.findIndex((file: any) => file.fieldname === roomFileKey);
+          if (roomFileIndex !== -1 && roomImageUrls[roomFileIndex]) {
+            return { ...room, imageUrl: roomImageUrls[roomFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`rooms[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...room, imageUrl: "" };
+          }
+          return room;
+        });
+        updateData.rooms = updatedRooms;
+      } else {
+        // No new room files, but check if imageUrl was cleared in form data
+        // Use updateData.rooms which contains either parsed rooms or preserved existing rooms
+        const currentRooms = updateData.rooms || [];
+        const updatedRooms = currentRooms.map((room, index) => {
+          const formImageUrl = req.body[`rooms[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...room, imageUrl: "" };
+          }
+          return room;
+        });
+        updateData.rooms = updatedRooms;
+      }
+      
+      // Process cottage image files
+      if (cottageFiles && cottageFiles.length > 0) {
+        console.log("Processing cottage image files...");
+        const cottageImageUrls = await imageService.saveImages(cottageFiles);
+        console.log("Cottage image URLs:", cottageImageUrls);
+        
+        // Update cottages with new image URLs based on their index
+        // Use updateData.cottages which contains either parsed cottages or preserved existing cottages
+        const currentCottages = updateData.cottages || [];
+        const updatedCottages = currentCottages.map((cottage, index) => {
+          const cottageFileKey = `cottageFiles[${index}]`;
+          const cottageFileIndex = cottageFiles.findIndex((file: any) => file.fieldname === cottageFileKey);
+          if (cottageFileIndex !== -1 && cottageImageUrls[cottageFileIndex]) {
+            return { ...cottage, imageUrl: cottageImageUrls[cottageFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`cottages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...cottage, imageUrl: "" };
+          }
+          return cottage;
+        });
+        updateData.cottages = updatedCottages;
+      } else {
+        // No new cottage files, but check if imageUrl was cleared in form data
+        // Use updateData.cottages which contains either parsed cottages or preserved existing cottages
+        const currentCottages = updateData.cottages || [];
+        const updatedCottages = currentCottages.map((cottage, index) => {
+          const formImageUrl = req.body[`cottages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...cottage, imageUrl: "" };
+          }
+          return cottage;
+        });
+        updateData.cottages = updatedCottages;
+      }
+      
+      // Process package image files
+      if (packageFiles && packageFiles.length > 0) {
+        console.log("Processing package image files...");
+        const packageImageUrls = await imageService.saveImages(packageFiles);
+        console.log("Package image URLs:", packageImageUrls);
+        
+        // Update packages with new image URLs based on their index
+        // Use updateData.packages which contains either parsed packages or preserved existing packages
+        const currentPackages = updateData.packages || [];
+        const updatedPackages = currentPackages.map((pkg, index) => {
+          const packageFileKey = `packageFiles[${index}]`;
+          const packageFileIndex = packageFiles.findIndex((file: any) => file.fieldname === packageFileKey);
+          if (packageFileIndex !== -1 && packageImageUrls[packageFileIndex]) {
+            return { ...pkg, imageUrl: packageImageUrls[packageFileIndex] };
+          }
+          // Check if imageUrl is explicitly set to empty string in form data
+          const formImageUrl = req.body[`packages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...pkg, imageUrl: "" };
+          }
+          return pkg;
+        });
+        updateData.packages = updatedPackages;
+      } else {
+        // No new package files, but check if imageUrl was cleared in form data
+        // Use updateData.packages which contains either parsed packages or preserved existing packages
+        const currentPackages = updateData.packages || [];
+        const updatedPackages = currentPackages.map((pkg, index) => {
+          const formImageUrl = req.body[`packages[${index}][imageUrl]`];
+          if (formImageUrl === "" || formImageUrl === null) {
+            return { ...pkg, imageUrl: "" };
+          }
+          return pkg;
+        });
+        updateData.packages = updatedPackages;
+      }
+      
+      // Debug: Log full updateData before updating
+      console.log("=== FINAL UPDATE DATA DEBUG ===");
+      console.log("updateData.policies:", JSON.stringify(updateData.policies, null, 2));
+      console.log("=== ACCOMMODATION DATA BEFORE SAVE ===");
+      console.log("Rooms count:", updateData.rooms?.length || 0);
+      console.log("Cottages count:", updateData.cottages?.length || 0);
+      console.log("Amenities count:", updateData.amenities?.length || 0);
+      console.log("Packages count:", updateData.packages?.length || 0);
+      
+      // Log each accommodation type details
+      if (updateData.rooms) {
+        updateData.rooms.forEach((room, index) => {
+          console.log(`Room ${index}:`, {
+            id: room.id,
+            name: room.name,
+            units: room.units,
+            pricePerNight: room.pricePerNight
+          });
+        });
+      }
+      
+      if (updateData.cottages) {
+        updateData.cottages.forEach((cottage, index) => {
+          console.log(`Cottage ${index}:`, {
+            id: cottage.id,
+            name: cottage.name,
+            units: cottage.units,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate
+          });
+        });
+      }
+      
+      if (updateData.amenities) {
+        updateData.amenities.forEach((amenity, index) => {
+          console.log(`Amenity ${index}:`, {
+            id: amenity.id,
+            name: amenity.name,
+            units: amenity.units,
+            price: amenity.price
+          });
+        });
+      }
+      
+      // Add payment fields to updateData
+      updateData.gcashNumber = req.body.gcashNumber || "";
+      updateData.downPaymentPercentage = Number(req.body.downPaymentPercentage) || 50;
+      
+      console.log("gcashNumber in FormData PUT:", updateData.gcashNumber);
+      console.log("downPaymentPercentage in FormData PUT:", updateData.downPaymentPercentage);
+      
+      const updatedHotel = await Hotel.findByIdAndUpdate(
+        req.params.hotelId,
+        updateData,
+        { new: true }
+      );
+      
+      // Debug: Log what was actually saved
+      console.log("=== AFTER SAVE DEBUG ===");
+      console.log("Saved rooms count:", updatedHotel.rooms?.length || 0);
+      console.log("Saved cottages count:", updatedHotel.cottages?.length || 0);
+      console.log("Saved amenities count:", updatedHotel.amenities?.length || 0);
+      console.log("Saved packages count:", updatedHotel.packages?.length || 0);
+
+      if (!updatedHotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      res.status(200).json(updatedHotel);
+    } catch (error) {
+      console.error("Error updating hotel:", error);
+      console.error("Request body:", req.body);
+      console.error("Hotel ID:", req.params.hotelId);
+      console.error("User ID:", req.userId);
+      res.status(500).json({
+        message: "Something went wrong",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+);
+
+router.delete(
+  "/:hotelId",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const hotelId = req.params.hotelId;
+
+      // First check if the hotel exists and belongs to the user
+      const hotel = await Hotel.findOne({
+        _id: hotelId,
+        userId: req.userId,
+      });
+
+      if (!hotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Check if there are any active bookings for this hotel
+      const activeBookings = await Booking.countDocuments({
+        hotelId: hotelId,
+        status: { $in: ["pending", "confirmed"] },
+      });
+
+      if (activeBookings > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete resort with active bookings. Please cancel all bookings first." 
+        });
+      }
+
+      // Delete the hotel
+      await Hotel.findByIdAndDelete(hotelId);
+
+      res.status(200).json({ 
+        message: "Resort deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error deleting hotel:", error);
+      res.status(500).json({ 
+        message: "Something went wrong",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+);
+
+export default router;

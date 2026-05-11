@@ -1,0 +1,473 @@
+2026-04-27T07:45:25.034943Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-04-27T07:45:25.324066Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\daemon"), AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie")}
+2026-04-27T07:45:25.324176Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T07:45:25.925514Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T07:45:25.925552Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T07:45:28.721486Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo")}
+2026-04-27T07:45:28.721561Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T07:49:14.115973Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\forms\\ManageHotelForm\\ManageHotelForm.tsx")}
+2026-04-27T07:49:14.116013Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T07:49:17.505312Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\forms\\ManageHotelForm\\ManageHotelForm.tsx")}
+2026-04-27T07:49:17.505338Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T07:49:17.505393Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T07:50:23.022382Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\forms\\ManageHotelForm\\ManageHotelForm.tsx")}
+2026-04-27T07:50:23.022417Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T07:57:12.213716Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T07:57:12.213769Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T07:57:12.411705Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T07:57:12.411751Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:01:45.637318Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T08:01:45.637359Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T08:01:47.706676Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T08:01:47.706704Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T08:01:47.706855Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T08:02:08.926939Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T08:02:08.926982Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T08:02:19.351804Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\uploads\\role-promotion-requests")}
+2026-04-27T08:02:19.351888Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:03:37.721414Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T08:03:37.721485Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T08:03:58.518734Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T08:03:58.518771Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T08:04:36.511862Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\uploads")}
+2026-04-27T08:04:36.511928Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:08:23.525508Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:08:23.525555Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:08:23.619519Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:08:23.619550Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:09:35.218278Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\types\\index.ts")}
+2026-04-27T08:09:35.218324Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T08:09:41.219288Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\identity-verification.ts")}
+2026-04-27T08:09:41.219323Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:09:53.415221Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\identity-verification.ts")}
+2026-04-27T08:09:53.415417Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:16:27.519237Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\.vercel\\project.json"), AnchoredSystemPathBuf("hotel-booking-backend"), AnchoredSystemPathBuf("hotel-booking-backend\\.vercel"), AnchoredSystemPathBuf("hotel-booking-backend\\.gitignore"), AnchoredSystemPathBuf("hotel-booking-backend\\.vercel\\README.txt")}
+2026-04-27T08:16:27.519275Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:16:36.415470Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\.gitignore"), AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:16:36.415502Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:18:40.018054Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:18:40.018085Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:18:45.412519Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:18:45.412553Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:21:25.318712Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:21:25.318762Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:21:33.819756Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:21:33.819793Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:24:13.124367Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api")}
+2026-04-27T08:24:13.124397Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:24:18.812115Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api"), AnchoredSystemPathBuf("hotel-booking-backend\\.vercel"), AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts"), AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:24:18.812149Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:24:24.813825Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:24:24.813862Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:25:49.416485Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:25:49.416515Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:25:54.523952Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:25:54.523998Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:27:00.618908Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:27:00.618945Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:27:05.623836Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:27:05.623876Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:28:19.823520Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:28:19.823558Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:29:54.417900Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:29:54.417945Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:29:59.616310Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:29:59.616337Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:30:57.120532Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:30:57.120572Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:31:02.322710Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:31:02.322760Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:31:08.616609Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:31:08.616644Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:32:52.724595Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:32:52.724630Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:33:04.116480Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:33:04.116587Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:34:06.223595Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:34:06.223627Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:34:06.825584Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:34:06.825621Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:35:03.717345Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:35:03.717378Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:35:03.817262Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:35:03.817290Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:35:08.825490Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:35:08.825527Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:35:17.221567Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:35:17.221601Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:35:29.112099Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T08:35:29.112127Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:37:36.824057Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:37:36.824092Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:37:41.913239Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:37:41.913272Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:37:57.419524Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:37:57.419554Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:37:57.513549Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:37:57.513721Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:38:15.618436Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:38:15.618477Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:39:54.023240Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\vercel.json")}
+2026-04-27T08:39:54.023275Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:39:54.724440Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T08:39:54.724476Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:41:26.121026Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.js")}
+2026-04-27T08:41:26.121104Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:41:31.219554Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.js")}
+2026-04-27T08:41:31.219586Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:41:31.312178Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api")}
+2026-04-27T08:41:31.312215Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:43:31.925550Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api\\index.ts")}
+2026-04-27T08:43:31.925593Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:43:32.421064Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\api")}
+2026-04-27T08:43:32.421105Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:49:51.318031Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".vercel")}
+2026-04-27T08:49:51.318063Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:49:56.754879Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf(".gitignore")}
+2026-04-27T08:49:56.754907Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:50:00.612925Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".gitignore"), AnchoredSystemPathBuf("")}
+2026-04-27T08:50:00.612962Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:50:02.819056Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T08:50:02.819087Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T08:53:04.213133Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T08:53:04.213167Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:32:00.920605Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo")}
+2026-04-27T14:32:00.920669Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:32:01.013991Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2026-04-27T14:32:01.014035Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:32:01.142710Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-04-27T14:32:02.506130Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T14:32:02.506165Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:32:02.613285Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo")}
+2026-04-27T14:32:02.613321Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:55:07.819551Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\2.cookie")}
+2026-04-27T14:55:07.819589Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:55:08.917464Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies")}
+2026-04-27T14:55:08.917545Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:55:49.407544Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T14:55:49.407586Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:55:49.716188Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T14:55:49.716224Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:55:49.916677Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T14:55:49.916716Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:57:03.757832Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("audit-report.json")}
+2026-04-27T14:57:03.757869Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:57:03.758098Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2026-04-27T14:57:03.758114Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
+2026-04-27T14:57:03.815388Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("audit-report.json")}
+2026-04-27T14:57:03.815420Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:07.210414Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package-lock.json")}
+2026-04-27T14:59:07.210490Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:34.207249Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package-lock.json")}
+2026-04-27T14:59:34.207285Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:34.316389Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package-lock.json")}
+2026-04-27T14:59:34.316419Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:41.917325Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package-lock.json")}
+2026-04-27T14:59:41.917355Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:51.117853Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T14:59:51.117896Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T14:59:59.421284Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("shared\\types.ts")}
+2026-04-27T14:59:59.421323Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:00:30.713737Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\BookingForm\\BookingForm.tsx")}
+2026-04-27T15:00:30.713779Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:00:53.810058Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\AdvancedSearch.tsx")}
+2026-04-27T15:00:53.810093Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:01.214159Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\Hero.tsx")}
+2026-04-27T15:01:01.214205Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:08.508596Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\Header.tsx")}
+2026-04-27T15:01:08.508626Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:16.916611Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\UsernameMenu.tsx")}
+2026-04-27T15:01:16.916642Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:17.609545Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\MobileNavLinks.tsx")}
+2026-04-27T15:01:17.609601Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:18.014898Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\BookingForm\\BookingForm.tsx")}
+2026-04-27T15:01:18.014930Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:36.709719Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\UsernameMenu.tsx")}
+2026-04-27T15:01:36.709925Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:41.015849Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\UsernameMenu.tsx")}
+2026-04-27T15:01:41.015891Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:01:50.321145Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\UsernameMenu.tsx")}
+2026-04-27T15:01:50.321179Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:02:02.320133Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\AmenitySlotBooking.tsx")}
+2026-04-27T15:02:02.320165Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:02:12.908361Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\AmenitySlotBooking.tsx")}
+2026-04-27T15:02:12.908394Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:02:22.020824Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\AmenitySlotBooking.tsx")}
+2026-04-27T15:02:22.020874Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:03:29.514034Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\GuestInfoForm\\GuestInfoForm.tsx")}
+2026-04-27T15:03:29.514075Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:03:36.920116Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\GuestInfoForm\\GuestInfoForm.tsx")}
+2026-04-27T15:03:36.920158Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:03:49.419421Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\GuestInfoForm\\GuestInfoForm.tsx")}
+2026-04-27T15:03:49.419454Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:03:54.912911Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\GuestInfoForm\\GuestInfoForm.tsx")}
+2026-04-27T15:03:54.912949Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:04:11.511107Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\forms\\GuestInfoForm\\GuestInfoForm.tsx")}
+2026-04-27T15:04:11.511145Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:04:20.807448Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\FreshAccommodationDisplay.tsx")}
+2026-04-27T15:04:20.807484Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:04:27.611408Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\FreshAccommodationDisplay.tsx")}
+2026-04-27T15:04:27.611498Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:04:36.313235Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\FreshAccommodationDisplay.tsx")}
+2026-04-27T15:04:36.313269Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:04:45.516213Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\FreshAccommodationDisplay.tsx")}
+2026-04-27T15:04:45.516249Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:07.511030Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\GuestDiscountInput.tsx")}
+2026-04-27T15:05:07.511076Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:19.519587Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\GuestDiscountInput.tsx")}
+2026-04-27T15:05:19.519618Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:29.212989Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\GuestVerificationLayer.tsx")}
+2026-04-27T15:05:29.213026Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:39.512029Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\HousekeepingMobileView.tsx")}
+2026-04-27T15:05:39.512057Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:39.611906Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\HousekeepingMobileView.tsx")}
+2026-04-27T15:05:39.611943Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:50.906834Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\IDVerificationWidget.tsx")}
+2026-04-27T15:05:50.906872Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:05:59.318532Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\IDVerificationWidget.tsx")}
+2026-04-27T15:05:59.318564Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:06:20.915169Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\PaymentVerificationCard.tsx")}
+2026-04-27T15:06:20.915207Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:06:29.617052Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\ReportButton.tsx")}
+2026-04-27T15:06:29.617082Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:06:39.108834Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\SmartPaymentWidget.tsx")}
+2026-04-27T15:06:39.108877Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:06:48.312089Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\SmartPaymentWidget.tsx")}
+2026-04-27T15:06:48.312121Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:02.906345Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\components\\SocialShareButtons.tsx")}
+2026-04-27T15:07:02.906393Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:12.609148Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\pages\\MyHotels.tsx")}
+2026-04-27T15:07:12.609180Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:12.719964Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\pages\\MyHotels.tsx")}
+2026-04-27T15:07:12.719996Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:26.007845Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\pages\\Register.tsx")}
+2026-04-27T15:07:26.007879Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:34.506890Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\pages\\SignIn.tsx")}
+2026-04-27T15:07:34.506925Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:47.313439Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\imageService.ts")}
+2026-04-27T15:07:47.313471Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:07:52.807728Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\imageService.ts")}
+2026-04-27T15:07:52.807773Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:01.605767Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\bookingValidationService.ts")}
+2026-04-27T15:08:01.605795Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:07.221057Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\bookingValidationService.ts")}
+2026-04-27T15:08:07.221088Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:12.713016Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\bookingValidationService.ts")}
+2026-04-27T15:08:12.713056Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:26.812033Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:08:26.812069Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:34.507272Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:08:34.507309Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:45.919696Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:08:45.919780Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:08:53.012600Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:08:53.012640Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:08.606680Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:09:08.606726Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:08.917034Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:09:08.917143Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:16.505751Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\availabilityService.ts")}
+2026-04-27T15:09:16.505786Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:30.315104Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils\\unitsStorage.ts")}
+2026-04-27T15:09:30.315138Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:40.412169Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils\\unitsStorage.ts")}
+2026-04-27T15:09:40.412213Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:47.319705Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils\\unitsStorage.ts")}
+2026-04-27T15:09:47.319740Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:09:57.211852Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils\\typeUtils.tsx")}
+2026-04-27T15:09:57.211896Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:10:58.509991Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T15:10:58.510026Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:10:58.805725Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package-lock.json")}
+2026-04-27T15:10:58.805761Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:02.514900Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\jest.config.js")}
+2026-04-27T15:11:02.514936Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:02.609151Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend")}
+2026-04-27T15:11:02.609181Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:11.712825Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\package.json")}
+2026-04-27T15:11:11.712855Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:17.113871Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\tests"), AnchoredSystemPathBuf("hotel-booking-backend\\src\\tests\\setup.ts")}
+2026-04-27T15:11:17.113907Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:17.406968Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\tests"), AnchoredSystemPathBuf("hotel-booking-backend\\src")}
+2026-04-27T15:11:17.407010Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:27.311667Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services\\bookingValidationService.test.ts")}
+2026-04-27T15:11:27.311702Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:11:27.511779Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\services")}
+2026-04-27T15:11:27.511810Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:18.516482Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package.json")}
+2026-04-27T15:12:18.516519Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:18.718635Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package-lock.json")}
+2026-04-27T15:12:18.718671Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:22.308628Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\vitest.config.ts")}
+2026-04-27T15:12:22.308657Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:22.508887Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend")}
+2026-04-27T15:12:22.508919Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:30.721628Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\package.json")}
+2026-04-27T15:12:30.721659Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:35.308416Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\tests")}
+2026-04-27T15:12:35.308445Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:35.414993Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\tests\\setup.ts")}
+2026-04-27T15:12:35.415025Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:35.616946Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\tests")}
+2026-04-27T15:12:35.616979Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:35.911232Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src")}
+2026-04-27T15:12:35.911270Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:41.209014Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils\\typeUtils.test.ts")}
+2026-04-27T15:12:41.209048Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:12:41.517058Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-frontend\\src\\utils")}
+2026-04-27T15:12:41.517093Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:14:53.915612Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T15:14:53.915653Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:14:56.208899Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T15:14:56.208955Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:14:58.721200Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T15:14:58.721232Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:15:33.508564Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\resort-staff.ts")}
+2026-04-27T15:15:33.508613Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:15:33.616854Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes")}
+2026-04-27T15:15:33.616892Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:15:37.513237Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\index.ts")}
+2026-04-27T15:15:37.513285Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:15:41.614911Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\index.ts")}
+2026-04-27T15:15:41.614947Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:20:28.706217Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\components\\FrontDeskDialog.tsx")}
+2026-04-27T15:20:28.706264Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:20:39.918221Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\package.json")}
+2026-04-27T15:20:39.918256Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:20:52.809323Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("package-lock.json")}
+2026-04-27T15:20:52.809368Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:24:31.608783Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\ui\\dialog.tsx")}
+2026-04-27T15:24:31.609078Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:24:37.706755Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:24:37.706794Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:24:44.819709Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\components\\FrontDeskDialog.tsx")}
+2026-04-27T15:24:44.819744Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:24:53.211284Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:24:53.211313Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:24:53.508587Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:24:53.508618Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:24:53.508704Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:24:58.905977Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:24:58.906019Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:26:04.305813Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\api-client.ts")}
+2026-04-27T15:26:04.305853Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:26:10.608480Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\auth\\api-client.ts")}
+2026-04-27T15:26:10.608522Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:26:17.816099Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\api-client.ts")}
+2026-04-27T15:26:17.816205Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:26:27.611843Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\auth\\api-client.ts")}
+2026-04-27T15:26:27.611877Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:26:28.224091Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\auth\\api-client.ts")}
+2026-04-27T15:26:28.224116Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:26:28.224163Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:26:32.216241Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\api-client.ts")}
+2026-04-27T15:26:32.216275Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:26:32.534398Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\api-client.ts")}
+2026-04-27T15:26:32.534424Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:26:32.534529Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:28:44.009170Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\ui\\dialog.tsx")}
+2026-04-27T15:28:44.009208Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:28:44.529286Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\ui\\dialog.tsx")}
+2026-04-27T15:28:44.529320Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:28:44.529421Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:29:54.210330Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\ui\\dialog.tsx")}
+2026-04-27T15:29:54.210370Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:29:54.701550Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\ui\\dialog.tsx")}
+2026-04-27T15:29:54.701577Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:29:54.701626Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:31:11.006966Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\auth.ts")}
+2026-04-27T15:31:11.006998Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:31:12.278361Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\auth.ts")}
+2026-04-27T15:31:12.278386Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:31:12.278521Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:31:40.607096Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\auth.ts")}
+2026-04-27T15:31:40.607141Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:31:53.014765Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\auth.ts")}
+2026-04-27T15:31:53.014799Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:32:06.718992Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\auth\\api-client.ts")}
+2026-04-27T15:32:06.719034Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:32:07.094970Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\auth\\api-client.ts")}
+2026-04-27T15:32:07.094999Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@glan-getaway/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2026-04-27T15:32:07.095078Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:34:37.311644Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:34:37.311729Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:34:42.003372Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\ManageFrontDesk.tsx")}
+2026-04-27T15:34:42.003396Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:34:42.003462Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T15:34:44.917743Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\components\\FrontDeskDialog.tsx")}
+2026-04-27T15:34:44.917807Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:42:58.514045Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T15:42:58.514077Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:43:21.915106Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\api-client.ts")}
+2026-04-27T15:43:21.915144Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:43:27.508876Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\role-promotion-requests.ts")}
+2026-04-27T15:43:27.508918Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:48:30.617011Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("delete-pending-request.js")}
+2026-04-27T15:48:30.617068Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:48:36.314237Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("delete-pending-request.js"), AnchoredSystemPathBuf("")}
+2026-04-27T15:48:36.314270Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:48:43.213498Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("delete-pending-request.js")}
+2026-04-27T15:48:43.213536Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T15:48:43.321104Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2026-04-27T15:48:43.321138Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
+2026-04-27T15:52:20.517595Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\admin-management.ts")}
+2026-04-27T15:52:20.517633Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T15:55:46.818770Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T15:55:46.818813Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:58:42.915906Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T15:58:42.915946Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:58:48.811864Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T15:58:48.811900Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T15:59:03.705878Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T15:59:03.705916Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T16:04:04.108549Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T16:04:04.108583Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T16:04:04.650672Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T16:04:04.650700Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T16:04:04.650770Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T16:04:10.519629Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T16:04:10.519664Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T16:04:17.317687Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\frontend\\src\\pages\\AdminManagement.tsx")}
+2026-04-27T16:04:17.317717Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-frontend"), path: AnchoredSystemPathBuf("packages\\frontend") }}))
+2026-04-27T16:12:01.209776Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\c99c952e291d6337-turbo.log.2026-04-27")}
+2026-04-27T16:12:01.209813Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T16:12:44.013467Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\admin.ts")}
+2026-04-27T16:12:44.013508Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T16:13:03.620053Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\src\\routes\\admin.ts")}
+2026-04-27T16:13:03.620093Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-04-27T16:20:25.007189Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\admin.ts")}
+2026-04-27T16:20:25.007228Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:22:00.612766Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\admin.ts")}
+2026-04-27T16:22:00.612815Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:42.908237Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\weather-triggers.ts")}
+2026-04-27T16:24:42.908274Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:44.611204Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\verification-documents.ts")}
+2026-04-27T16:24:44.611244Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:46.226642Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\resort-reports.ts")}
+2026-04-27T16:24:46.226811Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:46.795925Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\payments.ts")}
+2026-04-27T16:24:46.795968Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:46.796215Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T16:24:57.628650Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\my-hotels.ts")}
+2026-04-27T16:24:57.628684Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:24:59.615242Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\my-bookings.ts")}
+2026-04-27T16:24:59.615287Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:00.820077Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\identity-verification.ts")}
+2026-04-27T16:25:00.820114Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:01.449524Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\housekeeping-tasks.ts")}
+2026-04-27T16:25:01.449564Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:01.449731Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T16:25:10.816014Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\hotels.ts")}
+2026-04-27T16:25:10.816050Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:11.483193Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\hotels.ts")}
+2026-04-27T16:25:11.483236Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:11.483417Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T16:25:13.110127Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\dashboard.ts")}
+2026-04-27T16:25:13.110168Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:13.872549Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\business-insights.ts")}
+2026-04-27T16:25:13.872579Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:25:13.872747Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2026-04-27T16:25:14.016847Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\src\\routes\\billing.ts")}
+2026-04-27T16:25:14.016916Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("booking-backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-04-27T16:36:41.118121Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("hotel-booking-backend\\.env.migration")}
+2026-04-27T16:36:41.118151Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))

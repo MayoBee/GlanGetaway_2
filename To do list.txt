@@ -1,0 +1,30 @@
+To do list:
+
+-PWD (FACE VERIFICATION) / but subject to change
+-instead of sa lgu, kami nalang mag handle (Documents and valid id nalang)
+-kami nalang super admin 
+-Admin- RESORT OWNER 
+-SUPER ADMIN- ADMIN
+-Singular
+-/Adults
+-8-10 kids
+-tangalon nalang ang per night 
+-check out (1:00pm-8:00am)
+-fixed the time in time out
+-ibahin ang panel sa check in- check out 
+-tangalong ang facilities 
+-kung unaa ang materials ang unsa ma rent nila (aminities)
+-kayak(per head, per pax), per hour 
+-available rooms( if gusto magdagdag ug bed, single size)
+-ontime if kanus a mag out in depends sa day
+-downpayment in payment method to confirm booking 
+-resort information(contact number, page)
+-extend person 
+-gcash log in diritso through link, display automatic pay now and diritso sa application ni gcash mismo
+
+-resort owner account 
+-name of the resort 
+-mauna si purok,
+-description sa location 
+-listing ang price instead ug guest
+-validation

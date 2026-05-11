@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Speed Test</title>
+</head>
+<body>
+    <h2>🔍 Frontend Login Speed Test</h2>
+    <button onclick="testLogin()">Test Login Speed</button>
+    <div id="results"></div>
+
+    <script>
+        async function testLogin() {
+            const results = document.getElementById('results');
+            results.innerHTML = 'Testing login...';
+            
+            const startTime = performance.now();
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'biennickwadingan@gmail.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                const endTime = performance.now();
+                const totalTime = endTime - startTime;
+                
+                results.innerHTML = `
+                    <h3>✅ Login Results:</h3>
+                    <p><strong>Total Time:</strong> ${totalTime.toFixed(2)}ms</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Token:</strong> ${data.token ? 'Received ✅' : 'Not Received ❌'}</p>
+                    <p><strong>User ID:</strong> ${data.userId || 'N/A'}</p>
+                    <p><strong>Performance:</strong> ${totalTime < 200 ? '🚀 EXCELLENT' : totalTime < 500 ? '⚡ GOOD' : '⚠️ SLOW'}</p>
+                `;
+                
+            } catch (error) {
+                const endTime = performance.now();
+                const totalTime = endTime - startTime;
+                results.innerHTML = `
+                    <h3>❌ Login Failed:</h3>
+                    <p><strong>Time:</strong> ${totalTime.toFixed(2)}ms</p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
