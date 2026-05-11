@@ -556,10 +556,19 @@ router.put(
   verifyToken,
   async (req: Request, res: Response) => {
     try {
+      console.log("=== JSON ROUTE EXECUTION START ===");
       console.log("=== PUT /api/my-hotels/:hotelId/json called ===");
       console.log("Request body:", req.body);
       console.log("Hotel ID:", req.params.hotelId);
       console.log("User ID:", req.userId);
+      
+      // Check if includedEntranceFee data is present in request
+      if (req.body.rooms && req.body.rooms.length > 0) {
+        console.log("=== JSON ROUTE ROOMS ANALYSIS ===");
+        req.body.rooms.forEach((room: any, index: number) => {
+          console.log(`Room ${index} includedEntranceFee:`, room.includedEntranceFee);
+        });
+      }
       
       // Debug cottages specifically
       if (req.body.cottages) {
