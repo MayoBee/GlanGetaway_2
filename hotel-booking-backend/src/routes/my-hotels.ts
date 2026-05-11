@@ -1260,7 +1260,7 @@ router.put(
           roomAmenityIndex++;
         }
         
-        // Parse includedEntranceFee for rooms
+        // Parse includedEntranceFee for rooms - extract directly from FormData fields
         console.log(`=== ROOMS INCLUDED ENTRANCE FEE DEBUG ===`);
         console.log(`Room ${createRoomIndex} enabled:`, req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`]);
         console.log(`Room ${createRoomIndex} adultCount:`, req.body[`rooms[${createRoomIndex}][includedEntranceFee][adultCount]`]);
@@ -1270,6 +1270,7 @@ router.put(
         const allRoomKeys = Object.keys(req.body).filter(key => key.includes(`rooms[${createRoomIndex}]`) && key.includes('includedEntranceFee'));
         console.log(`All includedEntranceFee keys for Room ${createRoomIndex}:`, allRoomKeys);
         
+        // Extract includedEntranceFee directly from FormData fields
         const includedEntranceFee = {
           enabled: req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === "true" || 
                    req.body[`rooms[${createRoomIndex}][includedEntranceFee][enabled]`] === true,
@@ -1278,6 +1279,19 @@ router.put(
         };
         
         console.log(`Room ${createRoomIndex} parsed includedEntranceFee:`, includedEntranceFee);
+        
+        // Also check if the room object already has includedEntranceFee and merge if needed
+        const roomFromFormData = req.body.rooms && req.body.rooms[createRoomIndex];
+        if (roomFromFormData && roomFromFormData.includedEntranceFee) {
+          console.log(`Room ${createRoomIndex} has includedEntranceFee in parsed rooms:`, roomFromFormData.includedEntranceFee);
+          // If the parsed object is empty, use our FormData extraction
+          if (!roomFromFormData.includedEntranceFee.enabled && 
+              !roomFromFormData.includedEntranceFee.adultCount && 
+              !roomFromFormData.includedEntranceFee.childCount) {
+            console.log(`Room ${createRoomIndex} includedEntranceFee is empty, using FormData extraction`);
+            roomFromFormData.includedEntranceFee = includedEntranceFee;
+          }
+        }
 
         rooms.push({
           id: req.body[`rooms[${createRoomIndex}][id]`],
