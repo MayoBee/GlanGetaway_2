@@ -781,7 +781,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
 
     // Check if there's accommodation data that needs FormData serialization
-    const hasAccommodationData = processedData.rooms || processedData.cottages || processedData.packages;
+    const hasAccommodationData = !!(processedData.rooms || processedData.cottages || processedData.packages);
 
     console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
     console.log('hasNewImageFiles:', hasNewImageFiles);
