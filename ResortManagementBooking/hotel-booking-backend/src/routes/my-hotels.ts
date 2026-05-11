@@ -746,6 +746,9 @@ router.put(
         }
       }
 
+      // DEPLOYMENT VERSION CHECK - v2.0 (May 11, 2026)
+      console.log("=== BACKEND VERSION CHECK: v2.0 - FormData parsing enabled ===");
+      
       // Parse stringified JSON fields that might come from frontend
       const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee', 'rooms', 'cottages', 'packages', 'contact', 'policies'];
       for (const field of stringifiedFields) {
