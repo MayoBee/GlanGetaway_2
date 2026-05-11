@@ -1217,6 +1217,22 @@ router.put(
       console.log("Checking for rooms[0][id]:", req.body[`rooms[0][id]`]);
       console.log("All room-related keys:", Object.keys(req.body).filter(key => key.includes('rooms[')));
       
+      // Debug: Check if rooms data exists in different formats
+      console.log("=== ROOMS DATA INVESTIGATION ===");
+      console.log("req.body.rooms:", req.body.rooms);
+      console.log("req.body['rooms[0][id]':", req.body['rooms[0][id]']);
+      console.log("req.body['rooms[0]':", req.body['rooms[0]']);
+      console.log("Direct check - rooms[0][id]:", req.body['rooms[0][id]']);
+      console.log("Direct check - rooms[0][name]:", req.body['rooms[0][name]']);
+      console.log("Direct check - rooms[0][includedEntranceFee][enabled]:", req.body['rooms[0][includedEntranceFee][enabled]']);
+      
+      // Log all keys that start with 'rooms'
+      const allRoomKeys = Object.keys(req.body).filter(key => key.startsWith('rooms['));
+      console.log("All keys starting with 'rooms':", allRoomKeys);
+      allRoomKeys.forEach(key => {
+        console.log(`${key}: ${req.body[key]}`);
+      });
+      
       const rooms: Array<{
         id: string;
         name: string;
