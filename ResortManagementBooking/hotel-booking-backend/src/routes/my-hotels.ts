@@ -746,8 +746,8 @@ router.put(
         }
       }
 
-      // DEPLOYMENT VERSION CHECK - v2.1 (May 11, 2026) - FORCED REDEPLOY
-      console.log("🚀 BACKEND v2.1 DEPLOYED - FormData parsing ACTIVE");
+      // EMERGENCY DEPLOYMENT TRIGGER - 2026-05-11-10:30-AM
+      console.log("� EMERGENCY: BACKEND v2.2 ACTIVE - FormData parsing WORKING");
       
       // Parse stringified JSON fields that might come from frontend
       const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee', 'rooms', 'cottages', 'packages', 'contact', 'policies'];
