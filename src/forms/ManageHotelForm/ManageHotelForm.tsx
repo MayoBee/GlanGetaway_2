@@ -792,7 +792,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('cottageFiles count:', cottageFiles.size);
     console.log('packageFiles count:', packageFiles.size);
 
-    // If there are new image files (main hotel or accommodations) OR accommodation data, construct FormData
+    // Always construct FormData when there's accommodation data to ensure includedEntranceFee fields are properly sent
+    // This fixes the issue where entrance fee data was being sent as JSON instead of FormData fields
     if (hasNewImageFiles || hasAccommodationFiles || hasAccommodationData) {
       console.log('Constructing FormData with accommodation data');
       const formData = new FormData();
