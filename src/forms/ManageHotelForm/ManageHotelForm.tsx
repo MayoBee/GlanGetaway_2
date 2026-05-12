@@ -757,9 +757,9 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('imageFiles:', formDataJson.imageFiles);
 
     // Check if there are new image files to upload (main hotel or accommodations)
-    const hasNewImageFiles = formDataJson.imageFiles &&
+    const hasNewImageFiles = !!(formDataJson.imageFiles &&
                            (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) &&
-                           formDataJson.imageFiles.length > 0;
+                           formDataJson.imageFiles.length > 0);
     const hasAccommodationFiles = (roomsSectionRef.current?.getRoomFiles()?.size || 0) > 0 ||
       (cottagesSectionRef.current?.getCottageFiles()?.size || 0) > 0 ||
       (packagesSectionRef.current?.getPackageFiles()?.size || 0) > 0;
