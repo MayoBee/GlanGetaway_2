@@ -55,6 +55,10 @@ const upload = multer({
   storage: storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
+    fields: 10000, // Increased field limit to handle large accommodation data
+    fieldSize: 1024 * 1024, // 1MB per field limit
+    files: 50, // Increased file limit for multiple accommodation images
+    parts: 10000 // Total parts limit (fields + files)
   },
 });
 
@@ -896,7 +900,10 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       console.log("=== PUT /api/my-hotels/:hotelId called ===");
+      console.log("Request Content-Length:", req.headers['content-length']);
       console.log("Request body keys:", Object.keys(req.body));
+      console.log("Request body keys count:", Object.keys(req.body).length);
+      console.log("Request body size estimate:", JSON.stringify(req.body).length);
       console.log("Request body sample:", req.body);
       
       // Debug: Log all keys that contain 'includedEntranceFee'

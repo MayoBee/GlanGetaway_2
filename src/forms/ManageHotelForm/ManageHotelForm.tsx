@@ -767,8 +767,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
     // Always construct FormData when there's accommodation data to ensure includedEntranceFee fields are properly sent
     // This fixes the issue where entrance fee data was being sent as JSON instead of FormData fields
-    // TEMPORARY: Force FormData path to bypass deployment delay
-    const shouldConstructFormData = true; // Always use FormData for now
+    const shouldConstructFormData = hasNewImageFiles || hasAccommodationFiles || hasAccommodationData;
     console.log('shouldConstructFormData:', shouldConstructFormData);
     console.log('Final condition result:', {
       hasNewImageFiles,
@@ -1012,6 +1011,17 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         formData.append('discounts.pwdEnabled', String(processedData.discounts.pwdEnabled));
         formData.append('discounts.pwdPercentage', String(processedData.discounts.pwdPercentage));
       }
+      
+      // Enhanced debugging for FormData key tracking
+      const formDataKeys = Array.from(formData.keys());
+      console.log('FormData keys to be sent:', formDataKeys);
+      console.log('FormData total keys count:', formDataKeys.length);
+      console.log('FormData size estimate:', JSON.stringify(Object.fromEntries(formData)).length);
+      
+      // Debug entrance fee specific keys
+      const entranceFeeKeys = formDataKeys.filter(key => key.includes('includedEntranceFee'));
+      console.log('Entrance fee keys being sent:', entranceFeeKeys);
+      console.log('Total entrance fee keys:', entranceFeeKeys.length);
       
       console.log('FormData constructed successfully');
       onSave(formData as any);
