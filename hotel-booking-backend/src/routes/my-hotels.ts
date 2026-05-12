@@ -899,12 +899,22 @@ router.put(
   ]),
   async (req: Request, res: Response) => {
     try {
-      console.log("=== PUT /api/my-hotels/:hotelId called ===");
+      console.log("=== PUT /api/my-hotels/:hotelId called - VERSION 6.0 WITH MULTER FIXES ===");
+      console.log("Backend deployment timestamp:", new Date().toISOString());
       console.log("Request Content-Length:", req.headers['content-length']);
+      console.log("Request Content-Type:", req.headers['content-type']);
       console.log("Request body keys:", Object.keys(req.body));
       console.log("Request body keys count:", Object.keys(req.body).length);
       console.log("Request body size estimate:", JSON.stringify(req.body).length);
       console.log("Request body sample:", req.body);
+      
+      // Log request size for debugging
+      const contentLength = req.headers['content-length'];
+      console.log("=== REQUEST SIZE ANALYSIS ===");
+      console.log("Content-Length header:", contentLength);
+      console.log("Content-Length in bytes:", contentLength ? parseInt(contentLength) : 'undefined');
+      console.log("Form data entries count:", Object.keys(req.body).length);
+      console.log("Expected vs Actual keys:", "289 expected vs", Object.keys(req.body).length, "received");
       
       // Debug: Log all keys that contain 'includedEntranceFee'
       const includedEntranceFeeKeys = Object.keys(req.body).filter(key => key.includes('includedEntranceFee'));
