@@ -62,6 +62,18 @@ const upload = multer({
   },
 });
 
+// Log multer configuration on startup
+console.log("=== MULTER CONFIGURATION DEBUG ===");
+console.log("Multer limits:", {
+  fileSize: "5MB",
+  fields: 10000,
+  fieldSize: "1MB",
+  files: 50,
+  parts: 10000
+});
+console.log("This should handle 289+ FormData keys without truncation");
+console.log("=== MULTER CONFIGURATION DEBUG END ===");
+
 router.post(
   "/",
   verifyToken,
@@ -899,7 +911,7 @@ router.put(
   ]),
   async (req: Request, res: Response) => {
     try {
-      console.log("=== PUT /api/my-hotels/:hotelId called - VERSION 6.0 WITH MULTER FIXES ===");
+      console.log("=== PUT /api/my-hotels/:hotelId called - VERSION 7.0 WITH MULTER CONFIG LOGGING ===");
       console.log("Backend deployment timestamp:", new Date().toISOString());
       console.log("Request Content-Length:", req.headers['content-length']);
       console.log("Request Content-Type:", req.headers['content-type']);
