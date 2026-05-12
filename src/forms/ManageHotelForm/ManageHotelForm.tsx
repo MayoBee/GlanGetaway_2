@@ -767,7 +767,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
     // Always construct FormData when there's accommodation data to ensure includedEntranceFee fields are properly sent
     // This fixes the issue where entrance fee data was being sent as JSON instead of FormData fields
-    const shouldConstructFormData = hasAccommodationData; // Force FormData when accommodation data exists
+    // TEMPORARY: Force FormData path to bypass deployment delay
+    const shouldConstructFormData = true; // Always use FormData for now
     console.log('shouldConstructFormData:', shouldConstructFormData);
     console.log('Final condition result:', {
       hasNewImageFiles,
