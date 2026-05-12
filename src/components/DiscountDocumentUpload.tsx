@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/ui/card";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
-import { Label } from "../../../shared/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
+import { Button } from "@shared/ui/button";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
 import { Upload, FileText, CheckCircle, AlertCircle, X, Download } from "lucide-react";
-import axiosInstance from "../../../shared/auth/api-client";
+import axiosInstance from "@shared/auth/api-client";
 
 interface UploadedDocument {
   _id: string;

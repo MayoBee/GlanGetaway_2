@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { getApiBaseUrl } from "../../../shared/auth/api-client";
+import { getApiBaseUrl } from "@shared/auth/api-client";
 
 interface AmenitySlotBookingProps {
   amenityId: string;

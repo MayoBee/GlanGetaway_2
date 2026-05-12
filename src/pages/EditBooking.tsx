@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { axiosInstance } from "../api-client";
-import type { BookingType, HotelType } from "../../../shared/types";
+import type { BookingType, HotelType } from "@shared/types";
 import { updateBooking } from "../api-client";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";

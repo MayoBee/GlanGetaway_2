@@ -751,51 +751,30 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         childCount: room.includedEntranceFee?.childCount
       });
     });
-
-    // Debug FormData entrance fee appending
-    if (hasNewImageFiles || hasAccommodationFiles) {
-      console.log('=== FORM DATA ENTRANCE FEE DEBUG ===');
-      processedData.rooms?.forEach((room, index) => {
-        if (room.includedEntranceFee) {
-          console.log(`Appending room ${index} entrance fee:`, {
-            enabled: room.includedEntranceFee.enabled,
-            adultCount: room.includedEntranceFee.adultCount,
-            childCount: room.includedEntranceFee.childCount
-          });
-        }
-      });
-    }
-
-    // Reset manual submit flag
-    setIsManualSubmit(false);
-
-    // Check if there are new image files to upload (main hotel or accommodations)
-    const hasNewImageFiles = formDataJson.imageFiles &&
-                           (formDataJson.imageFiles instanceof FileList || Array.isArray(formDataJson.imageFiles)) &&
-                           formDataJson.imageFiles.length > 0;
-
-    // Check if there are accommodation image files
-    const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
-    const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
-    const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
-    const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
-
-    // Check if there's accommodation data that needs FormData serialization
-    const hasAccommodationData = !!(processedData.rooms || processedData.cottages || processedData.packages);
-
-    console.log('=== FORM DATA CONSTRUCTION DEBUG ===');
-    console.log('hasNewImageFiles:', hasNewImageFiles);
-    console.log('hasAccommodationFiles:', hasAccommodationFiles);
-    console.log('hasAccommodationData:', hasAccommodationData);
+    
+    console.log('processedData.cottages:', processedData.cottages);
+    console.log('processedData.packages:', processedData.packages);
     console.log('imageFiles:', formDataJson.imageFiles);
-    console.log('roomFiles count:', roomFiles.size);
-    console.log('cottageFiles count:', cottageFiles.size);
-    console.log('packageFiles count:', packageFiles.size);
+
+    const hasNewImageFiles = formDataJson.imageFiles && formDataJson.imageFiles.length > 0;
+    const hasAccommodationFiles = (roomsSectionRef.current?.getRoomFiles()?.size || 0) > 0 ||
+      (cottagesSectionRef.current?.getCottageFiles()?.size || 0) > 0 ||
+      (packagesSectionRef.current?.getPackageFiles()?.size || 0) > 0;
+    const hasAccommodationData = !!(processedData.rooms || processedData.cottages || processedData.packages);
 
     // Always construct FormData when there's accommodation data to ensure includedEntranceFee fields are properly sent
     // This fixes the issue where entrance fee data was being sent as JSON instead of FormData fields
-    if (hasNewImageFiles || hasAccommodationFiles || hasAccommodationData) {
-      console.log('Constructing FormData with accommodation data');
+    const shouldConstructFormData = hasNewImageFiles || hasAccommodationFiles || hasAccommodationData;
+    console.log('shouldConstructFormData:', shouldConstructFormData);
+    console.log('Final condition result:', {
+      hasNewImageFiles,
+      hasAccommodationFiles,
+      hasAccommodationData,
+      result: shouldConstructFormData
+    });
+
+    if (shouldConstructFormData) {
+      console.log('✅ CONSTRUCTING FormData with accommodation data');
       const formData = new FormData();
       
       // Add hotelId if available (for edit mode)
@@ -1034,7 +1013,14 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       onSave(formData as any);
     } else {
       // No new image files, send as JSON for backward compatibility
-      console.log('Sending data as JSON (no new images)');
+      console.log('❌ SENDING DATA AS JSON - DEBUGGING:');
+      console.log('Why this path was taken:', {
+        hasNewImageFiles,
+        hasAccommodationFiles,
+        hasAccommodationData,
+        shouldConstructFormData
+      });
+      console.log('Final processedData being sent as JSON:', processedData);
       onSave(processedData);
     }
   };

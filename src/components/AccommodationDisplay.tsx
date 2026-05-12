@@ -1,4 +1,4 @@
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "@shared/types";
 import { Bed, Home, Users, DollarSign, Plus } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 

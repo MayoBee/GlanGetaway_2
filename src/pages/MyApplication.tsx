@@ -18,16 +18,16 @@ import {
   Badge,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "../../../shared/ui/button";
+import { Button } from "@shared/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../shared/ui/card";
-import { Badge as UIBadge } from "../../../shared/ui/badge";
-import { Separator } from "../../../shared/ui/separator";
+} from "@shared/ui/card";
+import { Badge as UIBadge } from "@shared/ui/badge";
+import { Separator } from "@shared/ui/separator";
 
 type ApplicationStatus = "pending" | "approved" | "declined" | "none";
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "@shared/types";
 
 export interface SelectedRoom {
   id: string;

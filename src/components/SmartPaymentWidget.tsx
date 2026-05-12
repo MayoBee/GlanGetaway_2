@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axiosInstance, { getApiBaseUrl } from "../../../shared/auth/api-client";
+import axiosInstance, { getApiBaseUrl } from "@shared/auth/api-client";
 import StripePaymentForm from "./StripePaymentForm";
 
 interface SmartPaymentWidgetProps {

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "react-query";
 import { axiosInstance } from "../../api-client";
 import { useRoleBasedAccess } from '../../hooks/useRoleBasedAccess';
 import { useToast } from '../../hooks/use-toast';
-import { BookingType } from '../../../../shared/types';
+import { BookingType } from '@shared/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';

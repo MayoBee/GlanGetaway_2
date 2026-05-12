@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle, XCircle, Clock, Eye, Download, AlertCircle } from "lucide-react";
-import { BookingType } from "../../../shared/types";
+import { BookingType } from "@shared/types";
 
 type Props = {
   booking: BookingType;

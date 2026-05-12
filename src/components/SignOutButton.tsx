@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../../shared/ui/dropdown-menu";
+} from "@shared/ui/dropdown-menu";
 
 // Google profile image if exists, otherwise Robohash avatar
 const getAvatarUrl = () => {

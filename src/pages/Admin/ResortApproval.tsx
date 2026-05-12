@@ -11,7 +11,7 @@ import {
 } from "../../api-client";
 import { useAdminBypass } from "../../hooks/useAdminBypass";
 import { useToast } from "../../hooks/use-toast";
-import { HotelType } from "../../../../shared/types";
+import { HotelType } from "@shared/types";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";

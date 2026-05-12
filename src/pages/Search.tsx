@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import useSearchContext from "../hooks/useSearchContext";
 import { useQuery } from "react-query";
 import { searchHotels } from "../api-client";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "@shared/types";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import SearchResultCard from "../components/SearchResultsCard";

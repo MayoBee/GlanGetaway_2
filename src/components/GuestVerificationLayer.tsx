@@ -5,12 +5,12 @@ import {
   CardHeader, 
   CardTitle,
   CardDescription 
-} from "../../../shared/ui/card";
-import { Button } from "../../../shared/ui/button";
-import { Input } from "../../../shared/ui/input";
-import { Label } from "../../../shared/ui/label";
-import { Checkbox } from "../../../shared/ui/checkbox";
-import { Badge } from "../../../shared/ui/badge";
+} from "@shared/ui/card";
+import { Button } from "@shared/ui/button";
+import { Input } from "@shared/ui/input";
+import { Label } from "@shared/ui/label";
+import { Checkbox } from "@shared/ui/checkbox";
+import { Badge } from "@shared/ui/badge";
 import { 
   Users,
   AlertCircle,
@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../../shared/ui/dialog";
+} from "@shared/ui/dialog";
 import {
   mockOCRFunction,
   ScannedIDResult,
@@ -42,7 +42,7 @@ import {
   validateGuestAgainstID,
   calculateVerificationDiscount,
   IDType
-} from "../../../shared/lib/mockOCR";
+} from "@shared/lib/mockOCR";
 
 interface GuestInfo {
   id: string;

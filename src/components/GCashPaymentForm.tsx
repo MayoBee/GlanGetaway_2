@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, X, Smartphone } from "lucide-react";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "@shared/types";
 
 type Props = {
   totalCost: number;

@@ -1,7 +1,7 @@
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import { axiosInstance } from "../api-client";
 import { fetchMyBookings, deleteBooking } from "../api-client";
-import type { BookingType, HotelWithBookingsType } from "../../../shared/types";
+import type { BookingType, HotelWithBookingsType } from "@shared/types";
 import { Badge } from "../components/ui/badge";
 import SmartImage from "../components/SmartImage";
 import { Button } from "../components/ui/button";
