@@ -260,29 +260,49 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
-      // Fallback: Use existing /api/my-hotels endpoint
-      console.log('🔄 Using fallback endpoint for assigned resorts');
+      // Fallback: Get user data and fetch assigned resorts
+      console.log('🔄 Using fallback method for assigned resorts');
       
-      // Get current user info to determine role
+      // Get current user info
       const currentUserId = localStorage.getItem("user_id");
       const currentUserRole = localStorage.getItem("user_role");
       
-      const response = await axiosInstance.get("/api/my-hotels");
-      const allHotels = response.data;
-      
-      // If user is front desk, filter hotels based on assigned resorts
       if (currentUserRole === "front_desk" && currentUserId) {
-        // Get user's assigned resorts from localStorage or fetch user data
-        const userEmail = localStorage.getItem("user_email");
-        
-        // For now, return all hotels since backend doesn't have proper filtering
-        // This will work for testing until backend endpoint is implemented
-        console.log('🏨 Front desk user detected, returning available resorts');
-        return allHotels;
+        try {
+          // Fetch current user data to get assigned resorts
+          const userResponse = await axiosInstance.get("/api/users/me");
+          const userData = userResponse.data;
+          
+          // Check if user has assignedResorts
+          if (userData.assignedResorts && userData.assignedResorts.length > 0) {
+            console.log('🏨 Found assigned resorts for front desk user:', userData.assignedResorts);
+            
+            // Fetch all hotels and filter by assigned resort IDs
+            const hotelsResponse = await axiosInstance.get("/api/hotels");
+            const allHotels = hotelsResponse.data;
+            
+            // Filter hotels to only include assigned ones
+            const assignedHotels = allHotels.filter((hotel: HotelType) => 
+              userData.assignedResorts.some((assigned: any) => 
+                assigned.resortId === hotel._id
+              )
+            );
+            
+            console.log('🏨 Filtered assigned hotels:', assignedHotels.length);
+            return assignedHotels;
+          } else {
+            console.log('⚠️ No assigned resorts found for front desk user');
+            return [];
+          }
+        } catch (userError) {
+          console.error('❌ Error fetching user data:', userError);
+          return [];
+        }
       }
       
-      // For resort owners, return all their hotels
-      return allHotels;
+      // For resort owners, use /api/my-hotels
+      const response = await axiosInstance.get("/api/my-hotels");
+      return response.data;
     }
     throw error;
   }
