@@ -341,6 +341,10 @@ router.post(
         newHotel.packages = packages;
       }
 
+      // Clear any existing rooms/cottages data to ensure FormData parsing takes priority
+      delete newHotel.rooms;
+      delete newHotel.cottages;
+
       // Parse rooms from FormData
       const rooms: Array<{
         id: string;

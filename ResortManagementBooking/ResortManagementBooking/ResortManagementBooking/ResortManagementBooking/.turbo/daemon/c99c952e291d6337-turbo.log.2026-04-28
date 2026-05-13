@@ -1,0 +1,2 @@
+2026-04-28T05:34:42.049005Z  WARN turborepo_filewatch: failed to wait for initial filesystem cookie: filewatching failed to start: failed to write cookie to D:\Coding practice\Websites\Booking-website\ResortManagementBooking\.turbo\cookies\.turbo-cookie: failed to create file `D:\Coding practice\Websites\Booking-website\ResortManagementBooking\.turbo\cookies\.turbo-cookie`
+2026-04-28T05:34:42.160194Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
