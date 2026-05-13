@@ -498,6 +498,26 @@ router.post(
       console.log("gcashNumber set to:", newHotel.gcashNumber);
       console.log("downPaymentPercentage set to:", newHotel.downPaymentPercentage);
 
+      // Debug entrance fee data before saving (POST route)
+      console.log("=== ENTRANCE FEE CREATE DEBUG ===");
+      console.log("Rooms entrance fee data:");
+      newHotel.rooms?.forEach((room: any, index: number) => {
+        console.log(`Room ${index} (${room.name}): includedEntranceFee =`, {
+          enabled: room.includedEntranceFee?.enabled,
+          adultCount: room.includedEntranceFee?.adultCount,
+          childCount: room.includedEntranceFee?.childCount
+        });
+      });
+      console.log("Cottages entrance fee data:");
+      newHotel.cottages?.forEach((cottage: any, index: number) => {
+        console.log(`Cottage ${index} (${cottage.name}): includedEntranceFee =`, {
+          enabled: cottage.includedEntranceFee?.enabled,
+          adultCount: cottage.includedEntranceFee?.adultCount,
+          childCount: cottage.includedEntranceFee?.childCount
+        });
+      });
+      console.log("=== END ENTRANCE FEE CREATE DEBUG ===");
+
       const hotel = new Hotel(newHotel as HotelType);
       await hotel.save();
       
@@ -818,7 +838,27 @@ router.put(
         gcashNumber: sanitizedData.gcashNumber,
         downPaymentPercentage: sanitizedData.downPaymentPercentage
       });
-      
+
+      // Debug entrance fee data before saving
+      console.log("=== ENTRANCE FEE SAVE DEBUG ===");
+      console.log("Rooms entrance fee data:");
+      sanitizedData.rooms?.forEach((room: any, index: number) => {
+        console.log(`Room ${index} (${room.name}): includedEntranceFee =`, {
+          enabled: room.includedEntranceFee?.enabled,
+          adultCount: room.includedEntranceFee?.adultCount,
+          childCount: room.includedEntranceFee?.childCount
+        });
+      });
+      console.log("Cottages entrance fee data:");
+      sanitizedData.cottages?.forEach((cottage: any, index: number) => {
+        console.log(`Cottage ${index} (${cottage.name}): includedEntranceFee =`, {
+          enabled: cottage.includedEntranceFee?.enabled,
+          adultCount: cottage.includedEntranceFee?.adultCount,
+          childCount: cottage.includedEntranceFee?.childCount
+        });
+      });
+      console.log("=== END ENTRANCE FEE SAVE DEBUG ===");
+
       const updatedHotel = await hotel.save();
 
       console.log("=== HOTEL SAVE DEBUG ===");
