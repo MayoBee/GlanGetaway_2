@@ -260,31 +260,21 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
-      // Fallback: Get user data and fetch assigned resorts
+      // Fallback: Get fresh user data from database and fetch assigned resorts
       console.log('🔄 Using fallback method for assigned resorts');
       
-      // Get current user info
-      const currentUserId = localStorage.getItem("user_id");
-      const currentUserRole = localStorage.getItem("user_role");
-      
-      console.log('🔍 Role detection debug:', {
-        currentUserId,
-        currentUserRole,
-        currentUserRoleType: typeof currentUserRole,
-        isFrontDesk: currentUserRole === "front_desk",
-        hasUserId: !!currentUserId
-      });
-      
-      if (currentUserRole === "front_desk" && currentUserId) {
-        try {
-          console.log('🔍 Fetching user data for front desk user...');
-          // Fetch current user data to get assigned resorts
-          const userResponse = await axiosInstance.get("/api/users/me");
-          const userData = userResponse.data;
-          
-          console.log('👤 User data received:', userData);
-          console.log('🏨 assignedResorts field:', userData.assignedResorts);
-          
+      try {
+        console.log('🔍 Fetching fresh user data from database...');
+        // Always fetch current user data from database (no localStorage dependency)
+        const userResponse = await axiosInstance.get("/api/users/me");
+        const userData = userResponse.data;
+        
+        console.log('👤 Fresh user data received:', userData);
+        console.log('🏨 User role from database:', userData.role);
+        console.log('🏨 assignedResorts field:', userData.assignedResorts);
+        
+        // Check user role from database
+        if (userData.role === "front_desk") {
           // Check if user has assignedResorts
           if (userData.assignedResorts && userData.assignedResorts.length > 0) {
             console.log('🏨 Found assigned resorts for front desk user:', userData.assignedResorts);
@@ -310,15 +300,19 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
             console.log('⚠️ Length:', userData.assignedResorts?.length);
             return [];
           }
-        } catch (userError) {
-          console.error('❌ Error fetching user data:', userError);
+        } else if (userData.role === "resort_owner") {
+          // For resort owners, use /api/my-hotels
+          console.log('🏨 Resort owner detected, fetching owner hotels');
+          const response = await axiosInstance.get("/api/my-hotels");
+          return response.data;
+        } else {
+          console.log('⚠️ Unknown user role:', userData.role);
           return [];
         }
+      } catch (userError) {
+        console.error('❌ Error fetching user data:', userError);
+        return [];
       }
-      
-      // For resort owners, use /api/my-hotels
-      const response = await axiosInstance.get("/api/my-hotels");
-      return response.data;
     }
     throw error;
   }
