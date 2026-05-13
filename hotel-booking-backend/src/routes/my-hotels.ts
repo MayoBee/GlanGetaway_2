@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
 import imageService from "../services/imageService";
-import { v2 as cloudinary } from "cloudinary";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import verifyToken from "../middleware/auth";

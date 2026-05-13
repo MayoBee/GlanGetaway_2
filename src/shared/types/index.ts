@@ -492,26 +492,6 @@ export type BookingType = {
 
   basePrice: number;
 
-  // Walk-in/Kiosk support
-
-  source?: "online" | "walk_in"; // Distinguish between online and walk-in bookings
-
-  walkInDetails?: {
-
-    guestId?: string; // Guest ID for walk-in customers
-
-    paymentMethod: "cash" | "card" | "gcash" | "other";
-
-    idType?: "government_id" | "driver_license" | "passport" | "other";
-
-    idNumber?: string;
-
-    notes?: string;
-
-    processedByStaffId: string; // Staff member who processed the walk-in
-
-  };
-
   selectedRooms?: Array<{
 
     id: string;
