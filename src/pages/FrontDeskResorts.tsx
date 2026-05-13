@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { fetchMyHotels } from "../api-client";
+import { fetchAssignedResorts } from "../api-client";
 import { BsMap } from "react-icons/bs";
 import { BiMoney } from "react-icons/bi";
 import {
@@ -46,8 +46,8 @@ const FrontDeskResorts = () => {
   };
 
   const { data: hotelData } = useQueryWithLoading(
-    "fetchMyHotels",
-    fetchMyHotels,
+    "fetchAssignedResorts",
+    fetchAssignedResorts,
     {
       onError: () => {},
       loadingMessage: "Loading assigned resorts...",

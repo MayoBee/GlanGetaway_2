@@ -253,6 +253,11 @@ export const fetchMyHotels = async (): Promise<HotelType[]> => {
   return response.data;
 };
 
+export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
+  const response = await axiosInstance.get("/api/assigned-resorts");
+  return response.data;
+};
+
 export const fetchMyHotelById = async (hotelId: string): Promise<HotelType> => {
   const response = await axiosInstance.get(`/api/my-hotels/${hotelId}`);
   return response.data;
