@@ -306,8 +306,8 @@ const FrontDeskResorts = () => {
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
                 <TooltipProvider>
-                  {/* Edit Resort - Requires canManageRooms or canManageAmenities */}
-                  {(permissions.canManageRooms || permissions.canManageAmenities) ? (
+                  {/* Edit Resort - Requires canManagePricing for resort editing */}
+                  {permissions.canManagePricing ? (
                     <Link
                       to={`/edit-hotel/${hotel._id}`}
                       className="flex-1 bg-primary-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-primary-700 transition-colors text-center flex items-center justify-center min-w-[120px]"
@@ -316,7 +316,7 @@ const FrontDeskResorts = () => {
                       Edit Resort
                     </Link>
                   ) : (
-                    <Tooltip content="No permission to manage rooms or amenities">
+                    <Tooltip content="No permission to manage pricing - resort editing requires pricing permissions">
                       <Button
                         disabled
                         className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
