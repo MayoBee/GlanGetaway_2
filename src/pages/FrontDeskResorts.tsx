@@ -30,7 +30,7 @@ import BookingLogModal from "../components/BookingLogModal";
 import { useState } from "react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../shared/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "../components/ui/tooltip";
 
 const FrontDeskResorts = () => {
   const { isLoggedIn } = useAppContext();
@@ -316,19 +316,14 @@ const FrontDeskResorts = () => {
                       Edit Resort
                     </Link>
                   ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          disabled
-                          className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
-                        >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Edit Resort
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No permission to manage rooms or amenities</p>
-                      </TooltipContent>
+                    <Tooltip content="No permission to manage rooms or amenities">
+                      <Button
+                        disabled
+                        className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Edit Resort
+                      </Button>
                     </Tooltip>
                   )}
 
@@ -351,19 +346,14 @@ const FrontDeskResorts = () => {
                       Booking Log
                     </button>
                   ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          disabled
-                          className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
-                        >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Booking Log
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No permission to manage bookings</p>
-                      </TooltipContent>
+                    <Tooltip content="No permission to manage bookings">
+                      <Button
+                        disabled
+                        className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Booking Log
+                      </Button>
                     </Tooltip>
                   )}
 
@@ -377,19 +367,14 @@ const FrontDeskResorts = () => {
                       Reports
                     </Link>
                   ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          disabled
-                          className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
-                        >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Reports
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No permission to view reports</p>
-                      </TooltipContent>
+                    <Tooltip content="No permission to view reports">
+                      <Button
+                        disabled
+                        className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Reports
+                      </Button>
                     </Tooltip>
                   )}
 
@@ -403,19 +388,14 @@ const FrontDeskResorts = () => {
                       Billing
                     </Link>
                   ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          disabled
-                          className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
-                        >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Billing
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No permission to manage billing</p>
-                      </TooltipContent>
+                    <Tooltip content="No permission to manage billing">
+                      <Button
+                        disabled
+                        className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Billing
+                      </Button>
                     </Tooltip>
                   )}
 
@@ -429,19 +409,14 @@ const FrontDeskResorts = () => {
                       Activities
                     </Link>
                   ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          disabled
-                          className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
-                        >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Activities
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No permission to manage activities</p>
-                      </TooltipContent>
+                    <Tooltip content="No permission to manage activities">
+                      <Button
+                        disabled
+                        className="flex-1 bg-gray-300 text-gray-500 py-3 px-4 rounded-xl font-semibold text-center flex items-center justify-center min-w-[120px]"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Activities
+                      </Button>
                     </Tooltip>
                   )}
 
