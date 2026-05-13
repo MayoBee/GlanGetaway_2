@@ -107,7 +107,7 @@ router.post(
   async (req: Request, res: Response) => {
     console.log("=== POST /api/my-hotels called ===");
     console.log("Request body:", req.body);
-    console.log("Files:", req.files);
+    console.log("Files:", (req as any).files);
     console.log("gcashNumber received:", req.body.gcashNumber);
     console.log("downPaymentPercentage received:", req.body.downPaymentPercentage);
     
@@ -1296,11 +1296,11 @@ router.put(
 
       // Update the hotel
       // Handle image uploads if any
-      const uploadedFiles = (req as any).files;
-      const imageFiles = uploadedFiles?.imageFiles as any[] || [];
-      const roomFiles = uploadedFiles?.roomFiles as any[] || [];
-      const cottageFiles = uploadedFiles?.cottageFiles as any[] || [];
-      const packageFiles = uploadedFiles?.packageFiles as any[] || [];
+      const uploadedFilesUpdate = (req as any).files;
+      const imageFiles = uploadedFilesUpdate?.imageFiles as any[] || [];
+      const roomFiles = uploadedFilesUpdate?.roomFiles as any[] || [];
+      const cottageFiles = uploadedFilesUpdate?.cottageFiles as any[] || [];
+      const packageFiles = uploadedFilesUpdate?.packageFiles as any[] || [];
       
       let finalImageUrls: string[] = [];
       
