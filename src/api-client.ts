@@ -269,9 +269,13 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
       
       if (currentUserRole === "front_desk" && currentUserId) {
         try {
+          console.log('🔍 Fetching user data for front desk user...');
           // Fetch current user data to get assigned resorts
           const userResponse = await axiosInstance.get("/api/users/me");
           const userData = userResponse.data;
+          
+          console.log('👤 User data received:', userData);
+          console.log('🏨 assignedResorts field:', userData.assignedResorts);
           
           // Check if user has assignedResorts
           if (userData.assignedResorts && userData.assignedResorts.length > 0) {
@@ -280,6 +284,8 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
             // Fetch all hotels and filter by assigned resort IDs
             const hotelsResponse = await axiosInstance.get("/api/hotels");
             const allHotels = hotelsResponse.data;
+            
+            console.log('🏨 All hotels available:', allHotels.length);
             
             // Filter hotels to only include assigned ones
             const assignedHotels = allHotels.filter((hotel: HotelType) => 
@@ -292,6 +298,8 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
             return assignedHotels;
           } else {
             console.log('⚠️ No assigned resorts found for front desk user');
+            console.log('⚠️ userData.assignedResorts:', userData.assignedResorts);
+            console.log('⚠️ Length:', userData.assignedResorts?.length);
             return [];
           }
         } catch (userError) {
