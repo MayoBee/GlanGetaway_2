@@ -138,20 +138,34 @@ const FrontDeskDialog = ({ open, onClose, onStaffCreated, editingStaff }: FrontD
     setLoading(true);
 
     try {
+      // Ensure role is always front_desk for new staff
+      const staffData = {
+        ...formData,
+        role: "front_desk", // Force front_desk role
+        resortIds: formData.resortIds,
+        permissions: {
+          ...permissions,
+          // Ensure all management permissions are true for front desk
+          canManageBookings: permissions.canManageBookings !== false,
+          canManageRooms: permissions.canManageRooms !== false,
+          canManageAmenities: permissions.canManageAmenities !== false,
+          canManageActivities: permissions.canManageActivities !== false,
+          canViewReports: permissions.canViewReports !== false,
+          canManageBilling: permissions.canManageBilling !== false,
+        }
+      };
+
       if (editingStaff) {
-        await apiClient.updateResortStaff(editingStaff._id, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          resortIds: formData.resortIds,
-          permissions,
-        });
+        await apiClient.updateResortStaff(editingStaff._id, staffData);
         onClose(true);
       } else {
-        const response = await apiClient.createResortStaff({
-          ...formData,
-          resortIds: formData.resortIds,
-          permissions,
-        });
+        const response = await apiClient.createResortStaff(staffData);
+        
+        // Auto-assign staff to selected resorts
+        if (formData.resortIds.length > 0) {
+          await apiClient.assignStaffToResorts(response.data._id || response.data.id, formData.resortIds);
+        }
+        
         onStaffCreated({ email: formData.email, password: formData.password });
         resetForm();
         onClose(true);

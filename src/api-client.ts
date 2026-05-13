@@ -1014,3 +1014,11 @@ export const getAssignedResorts = async () => {
   const response = await axiosInstance.get("/api/resort-staff/assigned-resorts");
   return response.data;
 };
+
+export const assignStaffToResorts = async (staffId: string, resortIds: string[]) => {
+  const response = await axiosInstance.post("/api/resort-staff/assign-to-resorts", {
+    staffId,
+    resortIds
+  });
+  return response.data;
+};
