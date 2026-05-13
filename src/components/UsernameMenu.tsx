@@ -27,6 +27,15 @@ const UsernameMenu = () => {
   const { isLoggedIn } = useAppContext();
   const { permissions, hasAnyManagementPermission, isFrontDesk } = useRoleBasedAccess();
 
+  // Debug logging for front desk menu issue
+  console.log("UsernameMenu - Debug Info:", {
+    isLoggedIn,
+    isFrontDesk,
+    hasAnyManagementPermission,
+    email: localStorage.getItem("user_email"),
+    userRole: localStorage.getItem("user_role")
+  });
+
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
 

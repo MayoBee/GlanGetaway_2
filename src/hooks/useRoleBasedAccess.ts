@@ -62,17 +62,21 @@ export const useRoleBasedAccess = () => {
   
   const requireAdmin = () => isAdmin;
   
-  // Only log in development to reduce console noise
-  if (process.env.NODE_ENV === 'development') {
-    console.log("useRoleBasedAccess - Calculated permissions:", {
-      canCreateResort,
-      canApproveResorts,
-      canManageAllUsers,
-      canViewAllResorts,
-      canManageOwnResorts,
-      canBookResorts
-    });
-  }
+  // Always log for debugging front desk issues
+  console.log("useRoleBasedAccess - Debug Info:", {
+    userRole,
+    isFrontDesk,
+    isResortOwner,
+    user,
+    userPermissions,
+    hasAnyManagementPermission,
+    canManageBookings,
+    canManageRooms,
+    canManageAmenities,
+    canManageActivities,
+    canViewReports,
+    canManageBilling
+  });
 
   const getAccessibleRoutes = () => {
     if (!isLoggedIn) {
