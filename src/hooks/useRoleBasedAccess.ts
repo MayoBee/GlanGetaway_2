@@ -1,16 +1,16 @@
 import useAppContext from "./useAppContext";
+import { UserRole } from "../shared/types";
 
 export const useRoleBasedAccess = () => {
   const { user, userRole, isLoggedIn, isLoading, isAuthLoading } = useAppContext();
 
-  // Handle both "resort_owner" and "resort-owner" (hyphen or underscore)
-  // Handle both "superAdmin" (DB value) and legacy "super_admin"
-  const isSuperAdmin = userRole === "superAdmin" || userRole === "super_admin";
-  const isResortOwner = userRole === "resort_owner" || userRole === "resort-owner";
-  const isAdmin = userRole === "admin" || isSuperAdmin;
-  const isFrontDesk = userRole === "front_desk";
-  const isHousekeeping = userRole === "housekeeping";
-  const isUser = userRole === "user" || isFrontDesk || isHousekeeping;
+  // Use correct UserRole enum values
+  const isSuperAdmin = userRole === UserRole.SuperAdmin;
+  const isResortOwner = userRole === UserRole.ResortOwner;
+  const isAdmin = userRole === UserRole.Admin || isSuperAdmin;
+  const isFrontDesk = userRole === UserRole.FrontDesk;
+  const isHousekeeping = userRole === UserRole.Housekeeping;
+  const isUser = userRole === UserRole.User || isFrontDesk || isHousekeeping;
 
   // Get user-specific permissions from database
   const userPermissions = user?.permissions || {};
@@ -55,9 +55,9 @@ export const useRoleBasedAccess = () => {
 
   // Helper function to check if front desk user has any management permissions
   const hasAnyManagementPermission = isFrontDesk && (
-    (userPermissions.canManageBookings || userPermissions.canManageRooms || 
-     userPermissions.canManageAmenities || userPermissions.canManageActivities || 
-     userPermissions.canViewReports || userPermissions.canManageBilling)
+    (canManageBookings || canManageRooms || 
+     canManageAmenities || canManageActivities || 
+     canViewReports || canManageBilling)
   );
   
   const requireAdmin = () => isAdmin;
