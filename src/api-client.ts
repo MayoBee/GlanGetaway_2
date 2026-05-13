@@ -267,6 +267,14 @@ export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
       const currentUserId = localStorage.getItem("user_id");
       const currentUserRole = localStorage.getItem("user_role");
       
+      console.log('🔍 Role detection debug:', {
+        currentUserId,
+        currentUserRole,
+        currentUserRoleType: typeof currentUserRole,
+        isFrontDesk: currentUserRole === "front_desk",
+        hasUserId: !!currentUserId
+      });
+      
       if (currentUserRole === "front_desk" && currentUserId) {
         try {
           console.log('🔍 Fetching user data for front desk user...');
