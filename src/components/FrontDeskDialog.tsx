@@ -160,12 +160,6 @@ const FrontDeskDialog = ({ open, onClose, onStaffCreated, editingStaff }: FrontD
         onClose(true);
       } else {
         const response = await apiClient.createResortStaff(staffData);
-        
-        // Auto-assign staff to selected resorts
-        if (formData.resortIds.length > 0) {
-          await apiClient.assignStaffToResorts(response.data._id || response.data.id, formData.resortIds);
-        }
-        
         onStaffCreated({ email: formData.email, password: formData.password });
         resetForm();
         onClose(true);
