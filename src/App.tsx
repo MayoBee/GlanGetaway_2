@@ -39,7 +39,6 @@ import AdminLogin from "./pages/AdminLogin";
 import { AdminAuthProvider } from "./contexts/AdminAuthContext";
 import AdminLayout from "./layouts/AdminLayout";
 import ApplyResortOwner from "./pages/ApplyResortOwner";
-import Kiosk from "./pages/Kiosk";
 import ManageFrontDesk from "./pages/ManageFrontDesk";
 
 const App = () => {
@@ -189,16 +188,6 @@ const App = () => {
                 <ProtectedRoute>
                   <Layout>
                     <ManageFrontDesk />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/kiosk/:hotelId"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Kiosk />
                   </Layout>
                 </ProtectedRoute>
               }
