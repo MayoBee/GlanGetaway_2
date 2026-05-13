@@ -25,7 +25,7 @@ const getAvatarUrl = () => {
 const UsernameMenu = () => {
   const [imgError, setImgError] = useState(false);
   const { isLoggedIn } = useAppContext();
-  const { permissions } = useRoleBasedAccess();
+  const { permissions, hasAnyManagementPermission, isFrontDesk } = useRoleBasedAccess();
 
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
@@ -127,6 +127,21 @@ const UsernameMenu = () => {
             >
               <Users className="h-4 w-4" />
               Manage Front Desk
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {/* Manage Resort - Only visible to Front Desk users with management permissions */}
+        {isFrontDesk && hasAnyManagementPermission && (
+          <DropdownMenuItem
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/front-desk-resorts"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <Building className="h-4 w-4" />
+              Manage Resort
             </Link>
           </DropdownMenuItem>
         )}

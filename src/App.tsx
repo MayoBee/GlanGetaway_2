@@ -41,6 +41,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import ApplyResortOwner from "./pages/ApplyResortOwner";
 import Kiosk from "./pages/Kiosk";
 import ManageFrontDesk from "./pages/ManageFrontDesk";
+import FrontDeskResorts from "./pages/FrontDeskResorts";
 
 const App = () => {
   return (
@@ -189,6 +190,16 @@ const App = () => {
                 <ProtectedRoute>
                   <Layout>
                     <ManageFrontDesk />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/front-desk-resorts"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <FrontDeskResorts />
                   </Layout>
                 </ProtectedRoute>
               }
