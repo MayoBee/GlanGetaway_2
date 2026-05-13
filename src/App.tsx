@@ -42,6 +42,7 @@ import ApplyResortOwner from "./pages/ApplyResortOwner";
 import Kiosk from "./pages/Kiosk";
 import ManageFrontDesk from "./pages/ManageFrontDesk";
 import FrontDeskResorts from "./pages/FrontDeskResorts";
+import DebugUser from "./pages/DebugUser";
 
 const App = () => {
   return (
@@ -200,6 +201,16 @@ const App = () => {
                 <ProtectedRoute>
                   <Layout>
                     <FrontDeskResorts />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/debug-user"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <DebugUser />
                   </Layout>
                 </ProtectedRoute>
               }
