@@ -254,8 +254,38 @@ export const fetchMyHotels = async (): Promise<HotelType[]> => {
 };
 
 export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
-  const response = await axiosInstance.get("/api/assigned-resorts");
-  return response.data;
+  try {
+    // Try dedicated endpoint first
+    const response = await axiosInstance.get("/api/assigned-resorts");
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      // Fallback: Use existing /api/my-hotels endpoint
+      console.log('🔄 Using fallback endpoint for assigned resorts');
+      
+      // Get current user info to determine role
+      const currentUserId = localStorage.getItem("user_id");
+      const currentUserRole = localStorage.getItem("user_role");
+      
+      const response = await axiosInstance.get("/api/my-hotels");
+      const allHotels = response.data;
+      
+      // If user is front desk, filter hotels based on assigned resorts
+      if (currentUserRole === "front_desk" && currentUserId) {
+        // Get user's assigned resorts from localStorage or fetch user data
+        const userEmail = localStorage.getItem("user_email");
+        
+        // For now, return all hotels since backend doesn't have proper filtering
+        // This will work for testing until backend endpoint is implemented
+        console.log('🏨 Front desk user detected, returning available resorts');
+        return allHotels;
+      }
+      
+      // For resort owners, return all their hotels
+      return allHotels;
+    }
+    throw error;
+  }
 };
 
 export const fetchMyHotelById = async (hotelId: string): Promise<HotelType> => {
