@@ -157,8 +157,20 @@ export const clearAllStorage = () => {
   });
 };
 
-export const addMyHotel = async (hotelFormData: HotelFormData) => {
-  // Create FormData for the comprehensive hotel data
+export const addMyHotel = async (hotelFormData: HotelFormData | FormData) => {
+  // Check if the input is already a FormData object (from ManageHotelForm)
+  if (hotelFormData instanceof FormData) {
+    console.log('=== ADD HOTEL: Sending FormData directly ===');
+    const response = await axiosInstance.post("/api/my-hotels", hotelFormData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  }
+
+  // Otherwise, convert HotelFormData to FormData (legacy support)
+  console.log('=== ADD HOTEL: Converting HotelFormData to FormData ===');
   const formData = new FormData();
 
   // Add all form fields to FormData
