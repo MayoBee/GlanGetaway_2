@@ -1,47 +1,82 @@
 import useAppContext from "./useAppContext";
+import { UserRole } from "../shared/types";
 
 export const useRoleBasedAccess = () => {
   const { user, userRole, isLoggedIn, isLoading, isAuthLoading } = useAppContext();
 
-  // Handle both "resort_owner" and "resort-owner" (hyphen or underscore)
-  // Handle both "superAdmin" (DB value) and legacy "super_admin"
-  const isSuperAdmin = userRole === "superAdmin" || userRole === "super_admin";
-  const isResortOwner = userRole === "resort_owner" || userRole === "resort-owner";
-  const isAdmin = userRole === "admin" || isSuperAdmin;
-  const isFrontDesk = userRole === "front_desk";
-  const isHousekeeping = userRole === "housekeeping";
-  const isUser = userRole === "user" || isFrontDesk || isHousekeeping;
+  // Use correct UserRole enum values
+  const isSuperAdmin = userRole === UserRole.SuperAdmin;
+  const isResortOwner = userRole === UserRole.ResortOwner;
+  const isAdmin = userRole === UserRole.Admin || isSuperAdmin;
+  const isFrontDesk = userRole === UserRole.FrontDesk;
+  const isHousekeeping = userRole === UserRole.Housekeeping;
+  const isUser = userRole === UserRole.User || isFrontDesk || isHousekeeping;
 
-  const canCreateResort = isAdmin || isResortOwner;
-  const canApproveResorts = isAdmin;
-  const canManageAllUsers = isAdmin;
-  const canViewAllResorts = isAdmin;
-  const canManageOwnResorts = isAdmin || isResortOwner;
-  const canBookResorts = isLoggedIn;
-  const canManageBookings = isAdmin || isResortOwner || isFrontDesk;
-  const canViewDashboard = isAdmin || isResortOwner || isFrontDesk || isHousekeeping;
-  const canManageRooms = isAdmin || isResortOwner || isFrontDesk;
-  const canManageHousekeeping = isAdmin || isResortOwner || isHousekeeping;
-  const canManagePricing = isAdmin || isResortOwner;
-  const canManageAmenities = isAdmin || isResortOwner;
-  const canManageActivities = isAdmin || isResortOwner || isFrontDesk;
-  const canViewReports = isAdmin || isResortOwner || isFrontDesk;
-  const canManageBilling = isAdmin || isResortOwner || isFrontDesk;
-  const canManageMaintenance = isAdmin || isResortOwner;
+  // Get user-specific permissions from database
+  const userPermissions = user?.permissions || {};
+
+  // Role-based defaults
+  const roleBasedPermissions = {
+    canCreateResort: isAdmin || isResortOwner,
+    canApproveResorts: isAdmin,
+    canManageAllUsers: isAdmin,
+    canViewAllResorts: isAdmin,
+    canManageOwnResorts: isAdmin || isResortOwner,
+    canBookResorts: isLoggedIn,
+    canManageBookings: isAdmin || isResortOwner || isFrontDesk,
+    canViewDashboard: isAdmin || isResortOwner || isFrontDesk || isHousekeeping,
+    canManageRooms: isAdmin || isResortOwner || isFrontDesk,
+    canManageHousekeeping: isAdmin || isResortOwner || isHousekeeping,
+    canManagePricing: isAdmin || isResortOwner,
+    canManageAmenities: isAdmin || isResortOwner,
+    canManageActivities: isAdmin || isResortOwner || isFrontDesk,
+    canViewReports: isAdmin || isResortOwner || isFrontDesk,
+    canManageBilling: isAdmin || isResortOwner || isFrontDesk,
+    canManageMaintenance: isAdmin || isResortOwner,
+  };
+
+  // User-specific permissions override role-based defaults
+  const canCreateResort = userPermissions.canManageUsers !== undefined ? userPermissions.canManageUsers : roleBasedPermissions.canCreateResort;
+  const canApproveResorts = roleBasedPermissions.canApproveResorts;
+  const canManageAllUsers = userPermissions.canManageUsers !== undefined ? userPermissions.canManageUsers : roleBasedPermissions.canManageAllUsers;
+  const canViewAllResorts = roleBasedPermissions.canViewAllResorts;
+  const canManageOwnResorts = roleBasedPermissions.canManageOwnResorts;
+  const canBookResorts = roleBasedPermissions.canBookResorts;
+  const canManageBookings = userPermissions.canManageBookings !== undefined ? userPermissions.canManageBookings : roleBasedPermissions.canManageBookings;
+  const canViewDashboard = roleBasedPermissions.canViewDashboard;
+  const canManageRooms = userPermissions.canManageRooms !== undefined ? userPermissions.canManageRooms : roleBasedPermissions.canManageRooms;
+  const canManageHousekeeping = userPermissions.canManageHousekeeping !== undefined ? userPermissions.canManageHousekeeping : roleBasedPermissions.canManageHousekeeping;
+  const canManagePricing = userPermissions.canManagePricing !== undefined ? userPermissions.canManagePricing : roleBasedPermissions.canManagePricing;
+  const canManageAmenities = userPermissions.canManageAmenities !== undefined ? userPermissions.canManageAmenities : roleBasedPermissions.canManageAmenities;
+  const canManageActivities = userPermissions.canManageActivities !== undefined ? userPermissions.canManageActivities : roleBasedPermissions.canManageActivities;
+  const canViewReports = userPermissions.canViewReports !== undefined ? userPermissions.canViewReports : roleBasedPermissions.canViewReports;
+  const canManageBilling = userPermissions.canManageBilling !== undefined ? userPermissions.canManageBilling : roleBasedPermissions.canManageBilling;
+  const canManageMaintenance = userPermissions.canManageMaintenance !== undefined ? userPermissions.canManageMaintenance : roleBasedPermissions.canManageMaintenance;
+
+  // Helper function to check if front desk user has any management permissions
+  const hasAnyManagementPermission = isFrontDesk && (
+    (canManageBookings || canManageRooms || 
+     canManageAmenities || canManageActivities || 
+     canViewReports || canManageBilling)
+  );
   
   const requireAdmin = () => isAdmin;
   
-  // Only log in development to reduce console noise
-  if (process.env.NODE_ENV === 'development') {
-    console.log("useRoleBasedAccess - Calculated permissions:", {
-      canCreateResort,
-      canApproveResorts,
-      canManageAllUsers,
-      canViewAllResorts,
-      canManageOwnResorts,
-      canBookResorts
-    });
-  }
+  // Always log for debugging front desk issues
+  console.log("useRoleBasedAccess - Debug Info:", {
+    userRole,
+    isFrontDesk,
+    isResortOwner,
+    user,
+    userPermissions,
+    hasAnyManagementPermission,
+    canManageBookings,
+    canManageRooms,
+    canManageAmenities,
+    canManageActivities,
+    canViewReports,
+    canManageBilling
+  });
 
   const getAccessibleRoutes = () => {
     if (!isLoggedIn) {
@@ -130,6 +165,7 @@ export const useRoleBasedAccess = () => {
     canViewReports,
     canManageBilling,
     canManageMaintenance,
+    hasAnyManagementPermission,
     requireAdmin,
     permissions: {
       canCreateResort,

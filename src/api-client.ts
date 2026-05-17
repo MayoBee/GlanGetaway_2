@@ -253,6 +253,71 @@ export const fetchMyHotels = async (): Promise<HotelType[]> => {
   return response.data;
 };
 
+export const fetchAssignedResorts = async (): Promise<HotelType[]> => {
+  try {
+    // Try dedicated endpoint first
+    const response = await axiosInstance.get("/api/assigned-resorts");
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      // Fallback: Get fresh user data from database and fetch assigned resorts
+      console.log('🔄 Using fallback method for assigned resorts');
+      
+      try {
+        console.log('🔍 Fetching fresh user data from database...');
+        // Always fetch current user data from database (no localStorage dependency)
+        const userResponse = await axiosInstance.get("/api/users/me");
+        const userData = userResponse.data;
+        
+        console.log('👤 Fresh user data received:', userData);
+        console.log('🏨 User role from database:', userData.role);
+        console.log('🏨 assignedResorts field:', userData.assignedResorts);
+        
+        // Check user role from database
+        if (userData.role === "front_desk") {
+          // Check if user has assignedResorts
+          if (userData.assignedResorts && userData.assignedResorts.length > 0) {
+            console.log('🏨 Found assigned resorts for front desk user:', userData.assignedResorts);
+            
+            // Fetch all hotels and filter by assigned resort IDs
+            const hotelsResponse = await axiosInstance.get("/api/hotels");
+            const allHotels = hotelsResponse.data;
+            
+            console.log('🏨 All hotels available:', allHotels.length);
+            
+            // Filter hotels to only include assigned ones
+            const assignedHotels = allHotels.filter((hotel: HotelType) => 
+              userData.assignedResorts.some((assigned: any) => 
+                assigned.resortId === hotel._id
+              )
+            );
+            
+            console.log('🏨 Filtered assigned hotels:', assignedHotels.length);
+            return assignedHotels;
+          } else {
+            console.log('⚠️ No assigned resorts found for front desk user');
+            console.log('⚠️ userData.assignedResorts:', userData.assignedResorts);
+            console.log('⚠️ Length:', userData.assignedResorts?.length);
+            return [];
+          }
+        } else if (userData.role === "resort_owner") {
+          // For resort owners, use /api/my-hotels
+          console.log('🏨 Resort owner detected, fetching owner hotels');
+          const response = await axiosInstance.get("/api/my-hotels");
+          return response.data;
+        } else {
+          console.log('⚠️ Unknown user role:', userData.role);
+          return [];
+        }
+      } catch (userError) {
+        console.error('❌ Error fetching user data:', userError);
+        return [];
+      }
+    }
+    throw error;
+  }
+};
+
 export const fetchMyHotelById = async (hotelId: string): Promise<HotelType> => {
   const response = await axiosInstance.get(`/api/my-hotels/${hotelId}`);
   return response.data;
@@ -979,3 +1044,4 @@ export const getAssignedResorts = async () => {
   const response = await axiosInstance.get("/api/resort-staff/assigned-resorts");
   return response.data;
 };
+
