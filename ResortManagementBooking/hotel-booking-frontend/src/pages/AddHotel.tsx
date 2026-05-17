@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import ManageHotelForm, { HotelFormData } from "../forms/ManageHotelForm/ManageHotelForm";
 import useAppContext from "../hooks/useAppContext";
 import { addMyHotel } from "../api-client";
-import { HotelFormData as ApiHotelFormData } from "../shared/types";
 
 const AddHotel = () => {
-  const { showToast, user, isLoggedIn } = useAppContext();
+  const { showToast } = useAppContext();
   const navigate = useNavigate();
 
   const { mutate, isLoading } = useMutation(addMyHotel, {
@@ -62,27 +61,7 @@ const AddHotel = () => {
             
           case 401:
             errorTitle = "Authentication Error";
-            errorMessage = "Your session has expired. Redirecting to login page...";
-            // Save current form data to localStorage before redirecting
-            const currentFormData = (window as any).currentHotelFormData;
-            if (currentFormData) {
-              localStorage.setItem('pendingHotelFormData', JSON.stringify(currentFormData));
-              localStorage.setItem('pendingHotelFormTimestamp', Date.now().toString());
-              showToast({
-                title: "Session Expired",
-                description: "Your form data has been saved. Please log in again to continue adding your resort.",
-                type: "INFO",
-              });
-            }
-            // Redirect to login after a short delay
-            setTimeout(() => {
-              navigate('/signin', { 
-                state: { 
-                  message: "Your session expired. Please log in again to continue adding your resort.",
-                  returnUrl: '/add-hotel'
-                } 
-              });
-            }, 2000);
+            errorMessage = "Your session has expired. Please log in again and retry.";
             break;
             
           case 403:
@@ -158,40 +137,87 @@ const AddHotel = () => {
     console.log('Cottages units:', hotelFormData.cottages?.map(c => ({ name: c.name, units: c.units })));
     console.log('Amenities units:', hotelFormData.amenities?.map(a => ({ name: a.name, units: a.units })));
     
-    // Check if user is authenticated before attempting to save
-    if (!isLoggedIn || !user) {
-      showToast({
-        title: "Authentication Required",
-        description: "Please log in to add a resort. Your form data will be saved.",
-        type: "ERROR",
-      });
-      
-      // Save form data before redirecting to login
-      localStorage.setItem('pendingHotelFormData', JSON.stringify(hotelFormData));
-      localStorage.setItem('pendingHotelFormTimestamp', Date.now().toString());
-      
-      // Redirect to login page
-      setTimeout(() => {
-        navigate('/signin', { 
-          state: { 
-            message: "Please log in to add a resort. Your form data has been saved.",
-            returnUrl: '/add-hotel'
-          } 
-        });
-      }, 1500);
-      return;
-    }
+    // Create FormData for file upload support
+    const formData = new FormData();
     
-    // Add missing required fields for API
-    const apiFormData: ApiHotelFormData = {
-      ...hotelFormData,
-      userId: user?._id || "", // Use actual user ID from auth context
-      lastUpdated: new Date()
+    // Explicitly append all known fields to ensure nothing is lost
+    const appendField = (key: string, value: any) => {
+      if (value === undefined || value === null) return;
+      if (typeof value === 'object' && !(value instanceof File) && !(value instanceof FileList)) {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, value);
+      }
     };
-    
-    // Pass the complete HotelFormData to addMyHotel function
-    // The addMyHotel function in api-client.ts will handle FormData conversion
-    mutate(apiFormData);
+
+    // Basic fields
+    appendField('name', hotelFormData.name);
+    appendField('city', hotelFormData.city);
+    appendField('country', hotelFormData.country);
+    appendField('description', hotelFormData.description);
+    appendField('starRating', hotelFormData.starRating);
+    appendField('dayRate', hotelFormData.dayRate);
+    appendField('nightRate', hotelFormData.nightRate);
+    appendField('hasDayRate', hotelFormData.hasDayRate);
+    appendField('hasNightRate', hotelFormData.hasNightRate);
+    appendField('dayRateCheckInTime', hotelFormData.dayRateCheckInTime);
+    appendField('dayRateCheckOutTime', hotelFormData.dayRateCheckOutTime);
+    appendField('nightRateCheckInTime', hotelFormData.nightRateCheckInTime);
+    appendField('nightRateCheckOutTime', hotelFormData.nightRateCheckOutTime);
+    appendField('hasNightRateTimeRestrictions', hotelFormData.hasNightRateTimeRestrictions);
+    appendField('downPaymentPercentage', hotelFormData.downPaymentPercentage);
+    appendField('gcashNumber', hotelFormData.gcashNumber);
+    appendField('isFeatured', hotelFormData.isFeatured);
+
+    // Arrays
+    hotelFormData.type?.forEach((t, i) => formData.append(`type[${i}]`, t));
+    hotelFormData.facilities?.forEach((f, i) => formData.append(`facilities[${i}]`, f));
+
+    // Contact
+    if (hotelFormData.contact) {
+      Object.keys(hotelFormData.contact).forEach(k => {
+        const v = (hotelFormData.contact as any)[k];
+        if (v) formData.append(`contact.${k}`, v);
+      });
+    }
+
+    // Policies
+    if (hotelFormData.policies) {
+      Object.keys(hotelFormData.policies).forEach(k => {
+        const v = (hotelFormData.policies as any)[k];
+        if (v !== undefined && v !== null) {
+          if (Array.isArray(v)) {
+            v.forEach((p, i) => Object.keys(p).forEach(pk => formData.append(`policies.${k}[${i}][${pk}]`, p[pk])));
+          } else {
+            formData.append(`policies.${k}`, v);
+          }
+        }
+      });
+    }
+
+    // Rooms, Cottages, Amenities, Packages (stringify for complex objects)
+    if (hotelFormData.rooms?.length) formData.append('rooms', JSON.stringify(hotelFormData.rooms));
+    if (hotelFormData.cottages?.length) formData.append('cottages', JSON.stringify(hotelFormData.cottages));
+    if (hotelFormData.amenities?.length) formData.append('amenities', JSON.stringify(hotelFormData.amenities));
+    if (hotelFormData.packages?.length) formData.append('packages', JSON.stringify(hotelFormData.packages));
+
+    // Discounts
+    if (hotelFormData.discounts) formData.append('discounts', JSON.stringify(hotelFormData.discounts));
+
+    // Child entrance fee
+    if (hotelFormData.childEntranceFee?.length) formData.append('childEntranceFee', JSON.stringify(hotelFormData.childEntranceFee));
+
+    // Image files
+    const files = hotelFormData.imageFiles as any;
+    if (files && (files instanceof FileList || Array.isArray(files))) {
+      Array.from(files).forEach((file: File) => {
+        if (file instanceof File && file.size > 0) {
+          formData.append('imageFiles', file);
+        }
+      });
+    }
+
+    mutate(formData);
   };
 
   return <ManageHotelForm onSave={handleSave} isLoading={isLoading} />;  
