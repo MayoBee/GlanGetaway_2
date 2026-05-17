@@ -752,20 +752,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       });
     });
 
-    // Debug FormData entrance fee appending
-    if (hasNewImageFiles || hasAccommodationFiles) {
-      console.log('=== FORM DATA ENTRANCE FEE DEBUG ===');
-      processedData.rooms?.forEach((room, index) => {
-        if (room.includedEntranceFee) {
-          console.log(`Appending room ${index} entrance fee:`, {
-            enabled: room.includedEntranceFee.enabled,
-            adultCount: room.includedEntranceFee.adultCount,
-            childCount: room.includedEntranceFee.childCount
-          });
-        }
-      });
-    }
-
     // Reset manual submit flag
     setIsManualSubmit(false);
 
@@ -779,6 +765,20 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
     const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
     const hasAccommodationFiles = roomFiles.size > 0 || cottageFiles.size > 0 || packageFiles.size > 0;
+
+    // Debug FormData entrance fee appending
+    if (hasNewImageFiles || hasAccommodationFiles) {
+      console.log('=== FORM DATA ENTRANCE FEE DEBUG ===');
+      processedData.rooms?.forEach((room, index) => {
+        if (room.includedEntranceFee) {
+          console.log(`Appending room ${index} entrance fee:`, {
+            enabled: room.includedEntranceFee.enabled,
+            adultCount: room.includedEntranceFee.adultCount,
+            childCount: room.includedEntranceFee.childCount
+          });
+        }
+      });
+    }
 
     // Check if there's accommodation data that needs FormData serialization
     const hasAccommodationData = processedData.rooms || processedData.cottages || processedData.packages;
@@ -847,9 +847,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
       // Add accommodation image files (rooms, cottages, packages)
       console.log('=== ACCOMMODATION IMAGE FILES DEBUG ===');
-      
+
       // Collect room image files
-      const roomFiles = roomsSectionRef.current?.getRoomFiles() || new Map();
       console.log('Room files:', roomFiles);
       roomFiles.forEach((file, key) => {
         console.log(`Appending room file: ${key}`, file.name);
@@ -857,7 +856,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       });
 
       // Collect cottage image files
-      const cottageFiles = cottagesSectionRef.current?.getCottageFiles() || new Map();
       console.log('Cottage files:', cottageFiles);
       cottageFiles.forEach((file, key) => {
         console.log(`Appending cottage file: ${key}`, file.name);
@@ -865,7 +863,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       });
 
       // Collect package image files
-      const packageFiles = packagesSectionRef.current?.getPackageFiles() || new Map();
       console.log('Package files:', packageFiles);
       packageFiles.forEach((file, key) => {
         console.log(`Appending package file: ${key}`, file.name);
