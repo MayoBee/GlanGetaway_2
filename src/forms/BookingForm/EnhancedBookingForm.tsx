@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { PaymentIntentResponse, UserType, HotelType } from "@shared/types";
-import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
@@ -11,7 +10,7 @@ import { Card } from "@shared/ui/card";
 import { Input } from "@shared/ui/input";
 import { Label } from "@shared/ui/label";
 import { CardContent, CardHeader, CardTitle } from "@shared/ui/card";
-import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
+import { User, Phone, MessageSquare, Shield, CheckCircle, Smartphone } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
@@ -52,7 +51,7 @@ export type BookingFormData = {
   totalCost: number;
   basePrice: number;
   specialRequests?: string;
-  paymentMethod: "card" | "gcash";
+  paymentMethod: "gcash";
   selectedItems?: Array<{
     id: string;
     name: string;
@@ -78,8 +77,6 @@ const EnhancedBookingForm = ({
     remainingAmount,
     hotel,
   });
-  const stripe = useStripe();
-  const elements = useElements();
   const search = useSearchContext();
   const { hotelId } = useParams();
   const navigate = useNavigate();
@@ -89,24 +86,23 @@ const EnhancedBookingForm = ({
   const [phone, setPhone] = useState<string>("");
   const [specialRequests, setSpecialRequests] = useState<string>("");
   // Helper to get initial payment method from localStorage
-  const getInitialPaymentMethod = (): "card" | "gcash" => {
+  const getInitialPaymentMethod = (): "gcash" => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("booking_paymentMethod");
-      if (saved === "gcash" || saved === "card") {
+      if (saved === "gcash") {
         console.log("[DEBUG] Restored payment method from localStorage:", saved);
         return saved;
       }
     }
-    return "card";
+    return "gcash";
   };
 
-  const [isCopied, setIsCopied] = useState<boolean>(false);
   // Use a ref to track if component is mounted - prevents unwanted resets
   const isMounted = useRef(false);
   // Track payment processing to prevent double submissions
   const isProcessingPayment = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">(getInitialPaymentMethod);
+  const [paymentMethod, setPaymentMethod] = useState<"gcash">(getInitialPaymentMethod);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
 
@@ -124,7 +120,7 @@ const EnhancedBookingForm = ({
   }, []);
 
   // DEBUG: Log payment method changes with stack trace
-  const handlePaymentMethodChange = (method: "card" | "gcash") => {
+  const handlePaymentMethodChange = (method: "gcash") => {
     if (!isMounted.current) {
       console.log("[DEBUG] handlePaymentMethodChange called but component not mounted");
       return;
@@ -149,7 +145,7 @@ const EnhancedBookingForm = ({
     onGCashSubmit(paymentData);
   };
 
-  const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
+  const { mutate: bookRoom, isLoading: isGCashLoading } = useMutation(
     apiClient.createRoomBooking,
     {
       onSuccess: (data) => {
@@ -213,7 +209,7 @@ const EnhancedBookingForm = ({
     }
   );
 
-  const { mutate: bookWithGCash, isLoading: isGCashLoading } = useMutation(
+  const { mutate: bookWithGCash, isLoading: isGCashBookingLoading } = useMutation(
     apiClient.createGCashBooking,
     {
       onSuccess: (data) => {
@@ -270,25 +266,12 @@ const EnhancedBookingForm = ({
       totalCost: calculatedTotal, // Use calculated total instead of paymentIntent total
       basePrice: paymentIntent.totalCost, // Use paymentIntent total as base price
       paymentIntentId: paymentIntent.paymentIntentId,
-      paymentMethod: "card",
+      paymentMethod: "gcash",
       selectedItems,
     },
-    mode: paymentMethod === "card" ? "onChange" : "onSubmit", // Only validate in onChange mode for card
+    mode: "onSubmit",
     shouldUnregister: false,
   });
-
-  const handleCopyCredentials = async () => {
-    const credentials = `Card: 4242 4242 4242 4242
-MM/YY: 12/35 CVC: 123`;
-
-    try {
-      await navigator.clipboard.writeText(credentials);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy credentials:", err);
-    }
-  };
 
   // Calculate total with discount applied
   const getFinalPricing = () => {
@@ -317,115 +300,7 @@ MM/YY: 12/35 CVC: 123`;
     setDiscountResult(result);
   }, []);
 
-  const onCardSubmit = async (formData: BookingFormData) => {
-    // Prevent this from being called when GCash is selected
-    if (paymentMethod === "gcash") {
-      return;
-    }
-    // Prevent double submission
-    if (isProcessingPayment.current) {
-      return;
-    }
-    if (!stripe || !elements) {
-      showToast({
-        title: "Payment System Error",
-        description: "Stripe payment system is not loaded. Please refresh and try again.",
-        type: "ERROR",
-      });
-      return;
-    }
-
-    const completeFormData = {
-      ...formData,
-      phone,
-      specialRequests,
-      paymentMethod: "card",
-      totalCost: finalDownPayment, // Use final down payment amount
-      basePrice: calculatedTotal, // Use calculated total as base
-      checkInTime: "12:00 PM",
-      checkOutTime: "11:00 AM",
-      selectedItems,
-      paymentIntentId: paymentIntent.paymentIntentId, // Include payment intent ID
-    };
-
-    isProcessingPayment.current = true;
-    setIsProcessing(true);
-
-    try {
-      console.log("Attempting payment confirmation with clientSecret:", paymentIntent.clientSecret);
-      
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error("Card element not found");
-      }
-
-      console.log("Payment Debug - Attempting confirmation with:", {
-        clientSecret: paymentIntent.clientSecret,
-        paymentIntentId: paymentIntent.paymentIntentId,
-        userEmail: currentUser.email,
-        userName: `${currentUser.firstName} ${currentUser.lastName}`
-      });
-
-      // Skip payment intent check to allow booking creation
-      // The backend will handle payment intent validation
-
-      const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            email: currentUser.email,
-            name: `${currentUser.firstName} ${currentUser.lastName}`,
-          },
-        },
-      });
-
-      console.log("Payment Debug - Confirmation result:", {
-        error: result.error,
-        paymentIntent: result.paymentIntent,
-        status: result.paymentIntent?.status
-      });
-
-      if (result.error) {
-        isProcessingPayment.current = false;
-        setIsProcessing(false);
-        console.error("Stripe payment error:", result.error);
-        
-        // Handle specific payment intent state errors
-        if (result.error.type === 'invalid_request_error' && result.error.code === 'payment_intent_unexpected_state') {
-          showToast({
-            title: "Payment Already Processed",
-            description: "This payment appears to have already been processed. Please check your bookings or try with a new payment.",
-            type: "ERROR",
-          });
-        } else {
-          showToast({
-            title: "Payment Failed",
-            description: result.error.message || "An error occurred while processing your payment.",
-            type: "ERROR",
-          });
-        }
-        return;
-      }
-
-      if (result.paymentIntent?.status === 'succeeded') {
-        console.log("Payment successful, creating booking...");
-        bookRoom(completeFormData);
-      } else {
-        throw new Error(`Payment status: ${result.paymentIntent?.status}`);
-      }
-    } catch (error) {
-      isProcessingPayment.current = false;
-      setIsProcessing(false);
-      console.error("Payment confirmation error:", error);
-      showToast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred while processing your payment.",
-        type: "ERROR",
-      });
-    }
-  };
-
-  const onGCashSubmit = (paymentData: GCashPaymentData) => {
+  const onGCashSubmit = async (paymentData: GCashPaymentData) => {
     const formData = {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -462,7 +337,7 @@ MM/YY: 12/35 CVC: 123`;
     bookWithGCash(formData);
   };
 
-  const isLoading = isCardLoading || isGCashLoading || isProcessing;
+  const isLoading = isGCashLoading || isGCashBookingLoading || isProcessing;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8">
@@ -475,7 +350,7 @@ MM/YY: 12/35 CVC: 123`;
             e.nativeEvent.stopImmediatePropagation();
             return false;
           }
-          return handleSubmit(onCardSubmit)(e);
+          return handleSubmit(onGCashSubmit)(e);
         }} 
         className="space-y-6"
       >
@@ -586,7 +461,7 @@ MM/YY: 12/35 CVC: 123`;
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <Shield className="h-5 w-5 text-blue-600" />
               Price Summary
             </CardTitle>
           </CardHeader>
@@ -667,22 +542,7 @@ MM/YY: 12/35 CVC: 123`;
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handlePaymentMethodChange("card");
-                  }}
-                  className={`p-4 rounded-lg border-2 font-medium transition-all ${
-                    paymentMethod === "card"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <CreditCard className="w-6 h-6 mx-auto mb-2" />
-                  <div>Credit/Debit Card</div>
-                </button>
-
+              <div className="grid grid-cols-1 gap-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -698,58 +558,6 @@ MM/YY: 12/35 CVC: 123`;
                   <div>GCash</div>
                 </button>
               </div>
-
-              {/* Card Payment Form */}
-              {paymentMethod === "card" && (
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                    <CardElement
-                      id="payment-element"
-                      className="text-sm"
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: "16px",
-                            color: "#424770",
-                            "::placeholder": {
-                              color: "#aab7c4",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-
-                  {/* Test Credentials */}
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm">
-                        <div className="font-medium text-yellow-800 mb-1">Test Credentials:</div>
-                        <div className="text-yellow-700">Card: 4242 4242 4242 4242</div>
-                        <div className="text-yellow-700">MM/YY: 12/35</div>
-                        <div className="text-yellow-700">CVC: 123</div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyCredentials}
-                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
-                      >
-                        {isCopied ? (
-                          <>
-                            <CheckCircle className="h-3 w-3 inline mr-1" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3 inline mr-1" />
-                            Copy
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* GCash Payment Form */}
               {paymentMethod === "gcash" && (
@@ -774,27 +582,6 @@ MM/YY: 12/35 CVC: 123`;
             </div>
           </CardContent>
         </Card>
-
-        {/* Submit Button */}
-        {paymentMethod === "card" && (
-          <Button
-            disabled={isLoading || !stripe || !elements}
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Processing...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Confirm Booking
-              </div>
-            )}
-          </Button>
-        )}
       </form>
 
       {/* Trust Indicators */}
